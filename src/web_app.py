@@ -4,10 +4,14 @@ import os
 import math
 from datetime import datetime, timedelta
 import pandas as pd
+import yaml # Import yaml to load config/settings.yaml
+import requests # Needed for HomeAssistantClient
+import pycarwings2 # Needed for NissanLeaf
 
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
 from optimizer.engine import Optimizer # Import Optimizer to generate price forecast
+from connectors.vehicles import NissanLeaf # Import NissanLeaf directly
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 app.secret_key = "super_secret_key_change_me" 
@@ -30,7 +34,30 @@ DEFAULT_SETTINGS = {
 
 spot_service = SpotPriceService()
 weather_service = WeatherService(59.5196, 17.9285)
-optimizer_instance = Optimizer({}) # Create a dummy optimizer instance for price forecasting
+
+# --- CONFIGURATION LOADING FOR OPTIMIZER INSTANCE ---
+# This is now a function to ensure it loads the complete config
+def _load_full_config_for_optimizer():
+    full_config = {}
+    if os.path.exists(YAML_CONFIG_PATH):
+        try:
+            with open(YAML_CONFIG_PATH, 'r') as f:
+                full_config = yaml.safe_load(f)
+        except Exception as e:
+            app.logger.error(f"Error loading base config for Optimizer in web_app: {e}")
+    
+    # Ensure 'optimization' key exists even if config is minimal
+    if 'optimization' not in full_config:
+        full_config['optimization'] = {'price_buffer_threshold': 0.10, 'planning_horizon_days': 3}
+    # And 'cars' key
+    if 'cars' not in full_config:
+        full_config['cars'] = {}
+
+    return full_config
+
+optimizer_instance = Optimizer(_load_full_config_for_optimizer())
+# --- END CONFIGURATION LOADING ---
+
 
 def get_settings():
     if not os.path.exists(SETTINGS_PATH):
@@ -150,7 +177,7 @@ def api_status():
         display_manual_soc = manual_soc if manual_soc is not None else soc
         
         # Logic to use manual_soc if optimizer_state is 0 and manual is available
-        # or if manual_soc is explicitly set and optimizer_state hasn't reported anything better.
+        # or if optimizer_state is outdated compared to manual
         if manual_soc is not None:
             optimizer_updated_at_str = car_state.get('last_updated')
             
@@ -225,30 +252,9 @@ def api_status():
 @app.route('/api/plan')
 def api_plan():
     try:
-        # Load the base config (for default capacity/max_charge) and user_settings (for HA creds)
-        # to properly initialize the Optimizer
-        with open("config/settings.yaml", "r") as f:
-            base_config = yaml.safe_load(f)
-        user_settings = {}
-        try:
-            with open("data/user_settings.json", "r") as f:
-                user_settings = json.load(f)
-        except:
-            pass
-        
-        # Inject user settings into base config for Optimizer init
-        if 'mercedes_eqv' in base_config['cars']:
-            merc_config = base_config['cars']['mercedes_eqv']
-            merc_config['ha_url'] = user_settings.get('ha_url', merc_config.get('ha_url'))
-            merc_config['ha_token'] = user_settings.get('ha_token', merc_config.get('ha_token'))
-            merc_config['ha_merc_soc_entity_id'] = user_settings.get('ha_merc_soc_entity_id', merc_config.get('ha_merc_soc_entity_id'))
-        if 'nissan_leaf' in base_config['cars']:
-            nissan_config = base_config['cars']['nissan_leaf']
-            nissan_config['username'] = user_settings.get('nissan_username', nissan_config.get('username'))
-            nissan_config['password'] = user_settings.get('nissan_password', nissan_config.get('password'))
-
-        # Create optimizer with full config to access _generate_price_forecast
-        optimizer = Optimizer(base_config)
+        # Reload full config for optimizer with latest user settings
+        full_merged_config = _load_full_config_for_optimizer() # Use the new loader
+        optimizer = Optimizer(full_merged_config)
 
         official_prices = spot_service.get_prices_upcoming()
         weather_forecast = weather_service.get_forecast()
@@ -276,14 +282,14 @@ def api_plan():
             
             # Simulate getting the car object (need full config for that)
             if priority_car_from_state['id'] == 'mercedes_eqv':
-                car_obj = MercedesEQV(base_config['cars']['mercedes_eqv'])
+                car_obj = MercedesEQV(full_merged_config['cars']['mercedes_eqv'])
             else: # nissan_leaf
-                car_obj = NissanLeaf(base_config['cars']['nissan_leaf'])
+                car_obj = NissanLeaf(full_merged_config['cars']['nissan_leaf'])
             
             # This is a bit of a hack, calling job() logic parts here, but needed for UI.
             # In a perfect world, optimizer_state would contain the actual schedule.
             current_car_status = car_obj.get_status()
-            current_car_target = user_settings.get(f"{priority_car_from_state['id']}_target", 80)
+            current_car_target = get_settings().get(f"{priority_car_from_state['id']}_target", 80) # Use get_settings() for latest target
             
             # Recalculate based on current values
             soc_needed_percent = current_car_target - current_car_status['soc']
@@ -344,6 +350,37 @@ def api_manual_soc():
     data = request.json
     set_manual_soc(data.get('vehicle_id'), int(data.get('soc')))
     return jsonify({"status": "ok"})
+
+@app.route('/api/nissan/debug_login')
+def nissan_debug_login():
+    try:
+        user_settings = get_settings() # This will load from user_settings.json
+        
+        # Simulate loading full config as main.py does
+        full_config = {}
+        if os.path.exists(YAML_CONFIG_PATH):
+            with open(YAML_CONFIG_PATH, 'r') as f:
+                full_config = yaml.safe_load(f)
+        
+        # Inject Nissan credentials from user_settings
+        nissan_config_for_test = full_config['cars'].get('nissan_leaf', {})
+        nissan_config_for_test['username'] = user_settings.get('nissan_username', nissan_config_for_test.get('username'))
+        nissan_config_for_test['password'] = user_settings.get('nissan_password', nissan_config_for_test.get('password'))
+        nissan_config_for_test['vin'] = user_settings.get('nissan_vin', nissan_config_for_test.get('vin'))
+
+        nissan_leaf_test = NissanLeaf(nissan_config_for_test)
+        
+        # Attempt login
+        login_successful = nissan_leaf_test._login()
+        
+        if login_successful:
+            return jsonify({"status": "Login successful", "message": "Successfully obtained Nissan Leaf object."})
+        else:
+            return jsonify({"status": "Login failed", "message": "Check username/password or API changes."})
+            
+    except Exception as e:
+        app.logger.error(f"Error in nissan_debug_login: {e}")
+        return jsonify({"status": "Error", "message": str(e)})
 
 if __name__ == '__main__':
     os.makedirs("data", exist_ok=True)
