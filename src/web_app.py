@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 import json
 import os
 import math
@@ -7,12 +7,16 @@ import pandas as pd
 
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
+from connectors.mercedes_auth import MercedesClient
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
+app.secret_key = "super_secret_key_change_me" 
 
 SETTINGS_PATH = "data/user_settings.json"
 OVERRIDES_PATH = "data/manual_overrides.json"
 STATE_PATH = "data/optimizer_state.json"
+MANUAL_STATUS_PATH = "data/manual_status.json"
+YAML_CONFIG_PATH = "config/settings.yaml"
 
 DEFAULT_SETTINGS = {
     "mercedes_target": 80,
@@ -60,6 +64,24 @@ def set_override(vehicle_id, action, duration_minutes=60):
     with open(OVERRIDES_PATH, 'w') as f:
         json.dump(overrides, f, indent=2)
 
+def get_manual_status():
+    if not os.path.exists(MANUAL_STATUS_PATH):
+        return {}
+    try:
+        with open(MANUAL_STATUS_PATH, 'r') as f:
+            return json.load(f)
+    except:
+        return {}
+
+def set_manual_soc(vehicle_id, soc):
+    status = get_manual_status()
+    status[vehicle_id] = {
+        "soc": soc,
+        "updated_at": datetime.now().isoformat()
+    }
+    with open(MANUAL_STATUS_PATH, 'w') as f:
+        json.dump(status, f, indent=2)
+
 def get_optimizer_state():
     if not os.path.exists(STATE_PATH):
         return {}
@@ -68,6 +90,36 @@ def get_optimizer_state():
             return json.load(f)
     except:
         return {}
+
+# --- Mercedes Routes (Keeping as placeholder if you get keys) ---
+def get_mercedes_client():
+    settings = get_settings()
+    client_id = settings.get('mercedes_client_id')
+    client_secret = settings.get('mercedes_client_secret')
+    if client_id and client_secret:
+        return MercedesClient(client_id, client_secret)
+    return None
+
+@app.route('/api/mercedes/login')
+def mercedes_login():
+    client = get_mercedes_client()
+    if not client:
+        return "Error: Mercedes Client ID/Secret missing in settings.", 400
+    auth_url = client.get_auth_url()
+    return redirect(auth_url)
+
+@app.route('/api/mercedes/callback')
+def mercedes_callback():
+    code = request.args.get('code')
+    if not code: return "Error: No code", 400
+    client = get_mercedes_client()
+    if not client: return "Error: Client init failed", 500
+    try:
+        client.fetch_token(code)
+        return "<h1>Linked!</h1>"
+    except Exception as e:
+        return f"Error: {e}", 500
+# --- End Mercedes Routes ---
 
 @app.route('/')
 def index():
@@ -86,14 +138,12 @@ def api_status():
     settings = get_settings()
     overrides = get_overrides()
     state = get_optimizer_state()
+    manual_status = get_manual_status()
     
-    # Flatten state
     cars = []
     for k, v in state.items():
         v['name'] = k
         cars.append(v)
-        
-    # Sort by urgency score (highest first)
     cars.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
     
     priority_car_id = None
@@ -115,12 +165,17 @@ def api_status():
         plugged_in = car_state.get('plugged_in', False)
         urgency = car_state.get('urgency_score', 0)
         
+        # Check for Manual SoC override if real API fails (or is default mock)
+        # We assume if soc is exactly 45 (our mock value) or 0, we might want to show manual val
+        # Or simply ALWAYS prefer manual value if it's recent?
+        # Let's send the manual value to the UI regardless so it can be displayed in the slider
+        manual_val = manual_status.get(key_id, {}).get('soc', 50)
+        
         is_priority = (key_id == priority_car_id)
         needs_plugging = False
         urgency_msg = ""
         swap_msg = ""
         
-        # UI Logic for Alerts
         if is_priority and not plugged_in and urgency > 0:
             needs_plugging = True
             urgency_msg = "Denna bil MÅSTE laddas nu!"
@@ -134,18 +189,16 @@ def api_status():
                  needs_plugging = True 
                  urgency_msg = "Var god koppla ur denna bil."
                  swap_msg = f"Byt till {p_car.get('name')}!"
-
-        # Start Time Logic (Quick Estimate for UI)
-        # If IDLE but urgency > 0, when will it start?
+                 
         start_time_text = ""
         if plugged_in and car_state.get('action') == 'IDLE' and urgency > 0:
-             # The frontend graph calculation is better, but let's try to give a hint here
              start_time_text = "Startar senare..."
 
         return {
             "name": name,
             "id": key_id,
             "soc": soc,
+            "manual_soc": manual_val, # Send this to UI
             "target": target,
             "plugged_in": plugged_in,
             "override": overrides.get(key_id),
@@ -174,40 +227,28 @@ def api_plan():
     try:
         prices = spot_service.get_prices_upcoming()
         weather = weather_service.get_forecast()
-        settings = get_settings()
         state = get_optimizer_state()
 
         df = pd.DataFrame(prices)
         analysis = []
-        charging_plan = [] # Array of 0 or 1 matching prices length
+        charging_plan = [] 
         
-        # Determine priority car to plan for
         cars = []
         for k, v in state.items():
             v['name'] = k
             cars.append(v)
         cars.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
-        
         priority_car = cars[0] if cars else None
         
         if priority_car and priority_car.get('urgency_score', 0) > 0:
-            # Simulate logic
             hours_needed = math.ceil(priority_car.get('urgency_score'))
-            
-            # Sort prices by value
             df_sorted = df.sort_values(by='price_sek', ascending=True)
-            # Pick cheapest N hours
             cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
-            
-            # Build plan array
             for p in prices:
                 is_charging = 1 if p['time_start'] in cheapest_hours else 0
                 charging_plan.append(is_charging)
-                
-            # Add Analysis Text
             start_time = min(cheapest_hours) if cheapest_hours else "-"
             start_time_fmt = datetime.fromisoformat(start_time).strftime("%H:%M") if cheapest_hours else "-"
-            
             analysis.append(f"Planerar laddning för {priority_car['name']}.")
             analysis.append(f"Behov: {hours_needed} timmar.")
             analysis.append(f"Starttid: {start_time_fmt}.")
@@ -241,6 +282,12 @@ def api_settings():
 def api_override():
     data = request.json
     set_override(data.get('vehicle_id'), data.get('action'), data.get('duration', 60))
+    return jsonify({"status": "ok"})
+
+@app.route('/api/manual_soc', methods=['POST'])
+def api_manual_soc():
+    data = request.json
+    set_manual_soc(data.get('vehicle_id'), int(data.get('soc')))
     return jsonify({"status": "ok"})
 
 if __name__ == '__main__':

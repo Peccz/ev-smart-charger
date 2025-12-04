@@ -27,12 +27,13 @@
 <div class="container mt-4 content">
     <h4 class="mb-4 fw-bold text-center">⚙️ Inställningar</h4>
 
+    <!-- Charge Targets -->
     <div class="card p-4">
-        <h5 class="mb-4">🚗 Laddmål (Vardag)</h5>
+        <h5 class="mb-4">🚗 Laddmål</h5>
         
         <div class="mb-4">
             <label class="form-label d-flex justify-content-between">
-                <span>Mercedes EQV</span>
+                <span>Mercedes EQV (Mål)</span>
                 <span id="merc-val" class="fw-bold">80%</span>
             </label>
             <input type="range" class="form-range" min="20" max="100" step="5" id="mercedes_target" oninput="updateVal('merc-val', this.value)">
@@ -40,17 +41,35 @@
 
         <div class="mb-3">
             <label class="form-label d-flex justify-content-between">
-                <span>Nissan Leaf</span>
+                <span>Nissan Leaf (Mål)</span>
                 <span id="leaf-val" class="fw-bold">80%</span>
             </label>
             <input type="range" class="form-range" min="20" max="100" step="5" id="nissan_target" oninput="updateVal('leaf-val', this.value)">
         </div>
     </div>
-
+    
+    <!-- Departure -->
     <div class="card p-4">
         <h5 class="mb-3">🕒 Avresa</h5>
         <p class="text-muted small">Bilarna ska vara klara senast denna tid.</p>
         <input type="time" class="form-control form-control-lg" id="departure_time">
+    </div>
+
+    <!-- Mercedes API Config -->
+    <div class="card p-4">
+        <h5 class="mb-3">🔗 Mercedes Me (Developer)</h5>
+        <div class="mb-2">
+            <label class="small text-muted">Client ID</label>
+            <input type="text" class="form-control" id="mercedes_client_id">
+        </div>
+        <div class="mb-3">
+            <label class="small text-muted">Client Secret</label>
+            <input type="password" class="form-control" id="mercedes_client_secret">
+        </div>
+        <a href="/api/mercedes/login" target="_blank" class="btn btn-outline-dark w-100">
+            <i class="bi bi-link"></i> Koppla konto
+        </a>
+        <div class="small text-muted mt-2">Krävs för automatisk batteristatus.</div>
     </div>
     
     <div class="d-grid">
@@ -100,13 +119,18 @@
             updateVal('leaf-val', data.nissan_target || 80);
             
             document.getElementById('departure_time').value = data.departure_time || "07:00";
+            
+            document.getElementById('mercedes_client_id').value = data.mercedes_client_id || "";
+            document.getElementById('mercedes_client_secret').value = data.mercedes_client_secret || "";
         });
 
     function saveSettings() {
         const data = {
             mercedes_target: parseInt(document.getElementById('mercedes_target').value),
             nissan_target: parseInt(document.getElementById('nissan_target').value),
-            departure_time: document.getElementById('departure_time').value
+            departure_time: document.getElementById('departure_time').value,
+            mercedes_client_id: document.getElementById('mercedes_client_id').value,
+            mercedes_client_secret: document.getElementById('mercedes_client_secret').value
         };
 
         fetch('/api/settings', {

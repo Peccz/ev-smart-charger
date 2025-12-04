@@ -29,7 +29,21 @@ STATE_FILE = "data/optimizer_state.json"
 
 def load_config():
     with open("config/settings.yaml", "r") as f:
-        return yaml.safe_load(f)
+        base_config = yaml.safe_load(f)
+    
+    # Overlay user settings
+    try:
+        with open("data/user_settings.json", "r") as f:
+            user = json.load(f)
+            # Inject Mercedes credentials if present
+            if 'mercedes_client_id' in user:
+                base_config['cars']['mercedes_eqv']['client_id'] = user['mercedes_client_id']
+            if 'mercedes_client_secret' in user:
+                base_config['cars']['mercedes_eqv']['client_secret'] = user['mercedes_client_secret']
+    except:
+        pass
+        
+    return base_config
 
 def save_state(state):
     try:
