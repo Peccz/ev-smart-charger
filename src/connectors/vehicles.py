@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 import pycarwings2
 import requests
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -125,14 +126,19 @@ class NissanLeaf(Vehicle):
             return False
         try:
             self.session = pycarwings2.Session(self.username, self.password, self.region)
-            if self.vin:
-                self.leaf = self.session.get_leaf(self.vin)
-            else:
-                self.leaf = self.session.get_leaf()
             logger.info("NissanLeaf: Login successful.")
             return True
+        except pycarwings2.Pycarwings2Error as e:
+            logger.error(f"NissanLeaf: pycarwings2 specific Login Failed: {e}. Check credentials or region.")
+            return False
+        except requests.exceptions.RequestException as e:
+            logger.error(f"NissanLeaf: Network/Request Error during login: {e}")
+            return False
+        except json.decoder.JSONDecodeError as e:
+            logger.error(f"NissanLeaf: Server returned invalid JSON during login: {e}. Possible API change or bad response.")
+            return False
         except Exception as e:
-            logger.error(f"NissanLeaf: Login Failed: {e}")
+            logger.error(f"NissanLeaf: Unexpected Login Error: {e}")
             return False
 
     def get_status(self):
