@@ -144,10 +144,10 @@
             
             if (statusText.includes("Waiting")) statusText = "Väntar på billigare el...";
             if (statusText.includes("Current hour")) statusText = "Laddar smart (Billigt!)";
-            if (statusText.includes("Vehicle not plugged")) statusText = "Redo att laddas.";
-
-            // Highlight priority car slightly?
-            let borderStyle = car.is_priority ? 'border: 2px solid #0d6efd;' : '';
+                                if (statusText.includes("Vehicle not plugged")) statusText = "Redo att laddas.";
+                                if (car.start_time_text) statusText = `<span class="fw-bold text-dark">${car.start_time_text}</span>`;
+            
+                                // Highlight priority car slightly?            let borderStyle = car.is_priority ? 'border: 2px solid #0d6efd;' : '';
 
             html += `
                 <div class="card p-4" style="${borderStyle}">

@@ -1,12 +1,10 @@
 from flask import Flask, render_template, jsonify, request
 import json
 import os
-import sqlite3
+import math
 from datetime import datetime, timedelta
 import pandas as pd
 
-# Import specific connectors just to fetch live data for the Planning UI
-# (In a larger app, we would cache this in DB, but let's fetch fresh for now)
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
 
@@ -23,9 +21,8 @@ DEFAULT_SETTINGS = {
     "smart_buffering": True
 }
 
-# Initialize services (lightweight)
 spot_service = SpotPriceService()
-weather_service = WeatherService(59.5196, 17.9285) # Upplands Väsby coords
+weather_service = WeatherService(59.5196, 17.9285)
 
 def get_settings():
     if not os.path.exists(SETTINGS_PATH):
@@ -123,6 +120,7 @@ def api_status():
         urgency_msg = ""
         swap_msg = ""
         
+        # UI Logic for Alerts
         if is_priority and not plugged_in and urgency > 0:
             needs_plugging = True
             urgency_msg = "Denna bil MÅSTE laddas nu!"
@@ -137,6 +135,13 @@ def api_status():
                  urgency_msg = "Var god koppla ur denna bil."
                  swap_msg = f"Byt till {p_car.get('name')}!"
 
+        # Start Time Logic (Quick Estimate for UI)
+        # If IDLE but urgency > 0, when will it start?
+        start_time_text = ""
+        if plugged_in and car_state.get('action') == 'IDLE' and urgency > 0:
+             # The frontend graph calculation is better, but let's try to give a hint here
+             start_time_text = "Startar senare..."
+
         return {
             "name": name,
             "id": key_id,
@@ -150,7 +155,8 @@ def api_status():
             "is_priority": is_priority,
             "needs_plugging": needs_plugging,
             "urgency_msg": urgency_msg,
-            "swap_msg": swap_msg
+            "swap_msg": swap_msg,
+            "start_time_text": start_time_text
         }
 
     cars_data['mercedes'] = build_car("Mercedes EQV", "mercedes_eqv", "mercedes_target")
@@ -165,33 +171,54 @@ def api_status():
 
 @app.route('/api/plan')
 def api_plan():
-    """
-    Returns price data and charging plan for the UI graph.
-    """
     try:
         prices = spot_service.get_prices_upcoming()
         weather = weather_service.get_forecast()
-        
-        # Get logic from state
+        settings = get_settings()
         state = get_optimizer_state()
-        
-        # Add simple analysis text
+
+        df = pd.DataFrame(prices)
         analysis = []
-        if prices:
-            df = pd.DataFrame(prices)
-            avg = df['price_sek'].mean()
-            min_p = df['price_sek'].min()
-            analysis.append(f"Snittpris: {avg:.2f} kr (Lägst: {min_p:.2f} kr)")
+        charging_plan = [] # Array of 0 or 1 matching prices length
         
-        if weather:
-            df_w = pd.DataFrame(weather)
-            avg_wind = df_w['wind_kmh'].mean()
-            analysis.append(f"Vindprognos: {avg_wind:.1f} km/h (Medel)")
-            if avg_wind > 20:
-                analysis.append("🌪️ Mycket vind -> Priserna sjunker troligen!")
+        # Determine priority car to plan for
+        cars = []
+        for k, v in state.items():
+            v['name'] = k
+            cars.append(v)
+        cars.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
         
+        priority_car = cars[0] if cars else None
+        
+        if priority_car and priority_car.get('urgency_score', 0) > 0:
+            # Simulate logic
+            hours_needed = math.ceil(priority_car.get('urgency_score'))
+            
+            # Sort prices by value
+            df_sorted = df.sort_values(by='price_sek', ascending=True)
+            # Pick cheapest N hours
+            cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
+            
+            # Build plan array
+            for p in prices:
+                is_charging = 1 if p['time_start'] in cheapest_hours else 0
+                charging_plan.append(is_charging)
+                
+            # Add Analysis Text
+            start_time = min(cheapest_hours) if cheapest_hours else "-"
+            start_time_fmt = datetime.fromisoformat(start_time).strftime("%H:%M") if cheapest_hours else "-"
+            
+            analysis.append(f"Planerar laddning för {priority_car['name']}.")
+            analysis.append(f"Behov: {hours_needed} timmar.")
+            analysis.append(f"Starttid: {start_time_fmt}.")
+            analysis.append(f"Valde billigaste timmarna (Snitt: {df_sorted.head(hours_needed)['price_sek'].mean():.2f} kr).")
+        else:
+            charging_plan = [0] * len(prices)
+            analysis.append("Inget laddbehov just nu.")
+
         return jsonify({
-            "prices": prices, # List of {time_start, price_sek}
+            "prices": prices,
+            "plan": charging_plan,
             "weather": weather,
             "analysis": analysis
         })

@@ -27,18 +27,20 @@
 <div class="container mt-4 content">
     <h4 class="mb-4 fw-bold text-center">📅 Planering</h4>
 
-    <!-- Graph Card -->
-    <div class="card p-3">
-        <h6 class="fw-bold mb-3">Elpris (SE3) & Prognos</h6>
-        <canvas id="priceChart" height="200"></canvas>
-    </div>
-
     <!-- Analysis Card -->
-    <div class="card p-3">
+    <div class="card p-3 bg-white">
         <h6 class="fw-bold mb-3">🤖 Systemets Analys</h6>
-        <ul class="list-group list-group-flush" id="analysis-list">
+        <ul class="list-group list-group-flush small" id="analysis-list">
             <li class="list-group-item">Laddar data...</li>
         </ul>
+    </div>
+
+    <!-- Graph Card -->
+    <div class="card p-3">
+        <h6 class="fw-bold mb-3">Elpris & Laddschema</h6>
+        <div style="height: 300px">
+            <canvas id="priceChart"></canvas>
+        </div>
     </div>
 
 </div>
@@ -65,7 +67,7 @@
         fetch('/api/plan')
             .then(response => response.json())
             .then(data => {
-                renderChart(data.prices);
+                renderChart(data.prices, data.plan);
                 renderAnalysis(data.analysis);
             });
     }
@@ -76,23 +78,21 @@
             list.innerHTML = '<li class="list-group-item text-muted">Ingen data tillgänglig.</li>';
             return;
         }
-        list.innerHTML = items.map(item => `<li class="list-group-item"><i class="bi bi-info-circle text-primary me-2"></i> ${item}</li>`).join('');
+        list.innerHTML = items.map(item => `<li class="list-group-item py-2"><i class="bi bi-caret-right-fill text-primary me-2"></i> ${item}</li>`).join('');
     }
 
-    function renderChart(prices) {
+    function renderChart(prices, plan) {
         const ctx = document.getElementById('priceChart').getContext('2d');
         
-        // Prepare data
         const labels = prices.map(p => {
             const d = new Date(p.time_start);
             return d.getHours() + ":00";
         });
-        const dataPoints = prices.map(p => p.price_sek);
         
-        // Color logic: Green if cheap, Red if expensive
-        // Simple average calculation for color
-        const avg = dataPoints.reduce((a,b) => a + b, 0) / dataPoints.length;
-        const colors = dataPoints.map(p => p < avg ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)');
+        const priceData = prices.map(p => p.price_sek);
+        // Max price for scaling the charging bars
+        const maxPrice = Math.max(...priceData) * 1.1;
+        const planData = plan.map(isActive => isActive ? maxPrice : 0);
 
         if (chartInstance) {
             chartInstance.destroy();
@@ -102,24 +102,41 @@
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Pris (SEK/kWh)',
-                    data: dataPoints,
-                    backgroundColor: colors,
-                    borderColor: colors.map(c => c.replace('0.6', '1')),
-                    borderWidth: 1
-                }]
+                datasets: [
+                    {
+                        label: 'Laddning',
+                        data: planData,
+                        backgroundColor: 'rgba(25, 135, 84, 0.3)', // Green transparent overlay
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 1,
+                        barPercentage: 1.0,
+                        categoryPercentage: 1.0,
+                        order: 2
+                    },
+                    {
+                        label: 'Pris (SEK)',
+                        data: priceData,
+                        backgroundColor: 'rgba(108, 117, 125, 0.5)', // Grey
+                        borderColor: 'rgba(108, 117, 125, 1)',
+                        borderWidth: 1,
+                        order: 1
+                    }
+                ]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: { display: true, text: 'SEK / kWh' }
+                    },
+                    x: {
+                        grid: { display: false }
                     }
                 },
                 plugins: {
-                    legend: { display: false }
+                    legend: { position: 'bottom' }
                 }
             }
         });
