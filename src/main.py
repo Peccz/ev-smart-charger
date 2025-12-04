@@ -50,10 +50,9 @@ def load_config():
     merc_config_from_yaml = base_config['cars'].get('mercedes_eqv', {})
     mercedes_final_config = {
         'vin': merc_config_from_yaml.get('vin'),
-        'capacity_kwh': merc_config_from_yaml.get('capacity_kwh'),
-        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw'),
-        'target_soc': user_settings.get('mercedes_target', merc_config_from_yaml.get('target_soc', 80)), # Target from user_settings
-        # HA specific settings from user_settings
+        'capacity_kwh': merc_config_from_yaml.get('capacity_kwh'),      # <-- THIS WAS MISSING
+        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw'),    # <-- THIS WAS MISSING
+        'target_soc': user_settings.get('mercedes_target', merc_config_from_yaml.get('target_soc', 80)),
         'ha_url': user_settings.get('ha_url'),
         'ha_token': user_settings.get('ha_token'),
         'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id')
@@ -64,10 +63,9 @@ def load_config():
     nissan_config_from_yaml = base_config['cars'].get('nissan_leaf', {})
     nissan_final_config = {
         'vin': nissan_config_from_yaml.get('vin'),
-        'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh'),
-        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw'),
-        'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)), # Target from user_settings
-        # Nissan username/password from user_settings (if implemented in web UI)
+        'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh'),    # <-- THIS WAS MISSING
+        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw'),  # <-- THIS WAS MISSING
+        'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)),
         'username': user_settings.get('nissan_username', nissan_config_from_yaml.get('username')),
         'password': user_settings.get('nissan_password', nissan_config_from_yaml.get('password')),
         'region': nissan_config_from_yaml.get('region')
