@@ -75,11 +75,12 @@ def load_config():
     return base_config
 
 def save_state(state):
-    # Ensure the directory exists before writing the file
+    logger.info(f"Attempting to save state to {STATE_FILE}")
     os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
     try:
         with open(STATE_FILE, 'w') as f:
             json.dump(state, f, indent=2)
+        logger.info(f"Successfully saved state to {STATE_FILE}")
     except Exception as e:
         logger.error(f"Failed to save state to {STATE_FILE}: {e}")
 
@@ -116,7 +117,9 @@ def job():
     any_charging_needed = False
 
     for car in cars:
+        logger.info(f"Fetching status for {car.name}...")
         status = car.get_status()
+        logger.info(f"{car.name} get_status() returned: {status}")
         db.log_vehicle_status(car.name, status['soc'], status['range_km'], status['plugged_in'])
         
         # Determine target
