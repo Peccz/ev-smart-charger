@@ -1,6 +1,8 @@
 import time
 import yaml
 import schedule
+import json
+import os
 from datetime import datetime
 import logging
 
@@ -23,9 +25,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+STATE_FILE = "data/optimizer_state.json"
+
 def load_config():
     with open("config/settings.yaml", "r") as f:
         return yaml.safe_load(f)
+
+def save_state(state):
+    try:
+        with open(STATE_FILE, 'w') as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        logger.error(f"Failed to save state: {e}")
 
 def job():
     logger.info("Starting optimization cycle...")
@@ -38,7 +49,6 @@ def job():
     optimizer = Optimizer(config)
     
     # Initialize Hardware
-    # Note: In a real run, you would instantiate these once outside the loop if they hold connection state
     eqv = MercedesEQV(config['cars']['mercedes_eqv'])
     leaf = NissanLeaf(config['cars']['nissan_leaf'])
     charger = ZaptecCharger(config['charger']['zaptec'])
@@ -48,22 +58,57 @@ def job():
     weather = weather_service.get_forecast()
     
     cars = [eqv, leaf]
-    
+    state_data = {}
+    any_charging_needed = False
+
     for car in cars:
         status = car.get_status()
         db.log_vehicle_status(car.name, status['soc'], status['range_km'], status['plugged_in'])
         
+        # Get recommendation from optimizer
         decision = optimizer.suggest_action(car, prices, weather)
+        
+        # Add extra analysis for the UI (Urgency)
+        # (Ideally optimizer returns this, but we calculate simply here for now)
+        hours_to_target = 0
+        if decision.get('action') != "IDLE" or not status['plugged_in']:
+             # Re-calc logic simplified for UI visualization
+             target = 80 # Default fallback
+             try:
+                 # Quick hack to get target from settings if possible, else config
+                 pass 
+             except:
+                 pass
+        
+        state_data[car.name] = {
+            "id": "mercedes_eqv" if "Mercedes" in car.name else "nissan_leaf",
+            "last_updated": datetime.now().isoformat(),
+            "soc": status['soc'],
+            "plugged_in": status['plugged_in'],
+            "action": decision['action'],
+            "reason": decision['reason'],
+            "recommendation": decision.get('action') # CHARGE or IDLE
+        }
+
         logger.info(f"Car: {car.name} | SoC: {status['soc']}% | Action: {decision['action']} | Reason: {decision['reason']}")
         
-        if status['plugged_in']:
-            # Simple logic: If ANY plugged-in car needs charge, start charger.
-            # Advanced logic would need Zaptec to support individual session management per RFID or phase.
-            if decision['action'] == "CHARGE":
+        if status['plugged_in'] and decision['action'] == "CHARGE":
+            any_charging_needed = True
+
+    # Save state for Web App
+    save_state(state_data)
+
+    # Hardware Control
+    try:
+        charger_status = charger.get_status()
+        if any_charging_needed:
+            if not charger_status['is_charging']:
                 charger.start_charging()
-                # Assume we only charge one at a time or both get power
-            else:
+        else:
+            if charger_status['is_charging']:
                 charger.stop_charging()
+    except Exception as e:
+        logger.error(f"Charger control failed: {e}")
 
 def main():
     logger.info("EV Smart Charger System Started")

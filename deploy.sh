@@ -4,7 +4,8 @@
 RPI_USER="peccz"
 RPI_HOST="100.100.118.62"
 RPI_DIR="ev_smart_charger"
-SERVICE_NAME="ev_smart_charger.service"
+SERVICE_CORE="ev_smart_charger.service"
+SERVICE_WEB="ev_web_app.service"
 
 echo "======================================="
 echo "   EV Smart Charger - Auto Deploy      "
@@ -81,13 +82,16 @@ ssh $RPI_USER@$RPI_HOST << EOF
     # Install requirements
     ./venv/bin/pip install -r requirements.txt --quiet
     
-    echo "Updating Service..."
-    sudo cp $SERVICE_NAME /etc/systemd/system/
+    echo "Updating Services..."
+    sudo cp $SERVICE_CORE /etc/systemd/system/
+    sudo cp $SERVICE_WEB /etc/systemd/system/
     sudo systemctl daemon-reload
-    sudo systemctl enable $SERVICE_NAME
+    sudo systemctl enable $SERVICE_CORE
+    sudo systemctl enable $SERVICE_WEB
     
-    echo "Restarting Service..."
-    sudo systemctl restart $SERVICE_NAME
+    echo "Restarting Services..."
+    sudo systemctl restart $SERVICE_CORE
+    sudo systemctl restart $SERVICE_WEB
 EOF
 
 if [ $? -eq 0 ]; then
@@ -99,9 +103,13 @@ fi
 
 # 4. Verify Status
 echo "[4/4] Verifying Service Status..."
-sleep 3
-ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_NAME --no-pager"
+sleep 5
+echo "--- Core Service ---"
+ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_CORE --no-pager | head -n 3"
+echo "--- Web App ---"
+ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_WEB --no-pager | head -n 3"
 
 echo "======================================="
 echo "   Deployment Complete!                "
+echo "   Web App: http://$RPI_HOST:5000      "
 echo "======================================="

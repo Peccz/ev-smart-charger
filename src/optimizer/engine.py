@@ -2,17 +2,63 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import math
+import json
+import os
+import dateutil.parser
 
 class Optimizer:
     def __init__(self, config):
         self.config = config
         self.buffer_threshold_price = config['optimization']['price_buffer_threshold']
+        self.settings_path = "data/user_settings.json"
+        self.overrides_path = "data/manual_overrides.json"
+
+    def _get_user_settings(self):
+        if os.path.exists(self.settings_path):
+            try:
+                with open(self.settings_path, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        return {}
+
+    def _get_overrides(self):
+        if os.path.exists(self.overrides_path):
+            try:
+                with open(self.overrides_path, 'r') as f:
+                    data = json.load(f)
+                    # Filter out expired
+                    valid = {}
+                    now = datetime.now()
+                    for vid, override in data.items():
+                        expires = dateutil.parser.parse(override['expires_at'])
+                        # Naive comparison fix (assuming local time everywhere for simplicity in this context)
+                        if expires.tzinfo is None:
+                            expires = expires.replace(tzinfo=None) 
+                        
+                        if expires > now:
+                            valid[vid] = override
+                    return valid
+            except Exception as e:
+                print(f"Error reading overrides: {e}")
+        return {}
 
     def suggest_action(self, vehicle, prices, weather_forecast):
         """
         Decides whether to charge NOW based on inputs.
         Returns: dict { "action": "CHARGE" | "IDLE", "reason": str }
         """
+        # 0. Check Manual Overrides
+        overrides = self._get_overrides()
+        vehicle_id = "mercedes_eqv" if "Mercedes" in vehicle.name else "nissan_leaf"
+        
+        if vehicle_id in overrides:
+            ovr = overrides[vehicle_id]
+            if ovr['action'] == "CHARGE":
+                return {"action": "CHARGE", "reason": "Manual Override (Ladda Nu!)"}
+            if ovr['action'] == "STOP":
+                return {"action": "IDLE", "reason": "Manual Override (Stoppa)"}
+
         status = vehicle.get_status()
         
         # 1. Basic checks
@@ -21,15 +67,13 @@ class Optimizer:
         
         current_soc = status['soc']
         
-        # Determine target SoC (Normal vs Buffer)
-        base_target_soc = self.config['cars']['mercedes_eqv']['target_soc'] 
-        if vehicle.name == "Nissan Leaf":
-            base_target_soc = self.config['cars']['nissan_leaf']['target_soc']
-
-        target_soc = base_target_soc
+        # Determine target SoC from User Settings
+        user_settings = self._get_user_settings()
+        target_soc = user_settings.get(f"{vehicle_id}_target", 80) # Default 80 if not set
+        
         is_buffering = False
         
-        # Weather/Buffer Logic: If bad weather coming, increase target to 95%
+        # Weather/Buffer Logic
         if self._should_buffer(prices, weather_forecast):
             target_soc = 95
             is_buffering = True
@@ -54,33 +98,23 @@ class Optimizer:
 
         # Filter prices: Look at prices starting NOW until tomorrow morning (e.g., 24h window)
         now = datetime.now()
-        current_hour_str = now.strftime("%Y-%m-%dT%H:00:00") # Approximation for matching API format
         
         # Create DataFrame and sort by time
         df = pd.DataFrame(prices)
         
         # Ensure we only look at future/current prices
-        # (Simple string comparison works for ISO format, but let's be robust if needed later)
         # Taking top X cheapest hours from the available list
         
-        # If we have fewer hours of data than needed, charge now
         if len(df) < hours_needed:
              return {"action": "CHARGE", "reason": "Not enough price data to plan, charging now"}
 
         # Sort by Price (Lowest first)
-        # We assume the list 'prices' covers the relevant planning period (e.g. next 24h)
         df_sorted = df.sort_values(by='price_sek', ascending=True)
         
         # Pick the cheapest N hours
         cheapest_hours = df_sorted.head(hours_needed)
         
         # Check if CURRENT hour is in the cheapest set
-        # We compare the 'time_start' string. 
-        # Note: The API format is usually "2023-10-27T14:00:00"
-        # We need to match the current hour.
-        
-        current_hour_match = False
-        # Simple check: Is the first item in the UNSORTED list (which is 'now') present in the CHEAPEST list?
         current_time_start = df.iloc[0]['time_start'] # The API returns sorted by time usually
         
         if current_time_start in cheapest_hours['time_start'].values:
@@ -88,7 +122,7 @@ class Optimizer:
             mode = "Buffering" if is_buffering else "Normal"
             return {
                 "action": "CHARGE", 
-                "reason": f"{mode}: Current hour ({current_price} SEK) is in top {hours_needed} cheapest hours needed to add {kwh_needed:.1f} kWh."
+                "reason": f"{mode}: Current hour ({current_price} SEK) is in top {hours_needed} cheapest hours needed to add {kwh_needed:.1f} kWh (Target: {target_soc}%)."
             }
 
         next_best_price = cheapest_hours['price_sek'].max()

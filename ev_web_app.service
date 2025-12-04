@@ -1,0 +1,17 @@
+[Unit]
+Description=EV Smart Charger Web Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=peccz
+WorkingDirectory=/home/peccz/ev_smart_charger
+# Use gunicorn for production performance
+ExecStart=/home/peccz/ev_smart_charger/venv/bin/gunicorn --bind 0.0.0.0:5000 src.web_app:app
+Restart=on-failure
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ev_web_app
+
+[Install]
+WantedBy=multi-user.target
