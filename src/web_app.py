@@ -7,7 +7,7 @@ import pandas as pd
 
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
-from connectors.mercedes_auth import MercedesClient
+# from connectors.mercedes_api.token_client import MercedesTokenClient # Removed
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 app.secret_key = "super_secret_key_change_me" 
@@ -22,7 +22,10 @@ DEFAULT_SETTINGS = {
     "mercedes_target": 80,
     "nissan_target": 80,
     "departure_time": "07:00",
-    "smart_buffering": True
+    "smart_buffering": True,
+    "ha_url": "http://100.100.118.62:8123",
+    "ha_token": "",
+    "ha_merc_soc_entity_id": ""
 }
 
 spot_service = SpotPriceService()
@@ -33,7 +36,9 @@ def get_settings():
         return DEFAULT_SETTINGS
     try:
         with open(SETTINGS_PATH, 'r') as f:
-            return json.load(f)
+            current_settings = json.load(f)
+            # Merge with defaults to ensure new fields exist
+            return {**DEFAULT_SETTINGS, **current_settings}
     except:
         return DEFAULT_SETTINGS
 
@@ -91,35 +96,7 @@ def get_optimizer_state():
     except:
         return {}
 
-# --- Mercedes Routes (Keeping as placeholder if you get keys) ---
-def get_mercedes_client():
-    settings = get_settings()
-    client_id = settings.get('mercedes_client_id')
-    client_secret = settings.get('mercedes_client_secret')
-    if client_id and client_secret:
-        return MercedesClient(client_id, client_secret)
-    return None
-
-@app.route('/api/mercedes/login')
-def mercedes_login():
-    client = get_mercedes_client()
-    if not client:
-        return "Error: Mercedes Client ID/Secret missing in settings.", 400
-    auth_url = client.get_auth_url()
-    return redirect(auth_url)
-
-@app.route('/api/mercedes/callback')
-def mercedes_callback():
-    code = request.args.get('code')
-    if not code: return "Error: No code", 400
-    client = get_mercedes_client()
-    if not client: return "Error: Client init failed", 500
-    try:
-        client.fetch_token(code)
-        return "<h1>Linked!</h1>"
-    except Exception as e:
-        return f"Error: {e}", 500
-# --- End Mercedes Routes ---
+# --- Removed Mercedes App API Routes ---
 
 @app.route('/')
 def index():
@@ -165,11 +142,9 @@ def api_status():
         plugged_in = car_state.get('plugged_in', False)
         urgency = car_state.get('urgency_score', 0)
         
-        # Check for Manual SoC override if real API fails (or is default mock)
-        # We assume if soc is exactly 45 (our mock value) or 0, we might want to show manual val
-        # Or simply ALWAYS prefer manual value if it's recent?
-        # Let's send the manual value to the UI regardless so it can be displayed in the slider
-        manual_val = manual_status.get(key_id, {}).get('soc', 50)
+        manual_val = manual_status.get(key_id, {}).get('soc', soc) # Use actual soc if manual not set
+        if soc == 45 or soc == 0: # If mock or no data, use manual value
+            soc = manual_val
         
         is_priority = (key_id == priority_car_id)
         needs_plugging = False
@@ -238,6 +213,7 @@ def api_plan():
             v['name'] = k
             cars.append(v)
         cars.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
+        
         priority_car = cars[0] if cars else None
         
         if priority_car and priority_car.get('urgency_score', 0) > 0:

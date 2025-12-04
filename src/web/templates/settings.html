@@ -55,22 +55,22 @@
         <input type="time" class="form-control form-control-lg" id="departure_time">
     </div>
 
-    <!-- Mercedes Config -->
+    <!-- Home Assistant Config -->
     <div class="card p-4">
-        <h5 class="mb-3">🚙 Mercedes Me (App Login)</h5>
+        <h5 class="mb-3">🏠 Home Assistant Integration</h5>
         <div class="mb-2">
-            <label class="small text-muted">E-post (Mercedes Me ID)</label>
-            <input type="email" class="form-control" id="mercedes_email">
+            <label class="small text-muted">Home Assistant URL (inkl. port)</label>
+            <input type="text" class="form-control" id="ha_url" value="http://100.100.118.62:8123">
+        </div>
+        <div class="mb-2">
+            <label class="small text-muted">Long-Lived Access Token</label>
+            <input type="password" class="form-control" id="ha_token">
         </div>
         <div class="mb-3">
-            <label class="small text-muted">Lösenord</label>
-            <input type="password" class="form-control" id="mercedes_password">
+            <label class="small text-muted">Mercedes EQV SoC Entitets ID</label>
+            <input type="text" class="form-control" id="ha_merc_soc_entity_id" placeholder="sensor.mercedes_eqv_battery_level">
         </div>
-        <div class="mb-3">
-             <label class="small text-muted">VIN (Regnr)</label>
-             <input type="text" class="form-control" id="mercedes_vin" placeholder="W1K...">
-        </div>
-        <div class="small text-muted mt-2">Använder inofficiellt API.</div>
+        <div class="small text-muted mt-2">Hämtar Mercedes batteristatus från HA.</div>
     </div>
     
     <div class="d-grid">
@@ -121,9 +121,9 @@
             
             document.getElementById('departure_time').value = data.departure_time || "07:00";
             
-            document.getElementById('mercedes_email').value = data.mercedes_email || "";
-            document.getElementById('mercedes_password').value = data.mercedes_password || "";
-            document.getElementById('mercedes_vin').value = data.mercedes_vin || "";
+            document.getElementById('ha_url').value = data.ha_url || "http://100.100.118.62:8123";
+            document.getElementById('ha_token').value = data.ha_token || "";
+            document.getElementById('ha_merc_soc_entity_id').value = data.ha_merc_soc_entity_id || "";
         });
 
     function saveSettings() {
@@ -131,9 +131,9 @@
             mercedes_target: parseInt(document.getElementById('mercedes_target').value),
             nissan_target: parseInt(document.getElementById('nissan_target').value),
             departure_time: document.getElementById('departure_time').value,
-            mercedes_email: document.getElementById('mercedes_email').value,
-            mercedes_password: document.getElementById('mercedes_password').value,
-            mercedes_vin: document.getElementById('mercedes_vin').value
+            ha_url: document.getElementById('ha_url').value,
+            ha_token: document.getElementById('ha_token').value,
+            ha_merc_soc_entity_id: document.getElementById('ha_merc_soc_entity_id').value
         };
 
         fetch('/api/settings', {

@@ -36,13 +36,19 @@ def load_config():
         with open("data/user_settings.json", "r") as f:
             user = json.load(f)
             
-            # Map Mercedes App Credentials
-            if 'mercedes_email' in user:
-                base_config['cars']['mercedes_eqv']['username'] = user['mercedes_email']
-            if 'mercedes_password' in user:
-                base_config['cars']['mercedes_eqv']['password'] = user['mercedes_password']
-            if 'mercedes_vin' in user:
-                base_config['cars']['mercedes_eqv']['vin'] = user['mercedes_vin']
+            # Map Home Assistant Credentials
+            if 'ha_url' in user:
+                base_config['cars']['mercedes_eqv']['ha_url'] = user['ha_url']
+            if 'ha_token' in user:
+                base_config['cars']['mercedes_eqv']['ha_token'] = user['ha_token']
+            if 'ha_merc_soc_entity_id' in user:
+                base_config['cars']['mercedes_eqv']['ha_merc_soc_entity_id'] = user['ha_merc_soc_entity_id']
+                
+            # Map Nissan Credentials (still uses username/password)
+            if 'nissan_username' in user:
+                base_config['cars']['nissan_leaf']['username'] = user['nissan_username']
+            if 'nissan_password' in user:
+                base_config['cars']['nissan_leaf']['password'] = user['nissan_password']
                 
     except:
         pass
@@ -75,6 +81,7 @@ def job():
     optimizer = Optimizer(config)
     
     # Initialize Hardware
+    # Pass merged config to car constructors
     eqv = MercedesEQV(config['cars']['mercedes_eqv'])
     leaf = NissanLeaf(config['cars']['nissan_leaf'])
     charger = ZaptecCharger(config['charger']['zaptec'])

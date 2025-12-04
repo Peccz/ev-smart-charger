@@ -2,9 +2,30 @@ from abc import ABC, abstractmethod
 import logging
 import pycarwings2
 import requests
-from connectors.mercedes_api.token_client import MercedesTokenClient
 
 logger = logging.getLogger(__name__)
+
+# --- Home Assistant Client ---
+class HomeAssistantClient:
+    def __init__(self, base_url, token):
+        self.base_url = base_url.rstrip('/')
+        self.token = token
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json",
+        }
+
+    def get_state(self, entity_id):
+        url = f"{self.base_url}/api/states/{entity_id}"
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching state for {entity_id} from HA: {e}")
+            return None
+            
+# --- Vehicle Classes ---
 
 class Vehicle(ABC):
     def __init__(self, name, capacity_kwh, max_charge_kw):
@@ -26,52 +47,44 @@ class MercedesEQV(Vehicle):
     def __init__(self, config):
         super().__init__("Mercedes EQV", config['capacity_kwh'], config['max_charge_rate_kw'])
         self.vin = config.get('vin')
-        self.token_client = MercedesTokenClient()
+        # Home Assistant Config
+        self.ha_url = config.get('ha_url')
+        self.ha_token = config.get('ha_token')
+        self.ha_merc_soc_entity_id = config.get('ha_merc_soc_entity_id')
+        
+        self.ha_client = None
+        if self.ha_url and self.ha_token:
+            self.ha_client = HomeAssistantClient(self.ha_url, self.ha_token)
 
     def get_status(self):
-        token = self.token_client.get_valid_token()
-        
-        if token and self.vin:
-            try:
-                # Fetch status from BFF (Backend for Frontend) API
-                # This endpoint mimics the app call
-                url = "https://bff.mercedes-benz.com/vehicle/v1/vehicles"
-                headers = {
-                    "Authorization": f"Bearer {token}",
-                    "X-SessionId": "00000000-0000-0000-0000-000000000000", # Or random
-                    "Accept-Language": "en-US"
-                }
-                
-                # 1. Get list of vehicles to find ours (and get basic status)
-                r = requests.get(url, headers=headers)
-                r.raise_for_status()
-                data = r.json()
-                
-                target_car = None
-                for car in data:
-                    if car.get('finorvin') == self.vin:
-                        target_car = car
-                        break
-                
-                if target_car:
-                    soc = target_car.get('soc', 0)
-                    # Check specific EV status if needed, but summary usually has soc
+        # 1. Try Home Assistant API
+        if self.ha_client and self.ha_merc_soc_entity_id:
+            state = self.ha_client.get_state(self.ha_merc_soc_entity_id)
+            if state and 'state' in state:
+                try:
+                    soc = float(state['state'])
+                    # HA doesn't always provide 'plugged_in' directly for all integrations
+                    # We might need another sensor for that, or infer
+                    plugged_in = True # Assume plugged in if SoC is available for now
+                    if state.get('attributes', {}).get('charging', False) or state.get('attributes', {}).get('pluggedIn', False):
+                        plugged_in = True
                     return {
                         "vehicle": self.name,
-                        "soc": soc,
-                        "range_km": 0, # Might need deeper call
-                        "plugged_in": True # Simplify or check 'chargingActive'
+                        "soc": int(soc),
+                        "range_km": int(state.get('attributes', {}).get('range', 0)), # Get range if available
+                        "plugged_in": plugged_in
                     }
-                    
-            except Exception as e:
-                logger.error(f"Mercedes API Error: {e}")
-
-        # Fallback
+                except ValueError:
+                    logger.warning(f"HA SoC state is not a number: {state['state']}")
+        
+        # 2. Fallback to Manual SoC from user_settings or mock
+        # This will be picked up from web_app.py if HA fails
+        logger.warning("Mercedes HA integration not configured or failed. Using fallback.")
         return {
             "vehicle": self.name,
-            "soc": 45, # Fallback
+            "soc": 45, # Fallback mock
             "range_km": 150,
-            "plugged_in": True
+            "plugged_in": True # Fallback mock
         }
 
     def get_soc(self):
@@ -80,7 +93,7 @@ class MercedesEQV(Vehicle):
 
 class NissanLeaf(Vehicle):
     def __init__(self, config):
-        super().__init__("Nissan Leaf", config['capacity_kwh'], config['max_charge_rate_kw'])
+        super().__init__("Nissan Leaf", config['capacity_kwh'], config['max_charge_kw'])
         self.vin = config.get('vin')
         self.username = config.get('username')
         self.password = config.get('password')
