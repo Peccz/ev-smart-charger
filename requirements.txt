@@ -8,5 +8,5 @@ pycarwings2
 flask
 gunicorn
 requests-oauthlib
-# Install via ZIP to avoid git auth issues
-https://github.com/ReneBoer/python-mercedes-me-api/archive/master.zip
+# Trying xraver fork
+https://github.com/xraver/mercedes_me_api/archive/master.zip
