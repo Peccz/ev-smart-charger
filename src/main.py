@@ -31,34 +31,48 @@ def load_config():
     with open("config/settings.yaml", "r") as f:
         base_config = yaml.safe_load(f)
     
-    # Load user settings
+    # Load user settings from JSON
     user_settings = {}
     try:
         with open("data/user_settings.json", "r") as f:
             user_settings = json.load(f)
     except FileNotFoundError:
-        logger.info("user_settings.json not found, using defaults.")
+        logger.info("user_settings.json not found, using defaults for user preferences.")
     except Exception as e:
         logger.error(f"Error loading user_settings.json: {e}")
         
-    # Merge user settings into the base config for cars
-    # This ensures base fields (like capacity_kwh, max_charge_kw) are preserved
-    # and user-specific fields (like HA credentials) are overlaid.
+    # --- MERGE CONFIGURATIONS ---
+    # Create a new merged config for each car,
+    # prioritizing user_settings for HA/API credentials and targets,
+    # but keeping base_config for static car properties like capacity/max_charge.
     
-    # Mercedes EQV
-    if 'mercedes_eqv' in base_config['cars']:
-        merc_config = base_config['cars']['mercedes_eqv']
-        merc_config['ha_url'] = user_settings.get('ha_url', merc_config.get('ha_url'))
-        merc_config['ha_token'] = user_settings.get('ha_token', merc_config.get('ha_token'))
-        merc_config['ha_merc_soc_entity_id'] = user_settings.get('ha_merc_soc_entity_id', merc_config.get('ha_merc_soc_entity_id'))
+    # Mercedes EQV Configuration
+    merc_config_from_yaml = base_config['cars'].get('mercedes_eqv', {})
+    mercedes_final_config = {
+        'vin': merc_config_from_yaml.get('vin'),
+        'capacity_kwh': merc_config_from_yaml.get('capacity_kwh'),
+        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw'),
+        'target_soc': user_settings.get('mercedes_target', merc_config_from_yaml.get('target_soc', 80)), # Target from user_settings
+        # HA specific settings from user_settings
+        'ha_url': user_settings.get('ha_url'),
+        'ha_token': user_settings.get('ha_token'),
+        'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id')
+    }
+    base_config['cars']['mercedes_eqv'] = mercedes_final_config
 
-    # Nissan Leaf
-    if 'nissan_leaf' in base_config['cars']:
-        nissan_config = base_config['cars']['nissan_leaf']
-        # Currently, nissan credentials are not in user_settings.json from web-UI
-        # This needs to be added if user wants to configure Nissan via Web UI
-        nissan_config['username'] = user_settings.get('nissan_username', nissan_config.get('username'))
-        nissan_config['password'] = user_settings.get('nissan_password', nissan_config.get('password'))
+    # Nissan Leaf Configuration
+    nissan_config_from_yaml = base_config['cars'].get('nissan_leaf', {})
+    nissan_final_config = {
+        'vin': nissan_config_from_yaml.get('vin'),
+        'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh'),
+        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw'),
+        'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)), # Target from user_settings
+        # Nissan username/password from user_settings (if implemented in web UI)
+        'username': user_settings.get('nissan_username', nissan_config_from_yaml.get('username')),
+        'password': user_settings.get('nissan_password', nissan_config_from_yaml.get('password')),
+        'region': nissan_config_from_yaml.get('region')
+    }
+    base_config['cars']['nissan_leaf'] = nissan_final_config
             
     return base_config
 
