@@ -10,29 +10,22 @@ grid:
 
 cars:
   mercedes_eqv:
-    vin: "W1V44781313792958" # REQUIRED
-    capacity_kwh: 90
-    max_charge_rate_kw: 11
+    vin: "W1K..." # VIN for your Mercedes
+    capacity_kwh: 90  # Update with exact usable capacity
+    max_charge_kw: 11 # Max charging power in kW
     target_soc: 80
-    # Mercedes Me Credentials
-    username: "philip.hoglund+ha-mb@gmail.com"  # email
-    password: "2P2Kwz4CKnLS3@N"
     
   nissan_leaf:
     vin: "" # Optional, usually auto-discovered
-    capacity_kwh: 40
-    max_charge_rate_kw: 3.7
+    capacity_kwh: 40 # Update depending on model year (40 or 62)
+    max_charge_kw: 6.6 # Max charging power in kW
     target_soc: 80
-    # Nissan Connect Credentials
-    username: "philip.hoglund@gmail.com"
-    password: "^axWg$nPpM7Xac"
-    region: "NE" # Europe
 
 charger:
   zaptec:
-    username: "philip.hoglund@gmail.com"
-    password: "Tv88sSx13"
-    installation_id: "6e43316d-f9b2-4fe9-9931-4d395483bdab" # Found in Zaptec Portal or App
+    username: ""
+    password: ""
+    installation_id: "" # Found in Zaptec Portal or App
     
 optimization:
   price_buffer_threshold: 0.10

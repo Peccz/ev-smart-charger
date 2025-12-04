@@ -31,28 +31,33 @@ def load_config():
     with open("config/settings.yaml", "r") as f:
         base_config = yaml.safe_load(f)
     
-    # Overlay user settings for Credentials
+    # Overlay user settings for Credentials (e.g. HA credentials for Mercedes)
+    user_settings = {}
     try:
         with open("data/user_settings.json", "r") as f:
-            user = json.load(f)
-            
-            # Map Home Assistant Credentials
-            if 'ha_url' in user:
-                base_config['cars']['mercedes_eqv']['ha_url'] = user['ha_url']
-            if 'ha_token' in user:
-                base_config['cars']['mercedes_eqv']['ha_token'] = user['ha_token']
-            if 'ha_merc_soc_entity_id' in user:
-                base_config['cars']['mercedes_eqv']['ha_merc_soc_entity_id'] = user['ha_merc_soc_entity_id']
-                
-            # Map Nissan Credentials (still uses username/password)
-            if 'nissan_username' in user:
-                base_config['cars']['nissan_leaf']['username'] = user['nissan_username']
-            if 'nissan_password' in user:
-                base_config['cars']['nissan_leaf']['password'] = user['nissan_password']
-                
+            user_settings = json.load(f)
     except:
         pass
         
+    # Inject user-specific settings into the base config structure for cars
+    # This ensures max_charge_kw etc. from base_config are preserved
+    
+    # Mercedes EQV
+    if 'mercedes_eqv' in base_config['cars']:
+        if 'ha_url' in user_settings:
+            base_config['cars']['mercedes_eqv']['ha_url'] = user_settings['ha_url']
+        if 'ha_token' in user_settings:
+            base_config['cars']['mercedes_eqv']['ha_token'] = user_settings['ha_token']
+        if 'ha_merc_soc_entity_id' in user_settings:
+            base_config['cars']['mercedes_eqv']['ha_merc_soc_entity_id'] = user_settings['ha_merc_soc_entity_id']
+
+    # Nissan Leaf
+    if 'nissan_leaf' in base_config['cars']:
+        if 'nissan_username' in user_settings: # This was planned for, but not implemented in settings.html
+            base_config['cars']['nissan_leaf']['username'] = user_settings['nissan_username']
+        if 'nissan_password' in user_settings: # This was planned for, but not implemented in settings.html
+            base_config['cars']['nissan_leaf']['password'] = user_settings['nissan_password']
+            
     return base_config
 
 def save_state(state):
