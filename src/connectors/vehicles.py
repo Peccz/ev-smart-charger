@@ -22,9 +22,7 @@ class HomeAssistantClient:
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
-            data = response.json()
-            logger.info(f"HA: Received data for {entity_id}: {data}")
-            return data
+            return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"HA: Error fetching state for {entity_id} from HA: {e}")
             return None
@@ -119,18 +117,29 @@ class NissanLeaf(Vehicle):
         self.region = config.get('region', 'NE')
         self.session = None
         self.leaf = None # Ensure leaf is initialized to None
+        self.pycarwings2_enabled = False # Flag to disable pycarwings2 if it fails
+
+        # Check if credentials are provided for pycarwings2
+        if self.username and self.password:
+            self.pycarwings2_enabled = True
+            logger.info("NissanLeaf: pycarwings2 is enabled with credentials.")
+        else:
+            logger.warning("NissanLeaf: pycarwings2 credentials missing. Will rely on manual input.")
+
 
     def _login(self):
+        if not self.pycarwings2_enabled:
+            return False
+
         logger.info(f"NissanLeaf: Attempting login for user: {self.username}")
         if not self.username or not self.password:
             logger.error("NissanLeaf: Credentials missing from config.")
+            self.pycarwings2_enabled = False # Disable further attempts
             return False
         try:
             self.session = pycarwings2.Session(self.username, self.password, self.region)
             # Try to get the leaf object
             if self.vin:
-                # pycarwings2.Session.get_leaf(vin) may return a list or single object
-                # Ensure it's handled correctly
                 found_leaves = self.session.get_leaf(self.vin)
                 if isinstance(found_leaves, list) and len(found_leaves) > 0:
                     self.leaf = found_leaves[0] # Take the first if multiple
@@ -138,30 +147,40 @@ class NissanLeaf(Vehicle):
                     self.leaf = found_leaves # Single object
                 else:
                     logger.error(f"NissanLeaf: No leaf found for VIN {self.vin}.")
+                    self.pycarwings2_enabled = False
                     return False
             elif self.session.get_leaf(): # Get first available leaf if no VIN
                 self.leaf = self.session.get_leaf()
             else:
                 logger.error("NissanLeaf: No leaf objects returned from API.")
+                self.pycarwings2_enabled = False
                 return False
 
             logger.info("NissanLeaf: Login successful. Leaf object obtained.")
             return True
-        except pycarwings2.CarwingsError as e: # Corrected exception type
+        except pycarwings2.CarwingsError as e: 
             logger.error(f"NissanLeaf: pycarwings2 Login Failed: {e}. Check credentials or region.")
+            self.pycarwings2_enabled = False
             return False
         except requests.exceptions.RequestException as e:
             logger.error(f"NissanLeaf: Network/Request Error during login: {e}")
+            self.pycarwings2_enabled = False
             return False
         except json.decoder.JSONDecodeError as e:
             logger.error(f"NissanLeaf: Server returned invalid JSON during login: {e}. Possible API change or bad response.")
+            self.pycarwings2_enabled = False
             return False
         except Exception as e:
             logger.error(f"NissanLeaf: Unexpected Login Error: {e}")
+            self.pycarwings2_enabled = False
             return False
 
     def get_status(self):
         logger.info("NissanLeaf: Attempting to get status.")
+        if not self.pycarwings2_enabled:
+            logger.warning("NissanLeaf: pycarwings2 is disabled due to missing credentials or previous failures. Using fallback mock data.")
+            return {"vehicle": self.name, "soc": 0, "range_km": 0, "plugged_in": False, "error": "pycarwings2 disabled"}
+
         if not self.session or not self.leaf: # Check both session AND leaf object
             if not self._login():
                 logger.warning("NissanLeaf: Login failed, using fallback mock data.")
