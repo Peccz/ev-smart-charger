@@ -108,26 +108,67 @@ class MercedesEQV(Vehicle):
 class NissanLeaf(Vehicle):
     def __init__(self, config):
         logger.info(f"NissanLeaf: Initializing with config: {config}")
-        super().__init__("Nissan Leaf", 
-                         config.get('capacity_kwh', 40), 
+        super().__init__("Nissan Leaf",
+                         config.get('capacity_kwh', 40),
                          config.get('max_charge_kw', 6.6))
         self.vin = config.get('vin')
-        self.username = config.get('username')
-        self.password = config.get('password')
-        self.region = config.get('region', 'NE') # Default to Europe
-        
-        # We no longer attempt Kamereon login, always rely on manual input
-        logger.warning("NissanLeaf: Kamereon API disabled. Will rely on manual input for SoC.")
+        # Home Assistant Config
+        self.ha_url = config.get('ha_url')
+        self.ha_token = config.get('ha_token')
+        self.ha_nissan_soc_entity_id = config.get('ha_nissan_soc_entity_id')
+        self.ha_nissan_plugged_entity_id = config.get('ha_nissan_plugged_entity_id')
+        self.ha_nissan_range_entity_id = config.get('ha_nissan_range_entity_id')
+
+        self.ha_client = None
+        if self.ha_url and self.ha_token:
+            self.ha_client = HomeAssistantClient(self.ha_url, self.ha_token)
+            logger.info("NissanLeaf: HA client initialized.")
+        else:
+            logger.warning("NissanLeaf: HA credentials incomplete. Will use fallback.")
 
     def get_status(self):
-        # We no longer attempt Kamereon login, always fallback to manual/mock
-        logger.warning("NissanLeaf: API connection disabled. Using fallback mock data (0% for display).")
+        logger.info("NissanLeaf: Attempting to get status from HA.")
+        # Try Home Assistant API
+        if self.ha_client and self.ha_nissan_soc_entity_id:
+            state = self.ha_client.get_state(self.ha_nissan_soc_entity_id)
+            if state and 'state' in state:
+                try:
+                    soc = float(state['state'])
+
+                    # Get plugged_in status from separate sensor if available
+                    plugged_in = False
+                    if self.ha_nissan_plugged_entity_id:
+                        plugged_state = self.ha_client.get_state(self.ha_nissan_plugged_entity_id)
+                        if plugged_state and 'state' in plugged_state:
+                            plugged_in = plugged_state['state'] == 'on'
+
+                    # Get range if available
+                    range_km = 0
+                    if self.ha_nissan_range_entity_id:
+                        range_state = self.ha_client.get_state(self.ha_nissan_range_entity_id)
+                        if range_state and 'state' in range_state:
+                            try:
+                                range_km = int(float(range_state['state']))
+                            except ValueError:
+                                pass
+
+                    logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km")
+                    return {
+                        "vehicle": self.name,
+                        "soc": int(soc),
+                        "range_km": range_km,
+                        "plugged_in": plugged_in
+                    }
+                except ValueError:
+                    logger.error(f"NissanLeaf: HA SoC state is not a number: {state['state']}. Using fallback.")
+
+        # Fallback to Mock/Manual
+        logger.warning("NissanLeaf: HA integration not fully configured or failed. Using fallback mock data.")
         return {
             "vehicle": self.name,
-            "soc": 0, 
-            "range_km": 0, 
-            "plugged_in": False, 
-            "error": "API disabled, use manual SoC."
+            "soc": 0,
+            "range_km": 0,
+            "plugged_in": False
         }
 
     def get_soc(self):

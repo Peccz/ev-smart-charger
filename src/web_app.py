@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import yaml # Import yaml to load config/settings.yaml
 import requests # Needed for HomeAssistantClient
+# import pycarwings2 # Not needed, Kamereon client is used by vehicles.py
 
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService

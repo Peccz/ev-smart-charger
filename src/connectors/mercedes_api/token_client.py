@@ -28,7 +28,7 @@ class MercedesTokenClient:
         })
 
     def _generate_code_verifier(self):
-        chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + "-._~")
+        chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + "-._~"
         return "".join(random.choice(chars) for _ in range(128))
 
     def _generate_code_challenge(self, verifier):
