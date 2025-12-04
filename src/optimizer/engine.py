@@ -124,8 +124,8 @@ class Optimizer:
         
         if soc < target_soc: # Only calculate if charging is actually needed
             capacity = vehicle.capacity_kwh
-            needed_soc_percent = target_soc - soc 
-            needed_kwh = (needed_soc_percent / 100.0) * capacity
+            needed_soc_percent = target_soc - soc # Renamed to avoid confusion
+            needed_kwh = (needed_soc_percent / 100.0) * capacity # Define needed_kwh here
         
         # Hours needed at full speed (will be 0 if needed_kwh is 0)
         hours_needed = needed_kwh / vehicle.max_charge_kw if vehicle.max_charge_kw > 0 else 0.0
