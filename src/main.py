@@ -31,15 +31,19 @@ def load_config():
     with open("config/settings.yaml", "r") as f:
         base_config = yaml.safe_load(f)
     
-    # Overlay user settings
+    # Overlay user settings for Credentials
     try:
         with open("data/user_settings.json", "r") as f:
             user = json.load(f)
-            # Inject Mercedes credentials if present
-            if 'mercedes_client_id' in user:
-                base_config['cars']['mercedes_eqv']['client_id'] = user['mercedes_client_id']
-            if 'mercedes_client_secret' in user:
-                base_config['cars']['mercedes_eqv']['client_secret'] = user['mercedes_client_secret']
+            
+            # Map Mercedes App Credentials
+            if 'mercedes_email' in user:
+                base_config['cars']['mercedes_eqv']['username'] = user['mercedes_email']
+            if 'mercedes_password' in user:
+                base_config['cars']['mercedes_eqv']['password'] = user['mercedes_password']
+            if 'mercedes_vin' in user:
+                base_config['cars']['mercedes_eqv']['vin'] = user['mercedes_vin']
+                
     except:
         pass
         

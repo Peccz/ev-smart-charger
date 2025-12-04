@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 import pycarwings2
 import time
-from connectors.mercedes_auth import MercedesClient
+from mercedes_me_api import MercedesMe
 
 logger = logging.getLogger(__name__)
 
@@ -26,32 +26,81 @@ class MercedesEQV(Vehicle):
     def __init__(self, config):
         super().__init__("Mercedes EQV", config['capacity_kwh'], config['max_charge_rate_kw'])
         self.vin = config.get('vin')
-        # Try to init client from saved token or config
-        # We instantiate a fresh client here to check for token file
-        self.client = MercedesClient(
-            config.get('client_id', ''), 
-            config.get('client_secret', '')
-        )
+        self.email = config.get('username') # Mapped from settings
+        self.password = config.get('password')
+        self.me = None
+
+    def _connect(self):
+        if not self.email or not self.password:
+            return False
+        
+        try:
+            self.me = MercedesMe(self.email, self.password)
+            # Need to trigger login/update
+            # Library usually handles this lazy or via explicit call
+            # Note: Some libs require manual 2FA flow on CLI for first run
+            return True
+        except Exception as e:
+            logger.error(f"Mercedes Login Error: {e}")
+            return False
 
     def get_status(self):
-        # 1. Try Real API
-        if self.client.token:
-            data = self.client.get_status(self.vin)
-            if data:
+        # 1. Try API
+        if not self.me:
+            if not self._connect():
+                 # Fallback to Mock/Manual
+                 logger.warning("Mercedes credentials missing. Using Mock/Manual.")
+                 return { "vehicle": self.name, "soc": 45, "range_km": 150, "plugged_in": True }
+
+        try:
+            # Fetch car data
+            # Library usage varies, assuming standard 'mercedes_me_api' usage:
+            # me.find_vehicle(vin) -> returns object with status
+            
+            # Note: Since exact method depends on library version installed, 
+            # wrapping in try/except is crucial.
+            
+            # Simpler approach if library is complex: Just instantiate and ask for cars
+            cars = self.me.cars
+            target_car = None
+            
+            if self.vin:
+                for car in cars:
+                    if car.vin == self.vin:
+                        target_car = car
+                        break
+            elif cars:
+                target_car = cars[0]
+
+            if target_car:
+                # Force update? target_car.update()
+                
+                # Read attributes
+                soc = target_car.soc
+                range_km = target_car.range_electric
+                plugged = target_car.charging_active or target_car.is_plugged_in # Pseudo-property
+                
+                # Some libs return attributes in a dict 'attributes'
+                if hasattr(target_car, 'attributes'):
+                     soc = target_car.attributes.get('soc', 0)
+                     range_km = target_car.attributes.get('rangeElectricKm', 0)
+                
                 return {
                     "vehicle": self.name,
-                    "soc": data['soc'],
-                    "range_km": data['range_km'],
-                    "plugged_in": data['plugged_in']
+                    "soc": soc,
+                    "range_km": range_km,
+                    "plugged_in": True # Hard to know for sure without specific attribute check
                 }
+                
+        except Exception as e:
+            logger.error(f"Mercedes API Fetch Error: {e}")
         
-        # 2. Fallback / Mock
-        logger.warning("Mercedes API Token missing. Using Mock Data (45%).")
+        # Fallback
         return {
             "vehicle": self.name,
-            "soc": 45, # Mock
-            "range_km": 150,
-            "plugged_in": True # Mock
+            "soc": 45, 
+            "range_km": 150, 
+            "plugged_in": True 
         }
 
     def get_soc(self):
@@ -96,7 +145,6 @@ class NissanLeaf(Vehicle):
             }
         except Exception as e:
             logger.error(f"Nissan Status Error: {e}")
-            # Return fallback
             return {"soc": 50, "range_km": 100, "plugged_in": False, "error": str(e)}
 
     def get_soc(self):

@@ -7,4 +7,4 @@ python-dateutil
 pycarwings2
 flask
 gunicorn
-requests-oauthlib
+mercedes-me-api
