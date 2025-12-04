@@ -26,13 +26,13 @@ else
     echo "No local changes to push"
 fi
 
-# 2. Copy Secrets (Directly via SCP, skipping GitHub)
+# 2. Copy Secrets to RPi (via SCP)
 echo "[2/4] Copying configuration secrets to RPi..."
 if [ -f "config/settings.yaml" ]; then
     # Create config dir if not exists
     ssh $RPI_USER@$RPI_HOST "mkdir -p $RPI_DIR/config"
     
-    # SCP the file
+    # SCP the file directly to destination
     scp config/settings.yaml $RPI_USER@$RPI_HOST:$RPI_DIR/config/settings.yaml
     
     if [ $? -eq 0 ]; then
@@ -50,7 +50,6 @@ echo "[3/4] Deploying code on Raspberry Pi..."
 echo "Connecting to $RPI_USER@$RPI_HOST..."
 
 ssh $RPI_USER@$RPI_HOST << EOF
-    # Create directory if it doesn't exist
     if [ ! -d "$RPI_DIR" ]; then
         echo "Cloning repository..."
         git clone https://github.com/Peccz/ev-smart-charger.git $RPI_DIR
@@ -58,8 +57,20 @@ ssh $RPI_USER@$RPI_HOST << EOF
 
     cd $RPI_DIR
     
+    # Backup config just in case git wipeout affects it
+    cp config/settings.yaml /tmp/ev_settings_backup.yaml 2>/dev/null
+    
     echo "Pulling latest changes..."
-    git pull
+    # Force git to match remote exactly, discarding local changes to tracked files
+    git fetch --all
+    git reset --hard origin/main
+    
+    # Restore config
+    if [ -f "/tmp/ev_settings_backup.yaml" ]; then
+        mkdir -p config
+        cp /tmp/ev_settings_backup.yaml config/settings.yaml
+        echo "Restored settings.yaml"
+    fi
     
     echo "Setting up Virtual Environment..."
     if [ ! -d "venv" ]; then
@@ -67,7 +78,7 @@ ssh $RPI_USER@$RPI_HOST << EOF
         echo "Created new venv"
     fi
     
-    # Install requirements inside venv
+    # Install requirements
     ./venv/bin/pip install -r requirements.txt --quiet
     
     echo "Updating Service..."
