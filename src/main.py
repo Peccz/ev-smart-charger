@@ -31,32 +31,34 @@ def load_config():
     with open("config/settings.yaml", "r") as f:
         base_config = yaml.safe_load(f)
     
-    # Overlay user settings for Credentials (e.g. HA credentials for Mercedes)
+    # Load user settings
     user_settings = {}
     try:
         with open("data/user_settings.json", "r") as f:
             user_settings = json.load(f)
-    except:
-        pass
+    except FileNotFoundError:
+        logger.info("user_settings.json not found, using defaults.")
+    except Exception as e:
+        logger.error(f"Error loading user_settings.json: {e}")
         
-    # Inject user-specific settings into the base config structure for cars
-    # This ensures max_charge_kw etc. from base_config are preserved
+    # Merge user settings into the base config for cars
+    # This ensures base fields (like capacity_kwh, max_charge_kw) are preserved
+    # and user-specific fields (like HA credentials) are overlaid.
     
     # Mercedes EQV
     if 'mercedes_eqv' in base_config['cars']:
-        if 'ha_url' in user_settings:
-            base_config['cars']['mercedes_eqv']['ha_url'] = user_settings['ha_url']
-        if 'ha_token' in user_settings:
-            base_config['cars']['mercedes_eqv']['ha_token'] = user_settings['ha_token']
-        if 'ha_merc_soc_entity_id' in user_settings:
-            base_config['cars']['mercedes_eqv']['ha_merc_soc_entity_id'] = user_settings['ha_merc_soc_entity_id']
+        merc_config = base_config['cars']['mercedes_eqv']
+        merc_config['ha_url'] = user_settings.get('ha_url', merc_config.get('ha_url'))
+        merc_config['ha_token'] = user_settings.get('ha_token', merc_config.get('ha_token'))
+        merc_config['ha_merc_soc_entity_id'] = user_settings.get('ha_merc_soc_entity_id', merc_config.get('ha_merc_soc_entity_id'))
 
     # Nissan Leaf
     if 'nissan_leaf' in base_config['cars']:
-        if 'nissan_username' in user_settings: # This was planned for, but not implemented in settings.html
-            base_config['cars']['nissan_leaf']['username'] = user_settings['nissan_username']
-        if 'nissan_password' in user_settings: # This was planned for, but not implemented in settings.html
-            base_config['cars']['nissan_leaf']['password'] = user_settings['nissan_password']
+        nissan_config = base_config['cars']['nissan_leaf']
+        # Currently, nissan credentials are not in user_settings.json from web-UI
+        # This needs to be added if user wants to configure Nissan via Web UI
+        nissan_config['username'] = user_settings.get('nissan_username', nissan_config.get('username'))
+        nissan_config['password'] = user_settings.get('nissan_password', nissan_config.get('password'))
             
     return base_config
 
@@ -77,7 +79,7 @@ def get_user_settings():
 def job():
     logger.info("Starting optimization cycle...")
     config = load_config()
-    user_settings = get_user_settings()
+    user_settings = get_user_settings() # Still needed for target_soc etc
     
     # Initialize services
     db = DatabaseManager()
