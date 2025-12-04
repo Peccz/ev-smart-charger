@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import logging
 import pycarwings2
 import requests
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +21,7 @@ class HomeAssistantClient:
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
-            data = response.json()
-            logger.info(f"HA: Received data for {entity_id}: {data}")
-            return data
+            return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"HA: Error fetching state for {entity_id} from HA: {e}")
             return None
@@ -118,6 +115,7 @@ class NissanLeaf(Vehicle):
         self.password = config.get('password')
         self.region = config.get('region', 'NE')
         self.session = None
+        self.leaf = None # Ensure leaf is initialized to None
 
     def _login(self):
         logger.info(f"NissanLeaf: Attempting login for user: {self.username}")
@@ -126,7 +124,25 @@ class NissanLeaf(Vehicle):
             return False
         try:
             self.session = pycarwings2.Session(self.username, self.password, self.region)
-            logger.info("NissanLeaf: Login successful.")
+            # Try to get the leaf object
+            if self.vin:
+                # pycarwings2.Session.get_leaf(vin) may return a list or single object
+                # Ensure it's handled correctly
+                found_leaves = self.session.get_leaf(self.vin)
+                if isinstance(found_leaves, list) and len(found_leaves) > 0:
+                    self.leaf = found_leaves[0] # Take the first if multiple
+                elif not isinstance(found_leaves, list):
+                    self.leaf = found_leaves # Single object
+                else:
+                    logger.error(f"NissanLeaf: No leaf found for VIN {self.vin}.")
+                    return False
+            elif self.session.get_leaf(): # Get first available leaf if no VIN
+                self.leaf = self.session.get_leaf()
+            else:
+                logger.error("NissanLeaf: No leaf objects returned from API.")
+                return False
+
+            logger.info("NissanLeaf: Login successful. Leaf object obtained.")
             return True
         except pycarwings2.Pycarwings2Error as e:
             logger.error(f"NissanLeaf: pycarwings2 specific Login Failed: {e}. Check credentials or region.")
@@ -143,12 +159,17 @@ class NissanLeaf(Vehicle):
 
     def get_status(self):
         logger.info("NissanLeaf: Attempting to get status.")
-        if not self.session:
+        if not self.session or not self.leaf: # Check both session AND leaf object
             if not self._login():
                 logger.warning("NissanLeaf: Login failed, using fallback mock data.")
                 return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "Login failed"}
             
         try:
+            # Check self.leaf again after successful _login()
+            if not self.leaf:
+                 logger.error("NissanLeaf: Leaf object not available after login attempt.")
+                 return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "Leaf object missing"}
+
             stats = self.leaf.get_latest_battery_status()
             logger.info(f"NissanLeaf: API data received: SOC={stats.battery_percent}")
             return {
