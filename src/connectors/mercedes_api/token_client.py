@@ -11,8 +11,7 @@ import random
 
 logger = logging.getLogger(__name__)
 
-# Constants used by the App
-CLIENT_ID = "4377386a-6232-4623-95d5-9d665c723326" # Europe/Global App ID
+CLIENT_ID = "4377386a-6232-4623-95d5-9d665c723326" 
 REDIRECT_URI = "https://active-directory-v2.mercedes-benz.com/auth-callback"
 SCOPE = "openid email profile ciam:email ciam:phone offline_access"
 AUTH_URL = "https://id.mercedes-benz.com/as/authorization.oauth2"
@@ -37,10 +36,6 @@ class MercedesTokenClient:
         return base64.urlsafe_b64encode(digest).decode().rstrip("=")
 
     def start_login_flow(self, email):
-        """
-        Step 1: Request a PIN code to the email.
-        Returns the 'nonce' needed for the next step.
-        """
         self.code_verifier = self._generate_code_verifier()
         code_challenge = self._generate_code_challenge(self.code_verifier)
         
@@ -54,45 +49,28 @@ class MercedesTokenClient:
             "prompt": "login"
         }
         
-        # 1. Get the login page to establish session cookies
         r = self.session.get(AUTH_URL, params=params)
         if r.status_code != 200:
             logger.error(f"Failed to init auth: {r.status_code}")
             return False
 
-        # 2. Request PIN
-        # This mimics the user entering email and clicking "Next"
-        # The endpoint usually involves an internal API call like /ciam/auth/login/user
-        # Since mimicking the full web flow is brittle, we use the 'passwordless' flow if possible
-        # or we ask the user to paste the final URL.
-        
         print("\n=== VIKTIGT: MANUELL INLOGGNING ===")
-        print("Eftersom Mercedes har avancerade skydd (Captcha/Bot-skydd),")
-        print("är det säkrast att du genererar en kod manuellt via en webbläsare.")
         print("1. Öppna denna länk i din webbläsare (Inkognito):")
         print(r.url)
         print("2. Logga in.")
-        print("3. När du skickas vidare till en vit sida eller felmeddelande, KOPIERA URL:en.")
+        print("3. När du skickas vidare till en vit sida, KOPIERA URL:en.")
         return True
 
     def exchange_code(self, url_with_code):
-        """
-        Extracts code from URL and trades for token.
-        """
         try:
-            # Extract code=... from url
             if "code=" not in url_with_code:
                 print("Ingen kod hittades i URLen.")
                 return False
             
             code = url_with_code.split("code=")[1].split("&")[0]
             
-            # We need the code_verifier we generated earlier.
-            # Ideally this runs in same process. If user restarts script, verifier is lost.
-            # For this script, we assume interactive run.
             if not hasattr(self, 'code_verifier'):
-                # If we don't have it (e.g. manual flow restart), we might be stuck
-                # unless we use a fixed verifier (not recommended) or user runs Step 1 & 2 in same session.
+                # Fallback if verifier lost (should not happen in single run)
                 print("Session avbruten. Starta om scriptet.")
                 return False
 
@@ -108,7 +86,6 @@ class MercedesTokenClient:
             r.raise_for_status()
             token = r.json()
             
-            # Add expiry time
             token['expires_at'] = time.time() + token['expires_in']
             self._save_token(token)
             print("Token sparad!")
@@ -134,7 +111,6 @@ class MercedesTokenClient:
             r.raise_for_status()
             new_token = r.json()
             new_token['expires_at'] = time.time() + new_token['expires_in']
-            # Preserve refresh token if not returned
             if 'refresh_token' not in new_token:
                 new_token['refresh_token'] = token['refresh_token']
                 
@@ -145,6 +121,7 @@ class MercedesTokenClient:
             return False
 
     def _save_token(self, token):
+        os.makedirs(os.path.dirname(self.token_path), exist_ok=True)
         with open(self.token_path, 'w') as f:
             json.dump(token, f)
 
