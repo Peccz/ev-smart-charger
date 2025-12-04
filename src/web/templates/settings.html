@@ -57,7 +57,7 @@
 
     <!-- Home Assistant Config -->
     <div class="card p-4">
-        <h5 class="mb-3">🏠 Home Assistant Integration</h5>
+        <h5 class="mb-3">🏠 Home Assistant Integration (Mercedes)</h5>
         <div class="mb-2">
             <label class="small text-muted">Home Assistant URL (inkl. port)</label>
             <input type="text" class="form-control" id="ha_url" value="http://100.100.118.62:8123">
@@ -71,6 +71,24 @@
             <input type="text" class="form-control" id="ha_merc_soc_entity_id" placeholder="sensor.mercedes_eqv_battery_level">
         </div>
         <div class="small text-muted mt-2">Hämtar Mercedes batteristatus från HA.</div>
+    </div>
+
+    <!-- Nissan Connect Config -->
+    <div class="card p-4">
+        <h5 class="mb-3">🚗 Nissan Connect</h5>
+        <div class="mb-2">
+            <label class="small text-muted">Användarnamn (e-post)</label>
+            <input type="email" class="form-control" id="nissan_username">
+        </div>
+        <div class="mb-3">
+            <label class="small text-muted">Lösenord</label>
+            <input type="password" class="form-control" id="nissan_password">
+        </div>
+        <div class="mb-3">
+            <label class="small text-muted">VIN (Valfritt)</label>
+            <input type="text" class="form-control" id="nissan_vin" placeholder="T.ex. JN1... (kan autoupptäckas)">
+        </div>
+        <div class="small text-muted mt-2">Använder Nissan Connect API för batteristatus.</div>
     </div>
     
     <div class="d-grid">
@@ -124,6 +142,10 @@
             document.getElementById('ha_url').value = data.ha_url || "http://100.100.118.62:8123";
             document.getElementById('ha_token').value = data.ha_token || "";
             document.getElementById('ha_merc_soc_entity_id').value = data.ha_merc_soc_entity_id || "";
+
+            document.getElementById('nissan_username').value = data.nissan_username || "";
+            document.getElementById('nissan_password').value = data.nissan_password || "";
+            document.getElementById('nissan_vin').value = data.nissan_vin || "";
         });
 
     function saveSettings() {
@@ -133,7 +155,10 @@
             departure_time: document.getElementById('departure_time').value,
             ha_url: document.getElementById('ha_url').value,
             ha_token: document.getElementById('ha_token').value,
-            ha_merc_soc_entity_id: document.getElementById('ha_merc_soc_entity_id').value
+            ha_merc_soc_entity_id: document.getElementById('ha_merc_soc_entity_id').value,
+            nissan_username: document.getElementById('nissan_username').value,
+            nissan_password: document.getElementById('nissan_password').value,
+            nissan_vin: document.getElementById('nissan_vin').value
         };
 
         fetch('/api/settings', {
