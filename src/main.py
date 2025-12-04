@@ -62,7 +62,7 @@ def load_config():
     # Nissan Leaf Configuration
     nissan_config_from_yaml = base_config['cars'].get('nissan_leaf', {})
     nissan_final_config = {
-        'vin': user_settings.get('nissan_vin', nissan_config_from_yaml.get('vin')), # Use VIN from user_settings if present
+        'vin': user_settings.get('nissan_vin', nissan_config_from_yaml.get('vin')),
         'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh', 40),
         'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw', 6.6),
         'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)),
@@ -109,9 +109,12 @@ def job():
     charger = ZaptecCharger(config['charger']['zaptec'])
     
     # Fetch Data
-    prices = spot_service.get_prices_upcoming()
-    weather = weather_service.get_forecast()
+    official_prices = spot_service.get_prices_upcoming()
+    weather_forecast = weather_service.get_forecast()
     
+    # Generate full price forecast (official + estimated)
+    prices = optimizer._generate_price_forecast(official_prices, weather_forecast)
+
     cars = [eqv, leaf]
     state_data = {}
     any_charging_needed = False
@@ -127,7 +130,7 @@ def job():
         target_soc = user_settings.get(f"{vid}_target", 80)
         
         # Get recommendation
-        decision = optimizer.suggest_action(car, prices, weather)
+        decision = optimizer.suggest_action(car, prices, weather_forecast)
         
         # Calculate Urgency Score
         urgency_score = optimizer.calculate_urgency(car, target_soc)

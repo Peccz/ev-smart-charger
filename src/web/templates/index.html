@@ -26,7 +26,7 @@
         .nav-item { text-align: center; color: #6c757d; text-decoration: none; font-size: 12px; }
         .nav-item.active { color: #0d6efd; font-weight: bold; }
         .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
-        .content { padding-bottom: 80px; max-width: 600px; margin: 0 auto; }
+        .content { padding-bottom: 80px; max_width: 600px; margin: 0 auto; }
         
         .status-bar {
             border-radius: 15px;
@@ -34,7 +34,7 @@
             margin-bottom: 25px;
             text-align: center;
             color: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box_shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .status-icon { font-size: 32px; display: block; margin-bottom: 5px; }
         
@@ -53,6 +53,7 @@
 <div class="container mt-4 content">
     <h4 class="mb-4 fw-bold text-center">⚡ Smart Laddning</h4>
 
+    <!-- Top Status Bar -->
     <div id="system-status" class="status-bar bg-secondary">
         <div class="spinner-border spinner-border-sm"></div> Laddar status...
     </div>
@@ -90,6 +91,7 @@
         const bar = document.getElementById('system-status');
         const cars = Object.values(data.cars);
         
+        // Find issues
         const urgentCar = cars.find(c => c.needs_plugging);
         const priorityCar = cars.find(c => c.is_priority);
         const chargingCar = cars.find(c => c.action === 'CHARGE' && c.plugged_in);
@@ -103,17 +105,23 @@
             bg = 'danger';
             icon = 'bi-exclamation-triangle-fill';
             text = `Koppla in ${urgentCar.name}!`;
-            subtext = urgentCar.swap_msg ? urgentCar.swap_msg : "Bilen behöver laddas.";
+            subtext = urgentCar.swap_msg ? urgentCar.swap_msg : "Bilen behöver laddas för att nå målet.";
         } else if (chargingCar) {
             bg = 'primary';
             icon = 'bi-lightning-charge-fill';
             text = `Laddar ${chargingCar.name}...`;
             subtext = `Smart laddning pågår.`;
         } else if (priorityCar && priorityCar.plugged_in) {
-            bg = 'info';
+            bg = 'info'; // Light blue
             icon = 'bi-clock-history';
             text = `${priorityCar.name} väntar.`;
             subtext = priorityCar.start_time_text || "Laddningen startar senare ikväll.";
+        } else {
+            // Idle / Done
+            bg = 'success';
+            icon = 'bi-check-circle-fill';
+            text = "Alla bilar redo / fulladdade.";
+            subtext = "";
         }
 
         bar.className = `status-bar bg-${bg}`;
@@ -172,8 +180,8 @@
                     <div id="manual-${car.id}" class="manual-soc-container">
                         <label class="form-label small fw-bold">Justera batterinivå manuellt:</label>
                         <div class="d-flex align-items-center">
-                            <input type="range" class="form-range me-2" min="0" max="100" step="1" value="${car.manual_soc}" onchange="setManualSoc('${car.id}', this.value)">
-                            <span class="fw-bold">${car.manual_soc}%</span>
+                            <input type="range" class="form-range me-2" min="0" max="100" step="1" value="${car.manual_soc || car.soc}" oninput="document.getElementById('manual-soc-val-${car.id}').innerText = this.value + '%'; setManualSoc('${car.id}', this.value);">
+                            <span class="fw-bold" id="manual-soc-val-${car.id}">${car.manual_soc || car.soc}%</span>
                         </div>
                     </div>
                     
@@ -195,6 +203,11 @@
             el.style.display = 'none';
         } else {
             el.style.display = 'block';
+            // Ensure the value display is updated if opened
+            const rangeInput = document.querySelector(`#manual-${id} input[type="range"]`);
+            if (rangeInput) {
+                document.getElementById(`manual-soc-val-${id}`).innerText = rangeInput.value + '%';
+            }
         }
     }
 
@@ -204,7 +217,8 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ vehicle_id: id, soc: val })
         }).then(() => {
-            // Hide slider after set? Or keep open. Let's reload status.
+            // GetStatus will re-render and close the slider unless we prevent it
+            // For now, let's keep it simple and just re-render fully.
             getStatus();
         });
     }

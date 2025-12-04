@@ -1,4 +1,7 @@
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 class WeatherService:
     def __init__(self, lat, lon):
@@ -6,16 +9,16 @@ class WeatherService:
         self.lon = lon
         self.base_url = "https://api.open-meteo.com/v1/forecast"
 
-    def get_forecast(self, days=3):
+    def get_forecast(self, days=5): # Increased to 5 days for longer term planning
         """
         Fetches weather forecast (temp, wind) for optimization.
         """
         params = {
             "latitude": self.lat,
             "longitude": self.lon,
-            "hourly": "temperature_2m,wind_speed_10m",
+            "hourly": "temperature_2m,wind_speed_10m,wind_speed_80m,wind_speed_120m", # More detailed wind
             "forecast_days": days,
-            "timezone": "Europe/Berlin" # Matches Sweden usually
+            "timezone": "Europe/Berlin"
         }
         
         try:
@@ -26,16 +29,21 @@ class WeatherService:
             hourly = data.get("hourly", {})
             times = hourly.get("time", [])
             temps = hourly.get("temperature_2m", [])
-            winds = hourly.get("wind_speed_10m", [])
+            winds_10m = hourly.get("wind_speed_10m", [])
+            winds_80m = hourly.get("wind_speed_80m", [])
+            winds_120m = hourly.get("wind_speed_120m", [])
             
             forecast = []
-            for t, temp, wind in zip(times, temps, winds):
+            for i in range(len(times)):
                 forecast.append({
-                    "time": t,
-                    "temp_c": temp,
-                    "wind_kmh": wind
+                    "time": times[i],
+                    "temp_c": temps[i],
+                    "wind_kmh_10m": winds_10m[i],
+                    "wind_kmh_80m": winds_80m[i],
+                    "wind_kmh_120m": winds_120m[i]
                 })
+            logger.info(f"WeatherService: Fetched {len(forecast)} hours of forecast data.")
             return forecast
         except requests.RequestException as e:
-            print(f"Error fetching weather: {e}")
+            logger.error(f"WeatherService: Error fetching forecast: {e}")
             return []

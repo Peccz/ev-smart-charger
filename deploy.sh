@@ -50,8 +50,7 @@ fi
 echo "[3/4] Deploying code on Raspberry Pi..."
 echo "Connecting to $RPI_USER@$RPI_HOST..."
 
-# Commands to execute on the remote Raspberry Pi
-REMOTE_COMMANDS=$(cat << 'EOF_REMOTE'
+ssh $RPI_USER@$RPI_HOST << EOF
     RPI_DIR="ev_smart_charger"
     SERVICE_CORE="ev_smart_charger.service"
     SERVICE_WEB="ev_web_app.service"
@@ -95,15 +94,13 @@ REMOTE_COMMANDS=$(cat << 'EOF_REMOTE'
     echo "Restarting Services..."
     sudo systemctl restart $SERVICE_CORE
     sudo systemctl restart $SERVICE_WEB
-EOF_REMOTE
-)
+EOF
 
-# Execute remote commands
-ssh $RPI_USER@$RPI_HOST "$REMOTE_COMMANDS"
-
-# --- FORCED FILE COPY ---
-echo "Forcibly copying critical files from local to RPi..."
-scp src/connectors/vehicles.py $RPI_USER@$RPI_HOST:$RPI_DIR/src/connectors/vehicles.py
+# --- FORCED FILE COPY OF HTML TEMPLATES (FROM LOCAL TO RPI) ---
+echo "Forcibly copying HTML templates from local to RPi..."
+scp src/web/templates/index.html $RPI_USER@$RPI_HOST:$RPI_DIR/src/web/templates/index.html
+scp src/web/templates/planning.html $RPI_USER@$RPI_HOST:$RPI_DIR/src/web/templates/planning.html
+scp src/web/templates/settings.html $RPI_USER@$RPI_HOST:$RPI_DIR/src/web/templates/settings.html
 # --- END FORCED FILE COPY ---
 
 if [ $? -eq 0 ]; then
