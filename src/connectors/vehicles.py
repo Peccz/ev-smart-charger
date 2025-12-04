@@ -17,12 +17,15 @@ class HomeAssistantClient:
 
     def get_state(self, entity_id):
         url = f"{self.base_url}/api/states/{entity_id}"
+        logger.info(f"HA: Fetching state for {entity_id} from {url}")
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            logger.info(f"HA: Received data for {entity_id}: {data}")
+            return data
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching state for {entity_id} from HA: {e}")
+            logger.error(f"HA: Error fetching state for {entity_id} from HA: {e}")
             return None
             
 # --- Vehicle Classes ---
@@ -32,6 +35,8 @@ class Vehicle(ABC):
         self.name = name
         self.capacity_kwh = capacity_kwh
         self.max_charge_kw = max_charge_kw
+        logger.info(f"Vehicle: Initializing {name} with capacity={capacity_kwh} kWh, max_charge={max_charge_kw} kW")
+
 
     @abstractmethod
     def get_soc(self):
@@ -45,7 +50,11 @@ class Vehicle(ABC):
 
 class MercedesEQV(Vehicle):
     def __init__(self, config):
-        super().__init__("Mercedes EQV", config['capacity_kwh'], config['max_charge_rate_kw'])
+        logger.info(f"MercedesEQV: Initializing with config: {config}")
+        # Ensure these keys exist before passing to super()
+        super().__init__("Mercedes EQV", 
+                         config.get('capacity_kwh', 90), 
+                         config.get('max_charge_kw', 11))
         self.vin = config.get('vin')
         # Home Assistant Config
         self.ha_url = config.get('ha_url')
@@ -55,36 +64,42 @@ class MercedesEQV(Vehicle):
         self.ha_client = None
         if self.ha_url and self.ha_token:
             self.ha_client = HomeAssistantClient(self.ha_url, self.ha_token)
+            logger.info("MercedesEQV: HA client initialized.")
+        else:
+            logger.warning("MercedesEQV: HA credentials incomplete. Will use fallback.")
+
 
     def get_status(self):
+        logger.info("MercedesEQV: Attempting to get status from HA.")
         # 1. Try Home Assistant API
         if self.ha_client and self.ha_merc_soc_entity_id:
             state = self.ha_client.get_state(self.ha_merc_soc_entity_id)
             if state and 'state' in state:
                 try:
                     soc = float(state['state'])
-                    # HA doesn't always provide 'plugged_in' directly for all integrations
-                    # We might need another sensor for that, or infer
-                    plugged_in = True # Assume plugged in if SoC is available for now
-                    if state.get('attributes', {}).get('charging', False) or state.get('attributes', {}).get('pluggedIn', False):
+                    plugged_in = False # Default assumption
+                    # Look for common HA attributes for charging/plugged_in status
+                    if state.get('attributes', {}).get('charging', False) or \
+                       state.get('attributes', {}).get('pluggedIn', False) or \
+                       state.get('attributes', {}).get('charge_port_door_closed', False) : # Some integrations use this
                         plugged_in = True
+                    logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}")
                     return {
                         "vehicle": self.name,
                         "soc": int(soc),
-                        "range_km": int(state.get('attributes', {}).get('range', 0)), # Get range if available
+                        "range_km": int(state.get('attributes', {}).get('range', 0)),
                         "plugged_in": plugged_in
                     }
                 except ValueError:
-                    logger.warning(f"HA SoC state is not a number: {state['state']}")
+                    logger.error(f"MercedesEQV: HA SoC state is not a number: {state['state']}. Using fallback.")
         
-        # 2. Fallback to Manual SoC from user_settings or mock
-        # This will be picked up from web_app.py if HA fails
-        logger.warning("Mercedes HA integration not configured or failed. Using fallback.")
+        # 2. Fallback to Mock/Manual
+        logger.warning("MercedesEQV: HA integration not fully configured or failed. Using fallback mock data.")
         return {
             "vehicle": self.name,
-            "soc": 45, # Fallback mock
-            "range_km": 150,
-            "plugged_in": True # Fallback mock
+            "soc": 0, # Fallback mock to clearly show failure
+            "range_km": 0,
+            "plugged_in": False # Fallback mock
         }
 
     def get_soc(self):
@@ -93,7 +108,10 @@ class MercedesEQV(Vehicle):
 
 class NissanLeaf(Vehicle):
     def __init__(self, config):
-        super().__init__("Nissan Leaf", config['capacity_kwh'], config['max_charge_kw'])
+        logger.info(f"NissanLeaf: Initializing with config: {config}")
+        super().__init__("Nissan Leaf", 
+                         config.get('capacity_kwh', 40), 
+                         config.get('max_charge_kw', 6.6))
         self.vin = config.get('vin')
         self.username = config.get('username')
         self.password = config.get('password')
@@ -101,26 +119,32 @@ class NissanLeaf(Vehicle):
         self.session = None
 
     def _login(self):
+        logger.info("NissanLeaf: Attempting login.")
         if not self.username or not self.password:
-            return
+            logger.error("NissanLeaf: Credentials missing.")
+            return False
         try:
             self.session = pycarwings2.Session(self.username, self.password, self.region)
             if self.vin:
                 self.leaf = self.session.get_leaf(self.vin)
             else:
                 self.leaf = self.session.get_leaf()
+            logger.info("NissanLeaf: Login successful.")
+            return True
         except Exception as e:
-            logger.error(f"Nissan Login Failed: {e}")
+            logger.error(f"NissanLeaf: Login Failed: {e}")
+            return False
 
     def get_status(self):
+        logger.info("NissanLeaf: Attempting to get status.")
         if not self.session:
-            self._login()
+            if not self._login():
+                logger.warning("NissanLeaf: Login failed, using fallback mock data.")
+                return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "Login failed"}
             
-        if not self.session:
-             return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "No connection"}
-
         try:
             stats = self.leaf.get_latest_battery_status()
+            logger.info(f"NissanLeaf: API data received: SOC={stats.battery_percent}")
             return {
                 "vehicle": self.name,
                 "soc": stats.battery_percent,
@@ -128,8 +152,8 @@ class NissanLeaf(Vehicle):
                 "plugged_in": stats.is_connected
             }
         except Exception as e:
-            logger.error(f"Nissan Status Error: {e}")
-            return {"soc": 50, "range_km": 100, "plugged_in": False, "error": str(e)}
+            logger.error(f"NissanLeaf: Status Fetch Error: {e}. Using fallback mock data.")
+            return {"soc": 0, "range_km": 0, "plugged_in": False, "error": str(e)}
 
     def get_soc(self):
         s = self.get_status()

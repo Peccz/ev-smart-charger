@@ -50,7 +50,12 @@ fi
 echo "[3/4] Deploying code on Raspberry Pi..."
 echo "Connecting to $RPI_USER@$RPI_HOST..."
 
-ssh $RPI_USER@$RPI_HOST << EOF
+# Commands to execute on the remote Raspberry Pi
+REMOTE_COMMANDS=$(cat << 'EOF_REMOTE'
+    RPI_DIR="ev_smart_charger"
+    SERVICE_CORE="ev_smart_charger.service"
+    SERVICE_WEB="ev_web_app.service"
+
     if [ ! -d "$RPI_DIR" ]; then
         echo "Cloning repository..."
         git clone https://github.com/Peccz/ev-smart-charger.git $RPI_DIR
@@ -58,7 +63,6 @@ ssh $RPI_USER@$RPI_HOST << EOF
 
     cd $RPI_DIR
     
-    # --- CLEANUP AND PULL ---
     # Temporarily move config/settings.yaml to avoid git conflicts
     if [ -f "config/settings.yaml" ]; then
         mv config/settings.yaml /tmp/ev_settings_backup.yaml
@@ -72,7 +76,7 @@ ssh $RPI_USER@$RPI_HOST << EOF
         mv /tmp/ev_settings_backup.yaml config/settings.yaml
         echo "Restored settings.yaml from backup."
     fi
-    # --- END CLEANUP AND PULL ---
+    # --- END GIT PULL ---
 
     echo "Recreating Virtual Environment..."
     rm -rf venv # Ensure a clean venv
@@ -91,7 +95,16 @@ ssh $RPI_USER@$RPI_HOST << EOF
     echo "Restarting Services..."
     sudo systemctl restart $SERVICE_CORE
     sudo systemctl restart $SERVICE_WEB
-EOF
+EOF_REMOTE
+)
+
+# Execute remote commands
+ssh $RPI_USER@$RPI_HOST "$REMOTE_COMMANDS"
+
+# --- FORCED FILE COPY ---
+echo "Forcibly copying critical files from local to RPi..."
+scp src/connectors/vehicles.py $RPI_USER@$RPI_HOST:$RPI_DIR/src/connectors/vehicles.py
+# --- END FORCED FILE COPY ---
 
 if [ $? -eq 0 ]; then
     echo "Deployment commands executed"
