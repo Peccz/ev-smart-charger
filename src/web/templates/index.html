@@ -27,18 +27,16 @@
         .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
         .content { padding-bottom: 80px; max-width: 600px; margin: 0 auto; }
         
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        /* Status Bar */
+        .status-bar {
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        @keyframes pulse-blue {
-            0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
-        }
-        .urgent-alert { animation: pulse-red 2s infinite; border: 2px solid #dc3545; }
-        .priority-glow { border: 2px solid #0d6efd; }
+        .status-icon { font-size: 32px; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -46,8 +44,13 @@
 <div class="container mt-4 content">
     <h4 class="mb-4 fw-bold text-center">⚡ Smart Laddning</h4>
 
+    <!-- Top Status Bar -->
+    <div id="system-status" class="status-bar bg-secondary">
+        <div class="spinner-border spinner-border-sm"></div> Laddar status...
+    </div>
+
     <div id="car-container">
-        <div class="text-center p-5"><div class="spinner-border text-primary"></div></div>
+        <!-- Cars loaded here -->
     </div>
 
 </div>
@@ -56,6 +59,10 @@
     <a href="/" class="nav-item active">
         <i class="bi bi-lightning-charge-fill"></i>
         Ladda
+    </a>
+    <a href="/planning" class="nav-item">
+        <i class="bi bi-calendar-check-fill"></i>
+        Plan
     </a>
     <a href="/settings" class="nav-item">
         <i class="bi bi-gear-fill"></i>
@@ -68,76 +75,107 @@
         fetch('/api/status')
             .then(response => response.json())
             .then(data => {
-                const container = document.getElementById('car-container');
-                let html = '';
-
-                Object.values(data.cars).forEach(car => {
-                    // Color logic
-                    let color = 'success';
-                    if (car.soc < car.target) color = 'warning';
-                    if (car.soc < 20) color = 'danger';
-                    
-                    let statusText = car.reason;
-                    let badge = car.plugged_in ? '<span class="badge bg-success">Inkopplad</span>' : '<span class="badge bg-secondary">Ej ansluten</span>';
-                    
-                    let cardClass = "card p-4";
-                    let alertHtml = "";
-
-                    // URGENCY & SWAP LOGIC
-                    if (car.needs_plugging) {
-                        cardClass += " urgent-alert";
-                        let title = "KOPPLA IN NU!";
-                        let msg = car.urgency_msg;
-                        
-                        if (car.swap_msg) {
-                            title = "BYT BIL!";
-                            msg = `1. Koppla ur den andra bilen<br>2. Koppla in denna!<br><small>${car.swap_msg}</small>`;
-                        }
-                        
-                        alertHtml = `
-                            <div class="alert alert-danger text-center fw-bold mt-3">
-                                <i class="bi bi-exclamation-triangle-fill"></i> ${title}<br>
-                                <div class="fw-normal mt-1">${msg}</div>
-                            </div>
-                        `;
-                    } else if (car.is_priority && car.plugged_in) {
-                        cardClass += " priority-glow";
-                        alertHtml = `<div class="badge bg-primary w-100 mt-2">PRIORITERAD BIL</div>`;
-                    }
-
-                    if (car.override && car.override.action === 'CHARGE') {
-                        statusText = "🔥 TVÅNGSLADDAR";
-                        color = 'danger'; 
-                    }
-                    
-                    if (statusText.includes("Waiting for cheaper")) statusText = "Väntar på billigare el...";
-                    if (statusText.includes("Current hour")) statusText = "Laddar smart (Billigt!)";
-
-                    html += `
-                        <div class="${cardClass}">
-                            <h5 class="text-center mb-3 fw-bold">${car.name}</h5>
-                            <div class="soc-circle bg-${color}">
-                                ${car.soc}%
-                            </div>
-                            <div class="text-center mb-3">
-                                ${badge} <br>
-                                <small class="text-muted">Mål: ${car.target}%</small>
-                                <div class="mt-2 small text-primary fst-italic">${statusText}</div>
-                            </div>
-                            
-                            ${alertHtml}
-                            
-                            <div class="d-grid gap-2 mt-3">
-                                ${car.override ? 
-                                    `<button class="btn btn-outline-secondary" onclick="setOverride('${car.id}', 'AUTO')">Återgå till Auto</button>` :
-                                    `<button class="btn btn-primary" onclick="setOverride('${car.id}', 'CHARGE')">⚡ Ladda Nu (1h)</button>`
-                                }
-                            </div>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
+                renderSystemStatus(data);
+                renderCars(data.cars);
             });
+    }
+
+    function renderSystemStatus(data) {
+        const bar = document.getElementById('system-status');
+        const cars = Object.values(data.cars);
+        
+        // Find issues
+        const urgentCar = cars.find(c => c.needs_plugging);
+        const priorityCar = cars.find(c => c.is_priority);
+        const chargingCar = cars.find(c => c.action === 'CHARGE' && c.plugged_in);
+        
+        let bg = 'success';
+        let icon = 'bi-check-circle-fill';
+        let text = 'Systemet är i fas. Inga åtgärder krävs.';
+        let subtext = 'Båda bilarna når målet.';
+
+        if (urgentCar) {
+            bg = 'danger';
+            icon = 'bi-exclamation-triangle-fill';
+            text = `Koppla in ${urgentCar.name}!`;
+            subtext = urgentCar.swap_msg ? urgentCar.swap_msg : "Bilen behöver laddas för att nå målet.";
+        } else if (chargingCar) {
+            bg = 'primary';
+            icon = 'bi-lightning-charge-fill';
+            text = `Laddar ${chargingCar.name}...`;
+            subtext = `Smart laddning pågår.`;
+        } else if (priorityCar && priorityCar.plugged_in) {
+            bg = 'info'; // Light blue
+            icon = 'bi-clock-history';
+            text = `${priorityCar.name} väntar på elpris.`;
+            subtext = "Laddningen startar senare ikväll.";
+        } else {
+            // Idle / Done
+            bg = 'success';
+            icon = 'bi-check-circle-fill';
+            text = "Alla bilar redo / fulladdade.";
+            subtext = "";
+        }
+
+        bar.className = `status-bar bg-${bg}`;
+        bar.innerHTML = `
+            <i class="bi ${icon} status-icon"></i>
+            <div class="fw-bold fs-5">${text}</div>
+            <div class="small opacity-75">${subtext}</div>
+        `;
+    }
+
+    function renderCars(carsMap) {
+        const container = document.getElementById('car-container');
+        let html = '';
+
+        Object.values(carsMap).forEach(car => {
+            let color = 'success';
+            if (car.soc < car.target) color = 'warning';
+            if (car.soc < 20) color = 'danger';
+            
+            let statusText = car.reason;
+            let badge = car.plugged_in ? '<span class="badge bg-success">Inkopplad</span>' : '<span class="badge bg-secondary">Ej ansluten</span>';
+            
+            if (car.override && car.override.action === 'CHARGE') {
+                statusText = "🔥 TVÅNGSLADDAR";
+                color = 'danger'; 
+            }
+            
+            if (statusText.includes("Waiting")) statusText = "Väntar på billigare el...";
+            if (statusText.includes("Current hour")) statusText = "Laddar smart (Billigt!)";
+            if (statusText.includes("Vehicle not plugged")) statusText = "Redo att laddas.";
+
+            // Highlight priority car slightly?
+            let borderStyle = car.is_priority ? 'border: 2px solid #0d6efd;' : '';
+
+            html += `
+                <div class="card p-4" style="${borderStyle}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0 fw-bold">${car.name}</h5>
+                        ${badge}
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <div class="soc-circle bg-${color} me-4" style="width: 80px; height: 80px; font-size: 20px; margin: 0;">
+                            ${car.soc}%
+                        </div>
+                        <div>
+                            <div class="text-muted small mb-1">Mål: <strong>${car.target}%</strong></div>
+                            <div class="small text-primary">${statusText}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        ${car.override ? 
+                            `<button class="btn btn-sm btn-outline-secondary" onclick="setOverride('${car.id}', 'AUTO')">Återgå till Auto</button>` :
+                            `<button class="btn btn-sm btn-primary" onclick="setOverride('${car.id}', 'CHARGE')">⚡ Ladda Nu</button>`
+                        }
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
     }
 
     function setOverride(id, action) {

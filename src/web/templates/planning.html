@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Planering - EV Smart Charger</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .nav-bottom {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex; justify-content: space-around; padding: 10px;
+            z-index: 1000;
+        }
+        .nav-item { text-align: center; color: #6c757d; text-decoration: none; font-size: 12px; }
+        .nav-item.active { color: #0d6efd; font-weight: bold; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
+        .content { padding-bottom: 80px; max-width: 600px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4 content">
+    <h4 class="mb-4 fw-bold text-center">📅 Planering</h4>
+
+    <!-- Graph Card -->
+    <div class="card p-3">
+        <h6 class="fw-bold mb-3">Elpris (SE3) & Prognos</h6>
+        <canvas id="priceChart" height="200"></canvas>
+    </div>
+
+    <!-- Analysis Card -->
+    <div class="card p-3">
+        <h6 class="fw-bold mb-3">🤖 Systemets Analys</h6>
+        <ul class="list-group list-group-flush" id="analysis-list">
+            <li class="list-group-item">Laddar data...</li>
+        </ul>
+    </div>
+
+</div>
+
+<nav class="nav-bottom">
+    <a href="/" class="nav-item">
+        <i class="bi bi-lightning-charge-fill"></i>
+        Ladda
+    </a>
+    <a href="/planning" class="nav-item active">
+        <i class="bi bi-calendar-check-fill"></i>
+        Plan
+    </a>
+    <a href="/settings" class="nav-item">
+        <i class="bi bi-gear-fill"></i>
+        Inställningar
+    </a>
+</nav>
+
+<script>
+    let chartInstance = null;
+
+    function loadPlan() {
+        fetch('/api/plan')
+            .then(response => response.json())
+            .then(data => {
+                renderChart(data.prices);
+                renderAnalysis(data.analysis);
+            });
+    }
+
+    function renderAnalysis(items) {
+        const list = document.getElementById('analysis-list');
+        if (!items || items.length === 0) {
+            list.innerHTML = '<li class="list-group-item text-muted">Ingen data tillgänglig.</li>';
+            return;
+        }
+        list.innerHTML = items.map(item => `<li class="list-group-item"><i class="bi bi-info-circle text-primary me-2"></i> ${item}</li>`).join('');
+    }
+
+    function renderChart(prices) {
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        
+        // Prepare data
+        const labels = prices.map(p => {
+            const d = new Date(p.time_start);
+            return d.getHours() + ":00";
+        });
+        const dataPoints = prices.map(p => p.price_sek);
+        
+        // Color logic: Green if cheap, Red if expensive
+        // Simple average calculation for color
+        const avg = dataPoints.reduce((a,b) => a + b, 0) / dataPoints.length;
+        const colors = dataPoints.map(p => p < avg ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)');
+
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pris (SEK/kWh)',
+                    data: dataPoints,
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.6', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'SEK / kWh' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    loadPlan();
+</script>
+
+</body>
+</html>

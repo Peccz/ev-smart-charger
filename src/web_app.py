@@ -3,6 +3,12 @@ import json
 import os
 import sqlite3
 from datetime import datetime, timedelta
+import pandas as pd
+
+# Import specific connectors just to fetch live data for the Planning UI
+# (In a larger app, we would cache this in DB, but let's fetch fresh for now)
+from connectors.spot_price import SpotPriceService
+from connectors.weather import WeatherService
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 
@@ -16,6 +22,10 @@ DEFAULT_SETTINGS = {
     "departure_time": "07:00",
     "smart_buffering": True
 }
+
+# Initialize services (lightweight)
+spot_service = SpotPriceService()
+weather_service = WeatherService(59.5196, 17.9285) # Upplands Väsby coords
 
 def get_settings():
     if not os.path.exists(SETTINGS_PATH):
@@ -66,6 +76,10 @@ def get_optimizer_state():
 def index():
     return render_template('index.html')
 
+@app.route('/planning')
+def planning_page():
+    return render_template('planning.html')
+
 @app.route('/settings')
 def settings_page():
     return render_template('settings.html')
@@ -76,7 +90,6 @@ def api_status():
     overrides = get_overrides()
     state = get_optimizer_state()
     
-    # Logic to determine priority
     # Flatten state
     cars = []
     for k, v in state.items():
@@ -105,28 +118,22 @@ def api_status():
         plugged_in = car_state.get('plugged_in', False)
         urgency = car_state.get('urgency_score', 0)
         
-        # UI Logic
         is_priority = (key_id == priority_car_id)
         needs_plugging = False
         urgency_msg = ""
         swap_msg = ""
         
-        # Scenario 1: I am priority, but not plugged in
         if is_priority and not plugged_in and urgency > 0:
             needs_plugging = True
             urgency_msg = "Denna bil MÅSTE laddas nu!"
-            
-            # Check if the OTHER car is hogging the charger
             other_car = cars[1] if len(cars) > 1 and cars[0]['id'] == key_id else cars[0]
             if other_car.get('plugged_in'):
                 swap_msg = f"Koppla ur {other_car.get('name', 'den andra bilen')}!"
 
-        # Scenario 2: I am NOT priority, but I AM plugged in (and Priority needs charge)
         if not is_priority and plugged_in and priority_car_id and priority_car_id != key_id:
-             # Find priority car state
              p_car = next((c for c in cars if c['id'] == priority_car_id), None)
              if p_car and not p_car.get('plugged_in'):
-                 needs_plugging = True # Alert on this car too
+                 needs_plugging = True 
                  urgency_msg = "Var god koppla ur denna bil."
                  swap_msg = f"Byt till {p_car.get('name')}!"
 
@@ -155,6 +162,42 @@ def api_status():
             "departure": settings.get('departure_time', '07:00')
         }
     })
+
+@app.route('/api/plan')
+def api_plan():
+    """
+    Returns price data and charging plan for the UI graph.
+    """
+    try:
+        prices = spot_service.get_prices_upcoming()
+        weather = weather_service.get_forecast()
+        
+        # Get logic from state
+        state = get_optimizer_state()
+        
+        # Add simple analysis text
+        analysis = []
+        if prices:
+            df = pd.DataFrame(prices)
+            avg = df['price_sek'].mean()
+            min_p = df['price_sek'].min()
+            analysis.append(f"Snittpris: {avg:.2f} kr (Lägst: {min_p:.2f} kr)")
+        
+        if weather:
+            df_w = pd.DataFrame(weather)
+            avg_wind = df_w['wind_kmh'].mean()
+            analysis.append(f"Vindprognos: {avg_wind:.1f} km/h (Medel)")
+            if avg_wind > 20:
+                analysis.append("🌪️ Mycket vind -> Priserna sjunker troligen!")
+        
+        return jsonify({
+            "prices": prices, # List of {time_start, price_sek}
+            "weather": weather,
+            "analysis": analysis
+        })
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)})
 
 @app.route('/api/settings', methods=['GET', 'POST'])
 def api_settings():
