@@ -28,14 +28,14 @@ class MercedesTokenClient:
         })
 
     def _generate_code_verifier(self):
-        chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + "-._~"
+        chars = string.ascii_uppercase + string.ascii_lowercase + string.digits + "-._~")
         return "".join(random.choice(chars) for _ in range(128))
 
     def _generate_code_challenge(self, verifier):
         digest = hashlib.sha256(verifier.encode()).digest()
         return base64.urlsafe_b64encode(digest).decode().rstrip("=")
 
-    def start_login_flow(self, email):
+    def start_login_flow(self, email): # email is not used here but kept for consistency
         self.code_verifier = self._generate_code_verifier()
         code_challenge = self._generate_code_challenge(self.code_verifier)
         
@@ -51,14 +51,25 @@ class MercedesTokenClient:
         
         r = self.session.get(AUTH_URL, params=params)
         if r.status_code != 200:
-            logger.error(f"Failed to init auth: {r.status_code}")
+            logger.error(f"Failed to init auth: {r.status_code}. Response: {r.text}")
             return False
 
+        auth_url = r.url # The actual URL after any redirects
+        
+        # Save the URL to a file
+        auth_link_file = os.path.join(os.path.dirname(self.token_path), "mercedes_auth_link.txt")
+        os.makedirs(os.path.dirname(self.token_path), exist_ok=True) # Ensure data dir exists
+        with open(auth_link_file, 'w') as f:
+            f.write(auth_url)
+
         print("\n=== VIKTIGT: MANUELL INLOGGNING ===")
-        print("1. Öppna denna länk i din webbläsare (Inkognito):")
-        print(r.url)
-        print("2. Logga in.")
-        print("3. När du skickas vidare till en vit sida, KOPIERA HELA URL:en.")
+        print("1. Öppna FILEN:")
+        print(f"   {auth_link_file}")
+        print("   Kopiera länken som finns i den filen.")
+        print("2. Öppna den kopierade länken i din webbläsare (Inkognito-läge).")
+        print("3. Logga in på ditt Mercedes Me-konto.")
+        print("4. Efter lyckad inloggning kommer du att skickas till en vit sida.")
+        print("5. KOPIERA HELA URL:en från adressfältet i webbläsaren på den vita sidan.")
         return True
 
     def exchange_code(self, url_with_code):
