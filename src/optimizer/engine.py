@@ -107,7 +107,7 @@ class Optimizer:
         if not full_price_df.empty:
             full_price_df = full_price_df.drop_duplicates(subset=['time_start'], keep='first')
             full_price_df = full_price_df.sort_values(by='time_start')
-            full_price_df['time_start'] = full_price_df['time_start'].dt.isoformat() # Convert back to ISO string
+            full_price_df['time_start'] = full_price_df['time_start'].apply(lambda x: x.isoformat()) # Corrected line
             return full_price_df.to_dict(orient='records')
         return []
 
@@ -124,7 +124,7 @@ class Optimizer:
             
         capacity = vehicle.capacity_kwh
         needed_soc = target_soc - soc
-        needed_kwh = (needed_soc / 100.0) * capacity
+        kwh_needed = (needed_soc / 100.0) * capacity
         
         # Hours needed at full speed
         hours_needed = needed_kwh / vehicle.max_charge_kw
