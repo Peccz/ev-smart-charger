@@ -58,7 +58,7 @@ class MercedesTokenClient:
         print("1. Öppna denna länk i din webbläsare (Inkognito):")
         print(r.url)
         print("2. Logga in.")
-        print("3. När du skickas vidare till en vit sida, KOPIERA URL:en.")
+        print("3. När du skickas vidare till en vit sida, KOPIERA HELA URL:en.")
         return True
 
     def exchange_code(self, url_with_code):
@@ -70,7 +70,6 @@ class MercedesTokenClient:
             code = url_with_code.split("code=")[1].split("&")[0]
             
             if not hasattr(self, 'code_verifier'):
-                # Fallback if verifier lost (should not happen in single run)
                 print("Session avbruten. Starta om scriptet.")
                 return False
 
