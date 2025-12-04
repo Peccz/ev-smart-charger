@@ -50,8 +50,8 @@ def load_config():
     merc_config_from_yaml = base_config['cars'].get('mercedes_eqv', {})
     mercedes_final_config = {
         'vin': merc_config_from_yaml.get('vin'),
-        'capacity_kwh': merc_config_from_yaml.get('capacity_kwh'),      # <-- THIS WAS MISSING
-        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw'),    # <-- THIS WAS MISSING
+        'capacity_kwh': merc_config_from_yaml.get('capacity_kwh'),
+        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw'),
         'target_soc': user_settings.get('mercedes_target', merc_config_from_yaml.get('target_soc', 80)),
         'ha_url': user_settings.get('ha_url'),
         'ha_token': user_settings.get('ha_token'),
@@ -63,8 +63,8 @@ def load_config():
     nissan_config_from_yaml = base_config['cars'].get('nissan_leaf', {})
     nissan_final_config = {
         'vin': nissan_config_from_yaml.get('vin'),
-        'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh'),    # <-- THIS WAS MISSING
-        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw'),  # <-- THIS WAS MISSING
+        'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh'),
+        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw'),
         'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)),
         'username': user_settings.get('nissan_username', nissan_config_from_yaml.get('username')),
         'password': user_settings.get('nissan_password', nissan_config_from_yaml.get('password')),
@@ -75,11 +75,13 @@ def load_config():
     return base_config
 
 def save_state(state):
+    # Ensure the directory exists before writing the file
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
     try:
         with open(STATE_FILE, 'w') as f:
             json.dump(state, f, indent=2)
     except Exception as e:
-        logger.error(f"Failed to save state: {e}")
+        logger.error(f"Failed to save state to {STATE_FILE}: {e}")
 
 def get_user_settings():
     try:
