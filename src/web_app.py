@@ -6,12 +6,10 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 
-# Paths
 SETTINGS_PATH = "data/user_settings.json"
 OVERRIDES_PATH = "data/manual_overrides.json"
 STATE_PATH = "data/optimizer_state.json"
 
-# Defaults
 DEFAULT_SETTINGS = {
     "mercedes_target": 80,
     "nissan_target": 80,
@@ -43,7 +41,6 @@ def get_overrides():
 
 def set_override(vehicle_id, action, duration_minutes=60):
     overrides = get_overrides()
-    
     if action == "AUTO":
         if vehicle_id in overrides:
             del overrides[vehicle_id]
@@ -53,7 +50,6 @@ def set_override(vehicle_id, action, duration_minutes=60):
             "action": action,
             "expires_at": expiry.isoformat()
         }
-    
     with open(OVERRIDES_PATH, 'w') as f:
         json.dump(overrides, f, indent=2)
 
@@ -80,17 +76,25 @@ def api_status():
     overrides = get_overrides()
     state = get_optimizer_state()
     
-    # Merge state with settings
-    # Default structure if state file is empty
+    # Logic to determine priority
+    # Flatten state
+    cars = []
+    for k, v in state.items():
+        v['name'] = k
+        cars.append(v)
+        
+    # Sort by urgency score (highest first)
+    cars.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
+    
+    priority_car_id = None
+    if cars and cars[0].get('urgency_score', 0) > 0:
+        priority_car_id = cars[0]['id']
+
     cars_data = {}
     
-    # Helper to build car object
     def build_car(name, key_id, target_key):
-        # Find data in state (which is keyed by full name e.g. "Mercedes EQV")
-        # We do a fuzzy match or direct lookup
         car_state = state.get(name, {})
         if not car_state:
-             # Try finding by partial string
              for k, v in state.items():
                  if name.split()[0] in k:
                      car_state = v
@@ -99,16 +103,32 @@ def api_status():
         target = settings.get(target_key, 80)
         soc = car_state.get('soc', 0)
         plugged_in = car_state.get('plugged_in', False)
+        urgency = car_state.get('urgency_score', 0)
         
-        # Urgency Logic:
-        # If Soc < Target AND Not Plugged In -> Alert!
+        # UI Logic
+        is_priority = (key_id == priority_car_id)
         needs_plugging = False
         urgency_msg = ""
+        swap_msg = ""
         
-        if soc < target and not plugged_in:
+        # Scenario 1: I am priority, but not plugged in
+        if is_priority and not plugged_in and urgency > 0:
             needs_plugging = True
-            diff = target - soc
-            urgency_msg = f"Saknas {diff}% för att nå målet!"
+            urgency_msg = "Denna bil MÅSTE laddas nu!"
+            
+            # Check if the OTHER car is hogging the charger
+            other_car = cars[1] if len(cars) > 1 and cars[0]['id'] == key_id else cars[0]
+            if other_car.get('plugged_in'):
+                swap_msg = f"Koppla ur {other_car.get('name', 'den andra bilen')}!"
+
+        # Scenario 2: I am NOT priority, but I AM plugged in (and Priority needs charge)
+        if not is_priority and plugged_in and priority_car_id and priority_car_id != key_id:
+             # Find priority car state
+             p_car = next((c for c in cars if c['id'] == priority_car_id), None)
+             if p_car and not p_car.get('plugged_in'):
+                 needs_plugging = True # Alert on this car too
+                 urgency_msg = "Var god koppla ur denna bil."
+                 swap_msg = f"Byt till {p_car.get('name')}!"
 
         return {
             "name": name,
@@ -119,8 +139,11 @@ def api_status():
             "override": overrides.get(key_id),
             "action": car_state.get('action', 'IDLE'),
             "reason": car_state.get('reason', '-'),
+            "urgency_score": urgency,
+            "is_priority": is_priority,
             "needs_plugging": needs_plugging,
-            "urgency_msg": urgency_msg
+            "urgency_msg": urgency_msg,
+            "swap_msg": swap_msg
         }
 
     cars_data['mercedes'] = build_car("Mercedes EQV", "mercedes_eqv", "mercedes_target")
@@ -147,11 +170,7 @@ def api_settings():
 @app.route('/api/override', methods=['POST'])
 def api_override():
     data = request.json
-    vehicle_id = data.get('vehicle_id')
-    action = data.get('action') 
-    duration = data.get('duration', 60)
-    
-    set_override(vehicle_id, action, duration)
+    set_override(data.get('vehicle_id'), data.get('action'), data.get('duration', 60))
     return jsonify({"status": "ok"})
 
 if __name__ == '__main__':

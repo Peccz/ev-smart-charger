@@ -16,7 +16,6 @@
             margin: 0 auto 15px auto;
             border: 5px solid rgba(255,255,255,0.3);
         }
-        .btn-lg { border-radius: 12px; }
         .nav-bottom {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
@@ -28,16 +27,18 @@
         .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
         .content { padding-bottom: 80px; max-width: 600px; margin: 0 auto; }
         
-        /* Alert Animation */
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
             100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
         }
-        .urgent-alert {
-            animation: pulse-red 2s infinite;
-            border: 2px solid #dc3545;
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
         }
+        .urgent-alert { animation: pulse-red 2s infinite; border: 2px solid #dc3545; }
+        .priority-glow { border: 2px solid #0d6efd; }
     </style>
 </head>
 <body>
@@ -72,24 +73,36 @@
 
                 Object.values(data.cars).forEach(car => {
                     // Color logic
-                    let color = 'success'; // Green
-                    if (car.soc < car.target) color = 'warning'; // Yellow
-                    if (car.soc < 20) color = 'danger'; // Red
+                    let color = 'success';
+                    if (car.soc < car.target) color = 'warning';
+                    if (car.soc < 20) color = 'danger';
                     
                     let statusText = car.reason;
                     let badge = car.plugged_in ? '<span class="badge bg-success">Inkopplad</span>' : '<span class="badge bg-secondary">Ej ansluten</span>';
+                    
                     let cardClass = "card p-4";
                     let alertHtml = "";
 
-                    // URGENCY LOGIC
+                    // URGENCY & SWAP LOGIC
                     if (car.needs_plugging) {
                         cardClass += " urgent-alert";
+                        let title = "KOPPLA IN NU!";
+                        let msg = car.urgency_msg;
+                        
+                        if (car.swap_msg) {
+                            title = "BYT BIL!";
+                            msg = `1. Koppla ur den andra bilen<br>2. Koppla in denna!<br><small>${car.swap_msg}</small>`;
+                        }
+                        
                         alertHtml = `
                             <div class="alert alert-danger text-center fw-bold mt-3">
-                                <i class="bi bi-exclamation-triangle-fill"></i> KOPPLA IN BILEN NU!<br>
-                                <small class="fw-normal">${car.urgency_msg}</small>
+                                <i class="bi bi-exclamation-triangle-fill"></i> ${title}<br>
+                                <div class="fw-normal mt-1">${msg}</div>
                             </div>
                         `;
+                    } else if (car.is_priority && car.plugged_in) {
+                        cardClass += " priority-glow";
+                        alertHtml = `<div class="badge bg-primary w-100 mt-2">PRIORITERAD BIL</div>`;
                     }
 
                     if (car.override && car.override.action === 'CHARGE') {
@@ -97,7 +110,6 @@
                         color = 'danger'; 
                     }
                     
-                    // Simplify reason text
                     if (statusText.includes("Waiting for cheaper")) statusText = "Väntar på billigare el...";
                     if (statusText.includes("Current hour")) statusText = "Laddar smart (Billigt!)";
 
@@ -136,7 +148,6 @@
         }).then(() => getStatus());
     }
 
-    // Auto refresh
     getStatus();
     setInterval(getStatus, 5000);
 </script>
