@@ -123,8 +123,8 @@ class Optimizer:
             return 0.0
             
         capacity = vehicle.capacity_kwh
-        needed_soc = target_soc - soc
-        kwh_needed = (needed_soc / 100.0) * capacity
+        needed_soc_percent = target_soc - soc # Renamed to avoid confusion
+        needed_kwh = (needed_soc_percent / 100.0) * capacity # Define needed_kwh here
         
         # Hours needed at full speed
         hours_needed = needed_kwh / vehicle.max_charge_kw
@@ -199,7 +199,7 @@ class Optimizer:
                 "reason": f"{mode}: Current hour ({current_price:.2f} SEK) is cheap."
             }
 
-        next_best_price = cheapest_hours['price_sek'].max() # Price of the most expensive hour in the cheapest block
+        next_best_price = df_sorted.head(hours_needed)['price_sek'].max() # Price of the most expensive hour in the cheapest block
         return {
             "action": "IDLE", 
             "reason": f"Waiting for cheaper hours (Need < {next_best_price:.2f} SEK). Current is {df.iloc[0]['price_sek']:.2f} SEK."
