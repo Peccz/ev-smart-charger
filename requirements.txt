@@ -7,4 +7,6 @@ python-dateutil
 pycarwings2
 flask
 gunicorn
-mercedes-me-api
+requests-oauthlib
+# Install directly from GitHub
+git+https://github.com/ReneBoer/python-mercedes-me-api.git@master#egg=mercedes-me-api
