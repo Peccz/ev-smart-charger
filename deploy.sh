@@ -50,7 +50,8 @@ fi
 echo "[3/4] Deploying code on Raspberry Pi..."
 echo "Connecting to $RPI_USER@$RPI_HOST..."
 
-ssh $RPI_USER@$RPI_HOST << EOF
+# Commands to execute on the remote Raspberry Pi
+REMOTE_COMMANDS=$(cat << 'EOF_REMOTE'
     RPI_DIR="ev_smart_charger"
     SERVICE_CORE="ev_smart_charger.service"
     SERVICE_WEB="ev_web_app.service"
@@ -81,8 +82,7 @@ ssh $RPI_USER@$RPI_HOST << EOF
     rm -rf venv # Ensure a clean venv
     python3 -m venv venv
     
-    # Install requirements - THIS TIME, SHOW OUTPUT!
-    echo "Installing Python requirements. This may take a while..."
+    # Install requirements
     ./venv/bin/pip install -r requirements.txt
     
     echo "Updating Services..."
@@ -95,13 +95,18 @@ ssh $RPI_USER@$RPI_HOST << EOF
     echo "Restarting Services..."
     sudo systemctl restart $SERVICE_CORE
     sudo systemctl restart $SERVICE_WEB
-EOF
+EOF_REMOTE
+)
 
-# --- FORCED FILE COPY OF HTML TEMPLATES (FROM LOCAL TO RPI) ---
-echo "Forcibly copying HTML templates from local to RPi..."
+# Execute remote commands
+ssh $RPI_USER@$RPI_HOST "$REMOTE_COMMANDS"
+
+# --- FORCED FILE COPY OF HTML TEMPLATES AND WEB_APP.PY (FROM LOCAL TO RPI) ---
+echo "Forcibly copying HTML templates and web_app.py from local to RPi..."
 scp src/web/templates/index.html $RPI_USER@$RPI_HOST:$RPI_DIR/src/web/templates/index.html
 scp src/web/templates/planning.html $RPI_USER@$RPI_HOST:$RPI_DIR/src/web/templates/planning.html
 scp src/web/templates/settings.html $RPI_USER@$RPI_HOST:$RPI_DIR/src/web/templates/settings.html
+scp src/web_app.py $RPI_USER@$RPI_HOST:$RPI_DIR/src/web_app.py
 # --- END FORCED FILE COPY ---
 
 if [ $? -eq 0 ]; then

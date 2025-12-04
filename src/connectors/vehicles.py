@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 import logging
-import pycarwings2
 import requests
 import json # Import json for json.decoder.JSONDecodeError
+
+# Import the new Kamereon client
+from kamereon_python import KamereonClient, NissanConnectVehicle # Adjust import based on library structure
 
 logger = logging.getLogger(__name__)
 
@@ -114,91 +116,89 @@ class NissanLeaf(Vehicle):
         self.vin = config.get('vin')
         self.username = config.get('username')
         self.password = config.get('password')
-        self.region = config.get('region', 'NE')
-        self.session = None
-        self.leaf = None # Ensure leaf is initialized to None
-        self.pycarwings2_enabled = False # Flag to disable pycarwings2 if it fails
+        self.region = config.get('region', 'NE') # Default to Europe
+        self.kamereon_client = None
+        self.nissan_vehicle = None
+        self.kamereon_enabled = False
 
-        # Check if credentials are provided for pycarwings2
         if self.username and self.password:
-            self.pycarwings2_enabled = True
-            logger.info("NissanLeaf: pycarwings2 is enabled with credentials.")
+            self.kamereon_enabled = True
+            logger.info("NissanLeaf: Kamereon client enabled with credentials.")
         else:
-            logger.warning("NissanLeaf: pycarwings2 credentials missing. Will rely on manual input.")
+            logger.warning("NissanLeaf: Kamereon credentials missing. Will rely on manual input.")
 
-
-    def _login(self):
-        if not self.pycarwings2_enabled:
+    def _connect(self):
+        if not self.kamereon_enabled:
             return False
 
-        logger.info(f"NissanLeaf: Attempting login for user: {self.username}")
+        logger.info(f"NissanLeaf: Attempting connection for user: {self.username}")
         if not self.username or not self.password:
             logger.error("NissanLeaf: Credentials missing from config.")
-            self.pycarwings2_enabled = False # Disable further attempts
+            self.kamereon_enabled = False # Disable further attempts
             return False
+        
         try:
-            self.session = pycarwings2.Session(self.username, self.password, self.region)
-            # Try to get the leaf object
-            if self.vin:
-                found_leaves = self.session.get_leaf(self.vin)
-                if isinstance(found_leaves, list) and len(found_leaves) > 0:
-                    self.leaf = found_leaves[0] # Take the first if multiple
-                elif not isinstance(found_leaves, list):
-                    self.leaf = found_leaves # Single object
-                else:
-                    logger.error(f"NissanLeaf: No leaf found for VIN {self.vin}.")
-                    self.pycarwings2_enabled = False
-                    return False
-            elif self.session.get_leaf(): # Get first available leaf if no VIN
-                self.leaf = self.session.get_leaf()
-            else:
-                logger.error("NissanLeaf: No leaf objects returned from API.")
-                self.pycarwings2_enabled = False
-                return False
+            # KamereonClient expects email, password, and optional region code
+            self.kamereon_client = KamereonClient(self.username, self.password, self.region)
+            self.kamereon_client.connect() # Establish connection and get token
+            logger.info("NissanLeaf: KamereonClient connected.")
 
-            logger.info("NissanLeaf: Login successful. Leaf object obtained.")
+            # Get the vehicle object
+            vehicles = self.kamereon_client.get_vehicles()
+            if not vehicles:
+                logger.error("NissanLeaf: No vehicles found for this account.")
+                self.kamereon_enabled = False
+                return False
+            
+            if self.vin:
+                # Filter by VIN if provided
+                for v in vehicles:
+                    if v.vin == self.vin:
+                        self.nissan_vehicle = v
+                        break
+                if not self.nissan_vehicle:
+                    logger.error(f"NissanLeaf: Vehicle with VIN {self.vin} not found.")
+                    self.kamereon_enabled = False
+                    return False
+            else:
+                # Take the first vehicle if VIN not specified
+                self.nissan_vehicle = vehicles[0]
+                logger.info(f"NissanLeaf: Using first vehicle found: {self.nissan_vehicle.vin}")
+            
+            logger.info("NissanLeaf: Vehicle object obtained.")
             return True
-        except pycarwings2.CarwingsError as e: 
-            logger.error(f"NissanLeaf: pycarwings2 Login Failed: {e}. Check credentials or region.")
-            self.pycarwings2_enabled = False
-            return False
-        except requests.exceptions.RequestException as e:
-            logger.error(f"NissanLeaf: Network/Request Error during login: {e}")
-            self.pycarwings2_enabled = False
-            return False
-        except json.decoder.JSONDecodeError as e:
-            logger.error(f"NissanLeaf: Server returned invalid JSON during login: {e}. Possible API change or bad response.")
-            self.pycarwings2_enabled = False
-            return False
+
         except Exception as e:
-            logger.error(f"NissanLeaf: Unexpected Login Error: {e}")
-            self.pycarwings2_enabled = False
+            logger.error(f"NissanLeaf: Kamereon connection failed: {e}. Check credentials, VIN, or API changes.")
+            self.kamereon_enabled = False # Disable on failure
             return False
 
     def get_status(self):
         logger.info("NissanLeaf: Attempting to get status.")
-        if not self.pycarwings2_enabled:
-            logger.warning("NissanLeaf: pycarwings2 is disabled due to missing credentials or previous failures. Using fallback mock data.")
-            return {"vehicle": self.name, "soc": 0, "range_km": 0, "plugged_in": False, "error": "pycarwings2 disabled"}
+        if not self.kamereon_enabled:
+            logger.warning("NissanLeaf: Kamereon is disabled. Using fallback mock data.")
+            return {"vehicle": self.name, "soc": 0, "range_km": 0, "plugged_in": False, "error": "Kamereon disabled"}
 
-        if not self.session or not self.leaf: # Check both session AND leaf object
-            if not self._login():
-                logger.warning("NissanLeaf: Login failed, using fallback mock data.")
-                return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "Login failed"}
+        if not self.kamereon_client or not self.nissan_vehicle:
+            if not self._connect():
+                logger.warning("NissanLeaf: Connection failed. Using fallback mock data.")
+                return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "Connection failed"}
             
         try:
-            # Check self.leaf again after successful _login()
-            if not self.leaf:
-                 logger.error("NissanLeaf: Leaf object not available after login attempt.")
-                 return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "Leaf object missing"}
+            # Fetch fresh data from the vehicle
+            self.nissan_vehicle.update_status() # This method updates internal state
+            
+            soc = self.nissan_vehicle.battery_level
+            # Kamereon API can provide charging status
+            plugged_in = self.nissan_vehicle.is_charging or self.nissan_vehicle.is_plugged_in # Check relevant attributes
+            range_km = self.nissan_vehicle.range_electric
 
-            stats = self.leaf.get_latest_battery_status()
-            logger.info(f"NissanLeaf: API data received: SOC={stats.battery_percent}")
+            logger.info(f"NissanLeaf: API data received: SOC={soc}, Plugged={plugged_in}, Range={range_km}")
             return {
                 "vehicle": self.name,
-                "soc": stats.battery_percent,
-                "range_km": stats.cruising_range_ac_on_km,
-                "plugged_in": stats.is_connected
+                "soc": int(soc),
+                "range_km": int(range_km),
+                "plugged_in": plugged_in
             }
         except Exception as e:
             logger.error(f"NissanLeaf: Status Fetch Error: {e}. Using fallback mock data.")

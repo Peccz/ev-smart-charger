@@ -6,12 +6,11 @@ from datetime import datetime, timedelta
 import pandas as pd
 import yaml # Import yaml to load config/settings.yaml
 import requests # Needed for HomeAssistantClient
-import pycarwings2 # Needed for NissanLeaf
 
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
 from optimizer.engine import Optimizer # Import Optimizer to generate price forecast
-from connectors.vehicles import NissanLeaf # Import NissanLeaf directly
+from connectors.vehicles import MercedesEQV, NissanLeaf # Import NissanLeaf directly
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 app.secret_key = "super_secret_key_change_me" 
@@ -35,8 +34,8 @@ DEFAULT_SETTINGS = {
 spot_service = SpotPriceService()
 weather_service = WeatherService(59.5196, 17.9285)
 
-# --- CONFIGURATION LOADING FOR OPTIMIZER INSTANCE ---
-# This is now a function to ensure it loads the complete config
+# --- CONFIGURATION LOADING FOR OPTIMIZER INSTANCE (USED BY WEBAPP) ---
+# This is a function to ensure it loads the complete config
 def _load_full_config_for_optimizer():
     full_config = {}
     if os.path.exists(YAML_CONFIG_PATH):
@@ -52,6 +51,9 @@ def _load_full_config_for_optimizer():
     # And 'cars' key
     if 'cars' not in full_config:
         full_config['cars'] = {}
+        # Add minimal car config if missing, to prevent crashes
+        full_config['cars']['mercedes_eqv'] = {'capacity_kwh': 90, 'max_charge_kw': 11}
+        full_config['cars']['nissan_leaf'] = {'capacity_kwh': 40, 'max_charge_kw': 6.6}
 
     return full_config
 
@@ -281,6 +283,8 @@ def api_plan():
             # This is duplicating logic but ensures UI matches current config.
             
             # Simulate getting the car object (need full config for that)
+            # Rerunning load_config here for the car objects
+            full_merged_config = _load_full_config_for_optimizer() # Reload config, now it will include merged user settings
             if priority_car_from_state['id'] == 'mercedes_eqv':
                 car_obj = MercedesEQV(full_merged_config['cars']['mercedes_eqv'])
             else: # nissan_leaf

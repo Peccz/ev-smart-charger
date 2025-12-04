@@ -4,6 +4,6 @@ pandas
 pydantic
 schedule
 python-dateutil
-pycarwings2
 flask
 gunicorn
+kamereon-python
