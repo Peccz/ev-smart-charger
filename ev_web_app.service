@@ -6,7 +6,8 @@ After=network.target
 Type=simple
 User=peccz
 WorkingDirectory=/home/peccz/ev_smart_charger
-# Use gunicorn for production performance
+# Set python path so it finds 'connectors' etc
+Environment=PYTHONPATH=/home/peccz/ev_smart_charger/src
 ExecStart=/home/peccz/ev_smart_charger/venv/bin/gunicorn --bind 0.0.0.0:5000 src.web_app:app
 Restart=on-failure
 StandardOutput=journal
