@@ -81,8 +81,9 @@ ssh $RPI_USER@$RPI_HOST << EOF
     rm -rf venv # Ensure a clean venv
     python3 -m venv venv
     
-    # Install requirements
-    ./venv/bin/pip install -r requirements.txt --quiet
+    # Install requirements - THIS TIME, SHOW OUTPUT!
+    echo "Installing Python requirements. This may take a while..."
+    ./venv/bin/pip install -r requirements.txt
     
     echo "Updating Services..."
     sudo cp $SERVICE_CORE /etc/systemd/system/
