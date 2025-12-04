@@ -20,8 +20,8 @@ echo -e "${YELLOW}=======================================${NC}"
 echo -e "\n${YELLOW}[1/3] Pushing to GitHub...${NC}"
 if [[ -n $(git status -s) ]]; then
     git add .
-    read -p "Enter commit message: " msg
-    git commit -m "$msg"
+    # Use a default message if running non-interactively
+    git commit -m "Auto-deploy updates" 
     git push
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Code pushed successfully${NC}"
@@ -38,7 +38,7 @@ echo -e "\n${YELLOW}[2/3] Deploying to Raspberry Pi...${NC}"
 echo "Connecting to $RPI_USER@$RPI_HOST..."
 
 ssh $RPI_USER@$RPI_HOST << EOF
-    # Create directory if it doesn't exist (first run)
+    # Create directory if it doesn't exist
     if [ ! -d "$RPI_DIR" ]; then
         echo "Cloning repository..."
         git clone https://github.com/Peccz/ev-smart-charger.git $RPI_DIR
@@ -49,19 +49,23 @@ ssh $RPI_USER@$RPI_HOST << EOF
     echo "Pulling latest changes..."
     git pull
     
-    echo "Installing/Updating dependencies..."
-    # Using system python or create venv if you prefer
-    pip install -r requirements.txt --quiet
-    
-    echo "Restarting service..."
-    # Check if service file exists in systemd, if not copy it
-    if [ ! -f "/etc/systemd/system/$SERVICE_NAME" ]; then
-        echo "Installing service file..."
-        sudo cp $SERVICE_NAME /etc/systemd/system/
-        sudo systemctl daemon-reload
-        sudo systemctl enable $SERVICE_NAME
+    echo "Setting up Virtual Environment..."
+    # Create venv if it doesn't exist
+    if [ ! -d "venv" ]; then
+        python3 -m venv venv
+        echo "Created new venv"
     fi
     
+    # Install requirements inside venv
+    ./venv/bin/pip install -r requirements.txt --quiet
+    
+    echo "Updating Service..."
+    # Copy service file to systemd
+    sudo cp $SERVICE_NAME /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable $SERVICE_NAME
+    
+    echo "Restarting Service..."
     sudo systemctl restart $SERVICE_NAME
 EOF
 
@@ -74,7 +78,9 @@ fi
 
 # 3. Verify Status
 echo -e "\n${YELLOW}[3/3] Verifying Service Status...${NC}"
-ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_NAME --no-pager | head -n 10"
+# Wait a moment for service to start up or fail
+sleep 3
+ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_NAME --no-pager"
 
 echo -e "\n${GREEN}=======================================${NC}"
 echo -e "${GREEN}   🚀 Deployment Complete!             ${NC}"

@@ -5,12 +5,14 @@ After=network.target
 [Service]
 Type=simple
 User=peccz
-WorkingDirectory=/home/peccz/AI/ev_smart_charger
-# Point this to your python executable. If using venv: /home/peccz/AI/ev_smart_charger/venv/bin/python
-ExecStart=/usr/bin/python3 /home/peccz/AI/ev_smart_charger/src/main.py
+WorkingDirectory=/home/peccz/ev_smart_charger
+# Use the Python executable from the virtual environment
+ExecStart=/home/peccz/ev_smart_charger/venv/bin/python src/main.py
 Restart=on-failure
-StandardOutput=append:/home/peccz/AI/ev_smart_charger/ev_charger.log
-StandardError=append:/home/peccz/AI/ev_smart_charger/ev_charger.log
+# Use standard syslog identifiers instead of direct file writing to avoid permission issues
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ev_smart_charger
 
 [Install]
 WantedBy=multi-user.target
