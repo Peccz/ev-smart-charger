@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 import pycarwings2
 import requests
+import json # Import json for json.decoder.JSONDecodeError
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,9 @@ class HomeAssistantClient:
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            logger.info(f"HA: Received data for {entity_id}: {data}")
+            return data
         except requests.exceptions.RequestException as e:
             logger.error(f"HA: Error fetching state for {entity_id} from HA: {e}")
             return None
@@ -144,8 +147,8 @@ class NissanLeaf(Vehicle):
 
             logger.info("NissanLeaf: Login successful. Leaf object obtained.")
             return True
-        except pycarwings2.Pycarwings2Error as e:
-            logger.error(f"NissanLeaf: pycarwings2 specific Login Failed: {e}. Check credentials or region.")
+        except pycarwings2.CarwingsError as e: # Corrected exception type
+            logger.error(f"NissanLeaf: pycarwings2 Login Failed: {e}. Check credentials or region.")
             return False
         except requests.exceptions.RequestException as e:
             logger.error(f"NissanLeaf: Network/Request Error during login: {e}")
