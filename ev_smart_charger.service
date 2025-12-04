@@ -1,0 +1,16 @@
+[Unit]
+Description=EV Smart Charger Optimizer
+After=network.target
+
+[Service]
+Type=simple
+User=peccz
+WorkingDirectory=/home/peccz/AI/ev_smart_charger
+# Point this to your python executable. If using venv: /home/peccz/AI/ev_smart_charger/venv/bin/python
+ExecStart=/usr/bin/python3 /home/peccz/AI/ev_smart_charger/src/main.py
+Restart=on-failure
+StandardOutput=append:/home/peccz/AI/ev_smart_charger/ev_charger.log
+StandardError=append:/home/peccz/AI/ev_smart_charger/ev_charger.log
+
+[Install]
+WantedBy=multi-user.target

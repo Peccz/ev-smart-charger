@@ -1,0 +1,37 @@
+location:
+  city: "Upplands Väsby"
+  latitude: 59.5196
+  longitude: 17.9285
+  timezone: "Europe/Stockholm"
+
+grid:
+  provider: "Eon"
+  region: "SE3"
+  # Add tariff details here later if needed
+
+greenely:
+  # Greenely uses spot prices, often accessible via public APIs or custom integration
+  enabled: true
+
+cars:
+  mercedes_eqv:
+    vin: ""
+    capacity_kwh: 90  # Update with exact usable capacity
+    max_charge_rate_kw: 11
+    target_soc: 80
+    
+  nissan_leaf:
+    vin: ""
+    capacity_kwh: 40 # Update depending on model year (40 or 62)
+    max_charge_rate_kw: 6.6
+    target_soc: 80
+
+charger:
+  zaptec:
+    username: ""
+    password: ""
+    installation_id: ""
+    
+optimization:
+  price_buffer_threshold: 0.10 # Charge extra if price is 10% below average
+  planning_horizon_days: 3
