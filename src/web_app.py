@@ -7,7 +7,7 @@ import pandas as pd
 
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
-# from connectors.mercedes_api.token_client import MercedesTokenClient # Removed
+# Removed Mercedes App API related imports as they are not used now
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 app.secret_key = "super_secret_key_change_me" 
@@ -96,8 +96,6 @@ def get_optimizer_state():
     except:
         return {}
 
-# --- Removed Mercedes App API Routes ---
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -115,7 +113,7 @@ def api_status():
     settings = get_settings()
     overrides = get_overrides()
     state = get_optimizer_state()
-    manual_status = get_manual_status()
+    manual_status = get_manual_status() # Always load manual status
     
     cars = []
     for k, v in state.items():
@@ -130,21 +128,42 @@ def api_status():
     cars_data = {}
     
     def build_car(name, key_id, target_key):
-        car_state = state.get(name, {})
-        if not car_state:
-             for k, v in state.items():
-                 if name.split()[0] in k:
-                     car_state = v
-                     break
+        car_state = state.get(name, {}) # This is the source from optimizer_state.json
         
+        # Prioritize SOC from optimizer_state.json
+        soc = car_state.get('soc', 0) # Default to 0 if not found in optimizer state
+        
+        # If optimizer_state has 0% (or mock 45% if we used that), then use manual value
+        # if the manual value is different and more recent.
+        manual_val_data = manual_status.get(key_id, {})
+        manual_soc = manual_val_data.get('soc')
+        manual_updated_at_str = manual_val_data.get('updated_at')
+        
+        # Decide which SOC to display in UI and use for logic
+        display_soc = soc 
+        display_manual_soc = manual_soc if manual_soc is not None else soc
+        
+        # Logic to use manual_soc if optimizer_state is 0 and manual is available
+        # or if optimizer_state is outdated compared to manual
+        if manual_soc is not None:
+            optimizer_updated_at_str = car_state.get('last_updated')
+            
+            # Compare update times if both are available
+            if manual_updated_at_str and optimizer_updated_at_str:
+                manual_updated_at = datetime.fromisoformat(manual_updated_at_str)
+                optimizer_updated_at = datetime.fromisoformat(optimizer_updated_at_str)
+                if manual_updated_at > optimizer_updated_at and soc == 0: # Use manual if newer AND optimizer is 0
+                    display_soc = manual_soc
+                elif soc == 0 and manual_soc is not None: # If optimizer reports 0 and manual has a value
+                    display_soc = manual_soc
+            elif soc == 0 and manual_soc is not None: # If optimizer reports 0 and manual has a value (no timestamps to compare)
+                display_soc = manual_soc
+
+
+        # Now, fetch other details from car_state or settings
         target = settings.get(target_key, 80)
-        soc = car_state.get('soc', 0)
         plugged_in = car_state.get('plugged_in', False)
         urgency = car_state.get('urgency_score', 0)
-        
-        manual_val = manual_status.get(key_id, {}).get('soc', soc) # Use actual soc if manual not set
-        if soc == 45 or soc == 0: # If mock or no data, use manual value
-            soc = manual_val
         
         is_priority = (key_id == priority_car_id)
         needs_plugging = False
@@ -172,8 +191,8 @@ def api_status():
         return {
             "name": name,
             "id": key_id,
-            "soc": soc,
-            "manual_soc": manual_val, # Send this to UI
+            "soc": display_soc, # Use the determined display_soc
+            "manual_soc": display_manual_soc, # Ensure UI slider shows something reasonable
             "target": target,
             "plugged_in": plugged_in,
             "override": overrides.get(key_id),
@@ -228,7 +247,7 @@ def api_plan():
             analysis.append(f"Planerar laddning för {priority_car['name']}.")
             analysis.append(f"Behov: {hours_needed} timmar.")
             analysis.append(f"Starttid: {start_time_fmt}.")
-            analysis.append(f"Valde billigaste timmarna (Snitt: {df_sorted.head(hours_needed)['price_sek'].mean():.2f} kr).")
+            analysis.append(f"Valde billigaste timmarna (Snitt: {df_sorted.head(cheapest_hours)['price_sek'].mean():.2f} kr).")
         else:
             charging_plan = [0] * len(prices)
             analysis.append("Inget laddbehov just nu.")
