@@ -119,9 +119,9 @@ class NissanLeaf(Vehicle):
         self.session = None
 
     def _login(self):
-        logger.info("NissanLeaf: Attempting login.")
+        logger.info(f"NissanLeaf: Attempting login for user: {self.username}")
         if not self.username or not self.password:
-            logger.error("NissanLeaf: Credentials missing.")
+            logger.error("NissanLeaf: Credentials missing from config.")
             return False
         try:
             self.session = pycarwings2.Session(self.username, self.password, self.region)
