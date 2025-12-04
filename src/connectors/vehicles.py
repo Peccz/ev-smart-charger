@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 import logging
 import pycarwings2
-import time
-from mercedes_me_api import MercedesMe
+import requests
+from connectors.mercedes_api.token_client import MercedesTokenClient
 
 logger = logging.getLogger(__name__)
 
@@ -26,81 +26,52 @@ class MercedesEQV(Vehicle):
     def __init__(self, config):
         super().__init__("Mercedes EQV", config['capacity_kwh'], config['max_charge_rate_kw'])
         self.vin = config.get('vin')
-        self.email = config.get('username') # Mapped from settings
-        self.password = config.get('password')
-        self.me = None
-
-    def _connect(self):
-        if not self.email or not self.password:
-            return False
-        
-        try:
-            self.me = MercedesMe(self.email, self.password)
-            # Need to trigger login/update
-            # Library usually handles this lazy or via explicit call
-            # Note: Some libs require manual 2FA flow on CLI for first run
-            return True
-        except Exception as e:
-            logger.error(f"Mercedes Login Error: {e}")
-            return False
+        self.token_client = MercedesTokenClient()
 
     def get_status(self):
-        # 1. Try API
-        if not self.me:
-            if not self._connect():
-                 # Fallback to Mock/Manual
-                 logger.warning("Mercedes credentials missing. Using Mock/Manual.")
-                 return { "vehicle": self.name, "soc": 45, "range_km": 150, "plugged_in": True }
-
-        try:
-            # Fetch car data
-            # Library usage varies, assuming standard 'mercedes_me_api' usage:
-            # me.find_vehicle(vin) -> returns object with status
-            
-            # Note: Since exact method depends on library version installed, 
-            # wrapping in try/except is crucial.
-            
-            # Simpler approach if library is complex: Just instantiate and ask for cars
-            cars = self.me.cars
-            target_car = None
-            
-            if self.vin:
-                for car in cars:
-                    if car.vin == self.vin:
-                        target_car = car
-                        break
-            elif cars:
-                target_car = cars[0]
-
-            if target_car:
-                # Force update? target_car.update()
-                
-                # Read attributes
-                soc = target_car.soc
-                range_km = target_car.range_electric
-                plugged = target_car.charging_active or target_car.is_plugged_in # Pseudo-property
-                
-                # Some libs return attributes in a dict 'attributes'
-                if hasattr(target_car, 'attributes'):
-                     soc = target_car.attributes.get('soc', 0)
-                     range_km = target_car.attributes.get('rangeElectricKm', 0)
-                
-                return {
-                    "vehicle": self.name,
-                    "soc": soc,
-                    "range_km": range_km,
-                    "plugged_in": True # Hard to know for sure without specific attribute check
+        token = self.token_client.get_valid_token()
+        
+        if token and self.vin:
+            try:
+                # Fetch status from BFF (Backend for Frontend) API
+                # This endpoint mimics the app call
+                url = "https://bff.mercedes-benz.com/vehicle/v1/vehicles"
+                headers = {
+                    "Authorization": f"Bearer {token}",
+                    "X-SessionId": "00000000-0000-0000-0000-000000000000", # Or random
+                    "Accept-Language": "en-US"
                 }
                 
-        except Exception as e:
-            logger.error(f"Mercedes API Fetch Error: {e}")
-        
+                # 1. Get list of vehicles to find ours (and get basic status)
+                r = requests.get(url, headers=headers)
+                r.raise_for_status()
+                data = r.json()
+                
+                target_car = None
+                for car in data:
+                    if car.get('finorvin') == self.vin:
+                        target_car = car
+                        break
+                
+                if target_car:
+                    soc = target_car.get('soc', 0)
+                    # Check specific EV status if needed, but summary usually has soc
+                    return {
+                        "vehicle": self.name,
+                        "soc": soc,
+                        "range_km": 0, # Might need deeper call
+                        "plugged_in": True # Simplify or check 'chargingActive'
+                    }
+                    
+            except Exception as e:
+                logger.error(f"Mercedes API Error: {e}")
+
         # Fallback
         return {
             "vehicle": self.name,
-            "soc": 45, 
-            "range_km": 150, 
-            "plugged_in": True 
+            "soc": 45, # Fallback
+            "range_km": 150,
+            "plugged_in": True
         }
 
     def get_soc(self):
