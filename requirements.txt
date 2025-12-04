@@ -6,4 +6,3 @@ schedule
 python-dateutil
 flask
 gunicorn
-kamereon-python

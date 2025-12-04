@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 import logging
+# Removed pycarwings2 as it's not working reliably
+# Removed kamereon_python as it's not working reliably
 import requests
-import json # Import json for json.decoder.JSONDecodeError
-
-# Import the new Kamereon client
-from kamereon_python import KamereonClient, NissanConnectVehicle # Adjust import based on library structure
 
 logger = logging.getLogger(__name__)
 
@@ -117,92 +115,20 @@ class NissanLeaf(Vehicle):
         self.username = config.get('username')
         self.password = config.get('password')
         self.region = config.get('region', 'NE') # Default to Europe
-        self.kamereon_client = None
-        self.nissan_vehicle = None
-        self.kamereon_enabled = False
-
-        if self.username and self.password:
-            self.kamereon_enabled = True
-            logger.info("NissanLeaf: Kamereon client enabled with credentials.")
-        else:
-            logger.warning("NissanLeaf: Kamereon credentials missing. Will rely on manual input.")
-
-    def _connect(self):
-        if not self.kamereon_enabled:
-            return False
-
-        logger.info(f"NissanLeaf: Attempting connection for user: {self.username}")
-        if not self.username or not self.password:
-            logger.error("NissanLeaf: Credentials missing from config.")
-            self.kamereon_enabled = False # Disable further attempts
-            return False
         
-        try:
-            # KamereonClient expects email, password, and optional region code
-            self.kamereon_client = KamereonClient(self.username, self.password, self.region)
-            self.kamereon_client.connect() # Establish connection and get token
-            logger.info("NissanLeaf: KamereonClient connected.")
-
-            # Get the vehicle object
-            vehicles = self.kamereon_client.get_vehicles()
-            if not vehicles:
-                logger.error("NissanLeaf: No vehicles found for this account.")
-                self.kamereon_enabled = False
-                return False
-            
-            if self.vin:
-                # Filter by VIN if provided
-                for v in vehicles:
-                    if v.vin == self.vin:
-                        self.nissan_vehicle = v
-                        break
-                if not self.nissan_vehicle:
-                    logger.error(f"NissanLeaf: Vehicle with VIN {self.vin} not found.")
-                    self.kamereon_enabled = False
-                    return False
-            else:
-                # Take the first vehicle if VIN not specified
-                self.nissan_vehicle = vehicles[0]
-                logger.info(f"NissanLeaf: Using first vehicle found: {self.nissan_vehicle.vin}")
-            
-            logger.info("NissanLeaf: Vehicle object obtained.")
-            return True
-
-        except Exception as e:
-            logger.error(f"NissanLeaf: Kamereon connection failed: {e}. Check credentials, VIN, or API changes.")
-            self.kamereon_enabled = False # Disable on failure
-            return False
+        # We no longer attempt Kamereon login, always rely on manual input
+        logger.warning("NissanLeaf: Kamereon API disabled. Will rely on manual input for SoC.")
 
     def get_status(self):
-        logger.info("NissanLeaf: Attempting to get status.")
-        if not self.kamereon_enabled:
-            logger.warning("NissanLeaf: Kamereon is disabled. Using fallback mock data.")
-            return {"vehicle": self.name, "soc": 0, "range_km": 0, "plugged_in": False, "error": "Kamereon disabled"}
-
-        if not self.kamereon_client or not self.nissan_vehicle:
-            if not self._connect():
-                logger.warning("NissanLeaf: Connection failed. Using fallback mock data.")
-                return {"soc": 0, "range_km": 0, "plugged_in": False, "error": "Connection failed"}
-            
-        try:
-            # Fetch fresh data from the vehicle
-            self.nissan_vehicle.update_status() # This method updates internal state
-            
-            soc = self.nissan_vehicle.battery_level
-            # Kamereon API can provide charging status
-            plugged_in = self.nissan_vehicle.is_charging or self.nissan_vehicle.is_plugged_in # Check relevant attributes
-            range_km = self.nissan_vehicle.range_electric
-
-            logger.info(f"NissanLeaf: API data received: SOC={soc}, Plugged={plugged_in}, Range={range_km}")
-            return {
-                "vehicle": self.name,
-                "soc": int(soc),
-                "range_km": int(range_km),
-                "plugged_in": plugged_in
-            }
-        except Exception as e:
-            logger.error(f"NissanLeaf: Status Fetch Error: {e}. Using fallback mock data.")
-            return {"soc": 0, "range_km": 0, "plugged_in": False, "error": str(e)}
+        # We no longer attempt Kamereon login, always fallback to manual/mock
+        logger.warning("NissanLeaf: API connection disabled. Using fallback mock data (0% for display).")
+        return {
+            "vehicle": self.name,
+            "soc": 0, 
+            "range_km": 0, 
+            "plugged_in": False, 
+            "error": "API disabled, use manual SoC."
+        }
 
     def get_soc(self):
         s = self.get_status()
