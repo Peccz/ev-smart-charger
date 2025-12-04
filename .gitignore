@@ -8,5 +8,7 @@ env/
 *.log
 *.db
 .DS_Store
-# Keep settings.yaml for now as it is a template, but be careful with real passwords later
-# config/settings.yaml 
+# Ignore the real settings file containing passwords
+config/settings.yaml
+# Keep the template if we create one
+!config/settings.template.yaml

@@ -4,3 +4,4 @@ pandas
 pydantic
 schedule
 python-dateutil
+pycarwings2

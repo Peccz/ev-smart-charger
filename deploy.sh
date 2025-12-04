@@ -6,35 +6,47 @@ RPI_HOST="100.100.118.62"
 RPI_DIR="ev_smart_charger"
 SERVICE_NAME="ev_smart_charger.service"
 
-# Colors
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
-
-echo -e "${YELLOW}=======================================${NC}"
-echo -e "${YELLOW}   EV Smart Charger - Auto Deploy      ${NC}"
-echo -e "${YELLOW}=======================================${NC}"
+echo "======================================="
+echo "   EV Smart Charger - Auto Deploy      "
+echo "======================================="
 
 # 1. Push to GitHub
-echo -e "\n${YELLOW}[1/3] Pushing to GitHub...${NC}"
+echo "[1/4] Pushing to GitHub..."
 if [[ -n $(git status -s) ]]; then
     git add .
-    # Use a default message if running non-interactively
     git commit -m "Auto-deploy updates" 
     git push
     if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ Code pushed successfully${NC}"
+        echo "Code pushed successfully"
     else
-        echo -e "${RED}✗ Git push failed${NC}"
+        echo "Git push failed"
         exit 1
     fi
 else
-    echo -e "${GREEN}✓ No local changes to push${NC}"
+    echo "No local changes to push"
 fi
 
-# 2. Deploy to Raspberry Pi
-echo -e "\n${YELLOW}[2/3] Deploying to Raspberry Pi...${NC}"
+# 2. Copy Secrets (Directly via SCP, skipping GitHub)
+echo "[2/4] Copying configuration secrets to RPi..."
+if [ -f "config/settings.yaml" ]; then
+    # Create config dir if not exists
+    ssh $RPI_USER@$RPI_HOST "mkdir -p $RPI_DIR/config"
+    
+    # SCP the file
+    scp config/settings.yaml $RPI_USER@$RPI_HOST:$RPI_DIR/config/settings.yaml
+    
+    if [ $? -eq 0 ]; then
+        echo "Settings file copied successfully"
+    else
+        echo "Failed to copy settings file"
+        exit 1
+    fi
+else
+    echo "Warning: config/settings.yaml not found locally!"
+fi
+
+# 3. Deploy Code on Raspberry Pi
+echo "[3/4] Deploying code on Raspberry Pi..."
 echo "Connecting to $RPI_USER@$RPI_HOST..."
 
 ssh $RPI_USER@$RPI_HOST << EOF
@@ -50,7 +62,6 @@ ssh $RPI_USER@$RPI_HOST << EOF
     git pull
     
     echo "Setting up Virtual Environment..."
-    # Create venv if it doesn't exist
     if [ ! -d "venv" ]; then
         python3 -m venv venv
         echo "Created new venv"
@@ -60,7 +71,6 @@ ssh $RPI_USER@$RPI_HOST << EOF
     ./venv/bin/pip install -r requirements.txt --quiet
     
     echo "Updating Service..."
-    # Copy service file to systemd
     sudo cp $SERVICE_NAME /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable $SERVICE_NAME
@@ -70,18 +80,17 @@ ssh $RPI_USER@$RPI_HOST << EOF
 EOF
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✓ Deployment commands executed${NC}"
+    echo "Deployment commands executed"
 else
-    echo -e "${RED}✗ Deployment failed${NC}"
+    echo "Deployment failed"
     exit 1
 fi
 
-# 3. Verify Status
-echo -e "\n${YELLOW}[3/3] Verifying Service Status...${NC}"
-# Wait a moment for service to start up or fail
+# 4. Verify Status
+echo "[4/4] Verifying Service Status..."
 sleep 3
 ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_NAME --no-pager"
 
-echo -e "\n${GREEN}=======================================${NC}"
-echo -e "${GREEN}   🚀 Deployment Complete!             ${NC}"
-echo -e "${GREEN}=======================================${NC}"
+echo "======================================="
+echo "   Deployment Complete!                "
+echo "======================================="
