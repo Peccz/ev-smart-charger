@@ -8,5 +8,3 @@ pycarwings2
 flask
 gunicorn
 requests-oauthlib
-# Trying xraver fork
-https://github.com/xraver/mercedes_me_api/archive/master.zip
