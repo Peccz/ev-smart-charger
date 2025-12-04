@@ -58,26 +58,25 @@ ssh $RPI_USER@$RPI_HOST << EOF
 
     cd $RPI_DIR
     
-    # Backup config just in case git wipeout affects it
-    cp config/settings.yaml /tmp/ev_settings_backup.yaml 2>/dev/null
-    
-    echo "Pulling latest changes..."
+    # --- CLEANUP AND PULL ---
+    # Temporarily move config/settings.yaml to avoid git conflicts
+    if [ -f "config/settings.yaml" ]; then
+        mv config/settings.yaml /tmp/ev_settings_backup.yaml
+    fi
     # Force git to match remote exactly, discarding local changes to tracked files
     git fetch --all
     git reset --hard origin/main
-    
-    # Restore config
+    # Restore config/settings.yaml (or create if it didn't exist)
     if [ -f "/tmp/ev_settings_backup.yaml" ]; then
         mkdir -p config
-        cp /tmp/ev_settings_backup.yaml config/settings.yaml
-        echo "Restored settings.yaml"
+        mv /tmp/ev_settings_backup.yaml config/settings.yaml
+        echo "Restored settings.yaml from backup."
     fi
-    
-    echo "Setting up Virtual Environment..."
-    if [ ! -d "venv" ]; then
-        python3 -m venv venv
-        echo "Created new venv"
-    fi
+    # --- END CLEANUP AND PULL ---
+
+    echo "Recreating Virtual Environment..."
+    rm -rf venv # Ensure a clean venv
+    python3 -m venv venv
     
     # Install requirements
     ./venv/bin/pip install -r requirements.txt --quiet
