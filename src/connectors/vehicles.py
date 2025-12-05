@@ -163,11 +163,19 @@ class MercedesEQV(Vehicle):
                         except ValueError:
                             pass
 
-                    logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Odometer={odometer}")
+                    range_km = 0
+                    range_state = self.ha_client.get_state("sensor.urg48t_range_electric") # Get range from dedicated sensor
+                    if range_state and 'state' in range_state:
+                        try:
+                            range_km = int(float(range_state['state']))
+                        except ValueError:
+                            pass
+
+                    logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Odometer={odometer}, Range={range_km}km")
                     return {
                         "vehicle": self.name,
                         "soc": int(soc),
-                        "range_km": int(state.get('attributes', {}).get('range', 0)), # Range is often in SoC attributes
+                        "range_km": range_km, 
                         "plugged_in": plugged_in,
                         "odometer": odometer
                     }
@@ -250,13 +258,23 @@ class NissanLeaf(Vehicle):
                                 range_km = int(float(range_state['state']))
                             except ValueError:
                                 pass
+                    
+                    odometer = 0
+                    odometer_state = self.ha_client.get_state("sensor.leaf_odometer") # Assuming this exists
+                    if odometer_state and 'state' in odometer_state:
+                        try:
+                            odometer = int(float(odometer_state['state']))
+                        except ValueError:
+                            pass
 
-                    logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km")
+
+                    logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km, Odometer={odometer}")
                     return {
                         "vehicle": self.name,
                         "soc": int(soc),
                         "range_km": range_km,
-                        "plugged_in": plugged_in
+                        "plugged_in": plugged_in,
+                        "odometer": odometer
                     }
                 except ValueError:
                     logger.error(f"NissanLeaf: HA SoC state is not a number: {state['state']}. Using fallback.")
