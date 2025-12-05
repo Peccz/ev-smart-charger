@@ -180,6 +180,13 @@ def api_status():
     state = get_optimizer_state()
     manual_status = get_manual_status() # Always load manual status
     
+    # Initialize Optimizer and fetch prices for dynamic target calculation
+    full_merged_config = _load_full_config_for_optimizer() # Use the new loader
+    optimizer = Optimizer(full_merged_config)
+    official_prices = spot_service.get_prices_upcoming()
+    weather_forecast = weather_service.get_forecast()
+    prices_with_forecast = optimizer._generate_price_forecast(official_prices, weather_forecast)
+    
     cars = []
     for k, v in state.items():
         v['name'] = k
@@ -192,7 +199,7 @@ def api_status():
 
     cars_data = {}
     
-    def build_car(name, key_id, target_key):
+    def build_car(name, key_id): # Removed target_key as target is now dynamic
         car_state = state.get(name, {}) # This is the source from optimizer_state.json
         
         # Prioritize SOC from optimizer_state.json
@@ -224,9 +231,11 @@ def api_status():
             elif soc == 0 and manual_soc is not None: # If optimizer reports 0 and manual has a value (no timestamps to compare)
                 display_soc = manual_soc
 
-
+        # Dynamically calculate the target SoC for display
+        dynamic_target_soc, current_mode = optimizer._calculate_dynamic_target(key_id, prices_with_forecast)
+        
         # Now, fetch other details from car_state or settings
-        target = settings.get(target_key, 80)
+        # target = settings.get(target_key, 80) # No longer needed, using dynamic_target_soc
         min_soc = settings.get(f"{key_id}_min_soc", 40)
         max_soc = settings.get(f"{key_id}_max_soc", 80)
 
@@ -261,7 +270,8 @@ def api_status():
             "id": key_id,
             "soc": display_soc, # Use the determined display_soc
             "manual_soc": display_manual_soc, # Ensure UI slider shows something reasonable
-            "target": target,
+            "target": dynamic_target_soc, # THIS IS THE DYNAMICALLY CALCULATED TARGET
+            "target_mode": current_mode, # Pass the mode for future use if needed
             "min_soc": min_soc,
             "max_soc": max_soc,
             "plugged_in": plugged_in,
@@ -276,8 +286,8 @@ def api_status():
             "start_time_text": start_time_text
         }
 
-    cars_data['mercedes'] = build_car("Mercedes EQV", "mercedes_eqv", "mercedes_target")
-    cars_data['nissan'] = build_car("Nissan Leaf", "nissan_leaf", "nissan_target")
+    cars_data['mercedes'] = build_car("Mercedes EQV", "mercedes_eqv")
+    cars_data['nissan'] = build_car("Nissan Leaf", "nissan_leaf")
     
     return jsonify({
         "cars": cars_data,
