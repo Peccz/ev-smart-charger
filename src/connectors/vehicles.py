@@ -151,8 +151,8 @@ class MercedesEQV(Vehicle):
                             elif 'chargingstatus' in attrs:
                                 val = str(attrs['chargingstatus']).lower()
                                 logger.info(f"MercedesEQV: Raw plugged status attribute value for {self.ha_merc_plugged_entity_id} (chargingstatus): '{val}'")
-                                # Based on observed '3' when unplugged, let's assume 0 and 3 are unplugged
-                                if val not in ['0', '3', 'disconnected', 'null', 'off', 'unavailable', 'unknown']:
+                                # Based on observations: 0=Charging/Connected, 3=Disconnected (or unknown state mapped to disconnected)
+                                if val not in ['3', 'disconnected', 'null', 'off', 'unavailable', 'unknown']:
                                     plugged_in = True
                             
                             logger.info(f"MercedesEQV: Plugged check ({self.ha_merc_plugged_entity_id} attributes) -> {plugged_in}")

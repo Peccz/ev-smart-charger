@@ -81,7 +81,7 @@ def main():
                 # Compare state
                 if old['state'] != entity['state']:
                     msg = f"[{timestamp}] {eid}: STATE changed '{old['state']}' -> '{entity['state']}'"
-                    print(msg)
+                    print(msg, flush=True)
                     with open(LOG_FILE, "a") as f: f.write(msg + "\n")
                     changes_found = True
                 
@@ -93,13 +93,13 @@ def main():
                     new_val = entity.get('attributes', {}).get(attr)
                     if old_val != new_val:
                         msg = f"[{timestamp}] {eid}: ATTR '{attr}' changed '{old_val}' -> '{new_val}'"
-                        print(msg)
+                        print(msg, flush=True)
                         with open(LOG_FILE, "a") as f: f.write(msg + "\n")
                         changes_found = True
 
             else:
                 msg = f"[{timestamp}] New entity found: {eid} = {entity['state']}"
-                print(msg)
+                print(msg, flush=True)
                 with open(LOG_FILE, "a") as f: f.write(msg + "\n")
         
         # Update last states
