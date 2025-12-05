@@ -106,7 +106,7 @@ def _load_full_config_for_optimizer():
     merc_base = full_config['cars'].get('mercedes_eqv', {})
     full_config['cars']['mercedes_eqv'] = {
         'capacity_kwh': merc_base.get('capacity_kwh', 90),
-        'max_charge_kw': merc_base.get('max_charge_kw', 11),
+        'max_charge_kw': merc_base.get('max_charge_kw', merc_base.get('max_charge_rate_kw', 11)),
         'vin': merc_base.get('vin'),
         'target_soc': user_settings.get('mercedes_eqv_target', user_settings.get('mercedes_target', merc_base.get('target_soc', 80))),
         'min_soc': user_settings.get('mercedes_eqv_min_soc', 40),
@@ -123,7 +123,7 @@ def _load_full_config_for_optimizer():
     nis_base = full_config['cars'].get('nissan_leaf', {})
     full_config['cars']['nissan_leaf'] = {
         'capacity_kwh': nis_base.get('capacity_kwh', 40),
-        'max_charge_kw': nis_base.get('max_charge_kw', 3.7),
+        'max_charge_kw': nis_base.get('max_charge_kw', nis_base.get('max_charge_rate_kw', 3.7)),
         'vin': user_settings.get('nissan_vin', nis_base.get('vin')),
         'target_soc': user_settings.get('nissan_leaf_target', user_settings.get('nissan_target', nis_base.get('target_soc', 80))),
         'min_soc': user_settings.get('nissan_leaf_min_soc', 40),

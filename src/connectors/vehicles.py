@@ -142,6 +142,7 @@ class MercedesEQV(Vehicle):
                         plug_state = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
                         if plug_state and 'state' in plug_state:
                             val = str(plug_state['state']).lower()
+                            logger.info(f"MercedesEQV: Raw plugged state value for {self.ha_merc_plugged_entity_id}: '{val}'")
                             # Common values for "Not Plugged": 0, off, unknown, unavailable, disconnected
                             if val not in ['0', 'off', 'unknown', 'unavailable', 'disconnected', 'null']:
                                 plugged_in = True

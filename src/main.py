@@ -85,7 +85,7 @@ def load_config():
     mercedes_final_config = {
         'vin': merc_config_from_yaml.get('vin'),
         'capacity_kwh': merc_config_from_yaml.get('capacity_kwh', 90),
-        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw', 11),
+        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw', merc_config_from_yaml.get('max_charge_rate_kw', 11)),
         'target_soc': user_settings.get('mercedes_target', merc_config_from_yaml.get('target_soc', 80)),
         'ha_url': user_settings.get('ha_url'),
         'ha_token': user_settings.get('ha_token'),
@@ -98,7 +98,7 @@ def load_config():
     nissan_final_config = {
         'vin': user_settings.get('nissan_vin', nissan_config_from_yaml.get('vin')),
         'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh', 40),
-        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw', 3.7),
+        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw', nissan_config_from_yaml.get('max_charge_rate_kw', 3.7)),
         'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)),
         'username': user_settings.get('nissan_username', nissan_config_from_yaml.get('username')),
         'password': user_settings.get('nissan_password', nissan_config_from_yaml.get('password')),
