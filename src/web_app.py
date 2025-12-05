@@ -32,7 +32,8 @@ DEFAULT_SETTINGS = {
     "smart_buffering": True, # Still present, but the new logic mostly replaces it.
     "ha_url": "http://100.100.118.62:8123",
     "ha_token": "",
-    "ha_merc_soc_entity_id": ""
+    "ha_merc_soc_entity_id": "",
+    "ha_merc_plugged_entity_id": ""
 }
 
 spot_service = SpotPriceService()
@@ -112,7 +113,8 @@ def _load_full_config_for_optimizer():
         'max_soc': user_settings.get('mercedes_eqv_max_soc', 80),
         'ha_url': user_settings.get('ha_url'),
         'ha_token': user_settings.get('ha_token'),
-        'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id')
+        'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id'),
+        'ha_merc_plugged_entity_id': user_settings.get('ha_merc_plugged_entity_id')
     }
 
     # Nissan Config Merge

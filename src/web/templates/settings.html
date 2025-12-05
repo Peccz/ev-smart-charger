@@ -101,6 +101,11 @@
             <label class="small text-muted">Mercedes EQV SoC Entitets ID</label>
             <input type="text" class="form-control" id="ha_merc_soc_entity_id" placeholder="sensor.mercedes_eqv_battery_level">
         </div>
+        <div class="mb-3">
+            <label class="small text-muted">Mercedes EQV Status/Plugged ID (Valfritt)</label>
+            <input type="text" class="form-control" id="ha_merc_plugged_entity_id" placeholder="sensor.urg48t_charging_status">
+            <div class="form-text" style="font-size: 0.8em;">Används för att se om kabeln är i (t.ex. sensor.urg48t_charging_status).</div>
+        </div>
         <div class="small text-muted mt-2">Hämtar Mercedes batteristatus från HA.</div>
     </div>
 
@@ -204,6 +209,7 @@
             document.getElementById('ha_url').value = data.ha_url || "http://100.100.118.62:8123";
             document.getElementById('ha_token').value = data.ha_token || "";
             document.getElementById('ha_merc_soc_entity_id').value = data.ha_merc_soc_entity_id || "";
+            document.getElementById('ha_merc_plugged_entity_id').value = data.ha_merc_plugged_entity_id || "";
 
             document.getElementById('nissan_username').value = data.nissan_username || "";
             document.getElementById('nissan_password').value = data.nissan_password || "";
@@ -226,6 +232,7 @@
             ha_url: document.getElementById('ha_url').value,
             ha_token: document.getElementById('ha_token').value,
             ha_merc_soc_entity_id: document.getElementById('ha_merc_soc_entity_id').value,
+            ha_merc_plugged_entity_id: document.getElementById('ha_merc_plugged_entity_id').value,
             nissan_username: document.getElementById('nissan_username').value,
             nissan_password: document.getElementById('nissan_password').value,
             nissan_vin: document.getElementById('nissan_vin').value

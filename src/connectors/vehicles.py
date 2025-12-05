@@ -57,6 +57,7 @@ class MercedesEQV(Vehicle):
         self.ha_url = config.get('ha_url')
         self.ha_token = config.get('ha_token')
         self.ha_merc_soc_entity_id = config.get('ha_merc_soc_entity_id')
+        self.ha_merc_plugged_entity_id = config.get('ha_merc_plugged_entity_id')
         
         self.ha_client = None
         if self.ha_url and self.ha_token:
@@ -75,11 +76,23 @@ class MercedesEQV(Vehicle):
                 try:
                     soc = float(state['state'])
                     plugged_in = False # Default assumption
-                    # Look for common HA attributes for charging/plugged_in status
-                    if state.get('attributes', {}).get('charging', False) or \
-                       state.get('attributes', {}).get('pluggedIn', False) or \
-                       state.get('attributes', {}).get('charge_port_door_closed', False) : # Some integrations use this
+                    
+                    # Check explicitly configured plugged/charging status sensor
+                    if self.ha_merc_plugged_entity_id:
+                        plug_state = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
+                        if plug_state and 'state' in plug_state:
+                            val = str(plug_state['state']).lower()
+                            # Common values for "Not Plugged": 0, off, unknown, unavailable, disconnected
+                            if val not in ['0', 'off', 'unknown', 'unavailable', 'disconnected', 'null']:
+                                plugged_in = True
+                            logger.info(f"MercedesEQV: Plugged check ({self.ha_merc_plugged_entity_id}) = {val} -> {plugged_in}")
+                    
+                    # Fallback: Look for common HA attributes if no explicit sensor provided
+                    elif state.get('attributes', {}).get('charging', False) or \
+                         state.get('attributes', {}).get('pluggedIn', False) or \
+                         state.get('attributes', {}).get('charge_port_door_closed', False) : 
                         plugged_in = True
+                        
                     logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}")
                     return {
                         "vehicle": self.name,
