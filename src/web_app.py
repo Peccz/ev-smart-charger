@@ -35,6 +35,18 @@ DEFAULT_SETTINGS = {
 spot_service = SpotPriceService()
 weather_service = WeatherService(59.5196, 17.9285)
 
+def get_settings():
+    if not os.path.exists(SETTINGS_PATH):
+        return DEFAULT_SETTINGS
+    try:
+        with open(SETTINGS_PATH, 'r') as f:
+            current_settings = json.load(f)
+            # Merge with defaults to ensure new fields exist
+            return {**DEFAULT_SETTINGS, **current_settings}
+    except Exception as e:
+        app.logger.error(f"Error loading user_settings.json: {e}")
+        return DEFAULT_SETTINGS
+
 # --- CONFIGURATION LOADING FOR OPTIMIZER INSTANCE (USED BY WEBAPP) ---
 # This is a function to ensure it loads the complete config
 def _load_full_config_for_optimizer():
@@ -86,19 +98,6 @@ def _load_full_config_for_optimizer():
 
 optimizer_instance = Optimizer(_load_full_config_for_optimizer())
 # --- END CONFIGURATION LOADING ---
-
-
-def get_settings():
-    if not os.path.exists(SETTINGS_PATH):
-        return DEFAULT_SETTINGS
-    try:
-        with open(SETTINGS_PATH, 'r') as f:
-            current_settings = json.load(f)
-            # Merge with defaults to ensure new fields exist
-            return {**DEFAULT_SETTINGS, **current_settings}
-    except Exception as e:
-        app.logger.error(f"Error loading user_settings.json: {e}")
-        return DEFAULT_SETTINGS
 
 def save_settings(settings):
     with open(SETTINGS_PATH, 'w') as f:
