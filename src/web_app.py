@@ -298,6 +298,19 @@ def api_status():
         if plugged_in and car_state.get('action') == 'IDLE' and urgency > 0:
              start_time_text = "Startar senare..."
 
+        # --- UI CONSISTENCY CHECK ---
+        # If settings changed recently, the stored state might say "Target reached" (e.g. 40%)
+        # but the new dynamic target is higher (e.g. 60%). This looks like a bug.
+        # We detect this mismatch and display a "Pending" message instead.
+        display_action = car_state.get('action', 'IDLE')
+        display_reason = car_state.get('reason', '-')
+        
+        if display_soc < dynamic_target_soc and "reached" in str(display_reason):
+            display_action = "PENDING"
+            display_reason = "Mål ändrat. Inväntar nästa beräkning..."
+            # Also clear start time text as it might be invalid
+            start_time_text = ""
+
         return {
             "name": name,
             "id": key_id,
@@ -309,8 +322,8 @@ def api_status():
             "max_soc": max_soc,
             "plugged_in": plugged_in,
             "override": overrides.get(key_id),
-            "action": car_state.get('action', 'IDLE'),
-            "reason": car_state.get('reason', '-'),
+            "action": display_action,
+            "reason": display_reason,
             "urgency_score": urgency,
             "is_priority": is_priority,
             "needs_plugging": needs_plugging,
