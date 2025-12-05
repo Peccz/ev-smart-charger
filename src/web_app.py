@@ -1,3 +1,7 @@
+from flask import Flask, render_template, jsonify, request, redirect, url_for
+import json
+import os
+import math
 from config_manager import ConfigManager, FORECAST_HISTORY_FILE
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
