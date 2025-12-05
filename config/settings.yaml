@@ -14,12 +14,24 @@ cars:
     capacity_kwh: 90  # Update with exact usable capacity
     max_charge_kw: 11 # Max charging power in kW
     target_soc: 80
-    
+    # HomeAssistant Integration
+    ha_url: "http://homeassistant.local:8123"  # Or your HA IP address
+    ha_token: "YOUR_HA_LONG_LIVED_ACCESS_TOKEN"  # Create in HA Profile
+    ha_merc_soc_entity_id: "sensor.mercedes_eqv_battery"  # Entity ID from HA
+    ha_merc_plugged_entity_id: "binary_sensor.mercedes_eqv_plug"  # Optional
+    ha_merc_range_entity_id: "sensor.mercedes_eqv_range"  # Optional
+
   nissan_leaf:
     vin: "" # Optional, usually auto-discovered
     capacity_kwh: 40 # Update depending on model year (40 or 62)
     max_charge_kw: 6.6 # Max charging power in kW
     target_soc: 80
+    # HomeAssistant Integration
+    ha_url: "http://homeassistant.local:8123"  # Or your HA IP address
+    ha_token: "YOUR_HA_LONG_LIVED_ACCESS_TOKEN"  # Same token as above
+    ha_leaf_soc_entity_id: "sensor.nissan_leaf_battery"  # Entity ID from HA
+    ha_leaf_plugged_entity_id: "binary_sensor.nissan_leaf_plug"  # Optional
+    ha_leaf_range_entity_id: "sensor.nissan_leaf_range"  # Optional
 
 charger:
   zaptec:
