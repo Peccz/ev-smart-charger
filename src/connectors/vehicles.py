@@ -269,21 +269,28 @@ class NissanLeaf(Vehicle):
                         range_state = self.ha_client.get_state(self.ha_nissan_range_entity_id)
                         if range_state and 'state' in range_state:
                             try:
-                                                                range_km = int(float(range_state['state']))
-                                                            except ValueError:
-                                                                pass
-                                                    
-                                odometer = 0
-                                                    if self.ha_odometer_id:
-                                                        odometer_state = self.ha_client.get_state(self.ha_odometer_id)
-                                                        if odometer_state and 'state' in odometer_state:
-                                                            try:
-                                                                odometer = int(float(odometer_state['state']))
-                                                            except ValueError:
-                                                                pass
-                                
-                                
-                                                    logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km, Odometer={odometer}")                    return {
+                                range_km = int(float(range_state['state']))
+                            except ValueError:
+                                pass
+                    
+                    odometer = 0
+                    if self.ha_odometer_id:
+                        odometer_state = self.ha_client.get_state(self.ha_odometer_id)
+                        if odometer_state and 'state' in odometer_state:
+                            try:
+                                odometer = int(float(odometer_state['state']))
+                            except ValueError:
+                                pass
+                    
+                    climate_active = False
+                    if self.ha_climate_id:
+                        c_state = self.ha_client.get_state(self.ha_climate_id)
+                        if c_state and 'state' in c_state:
+                            if str(c_state['state']).lower() in ['on', 'true', '1', 'active']:
+                                climate_active = True
+
+                    logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km, Odometer={odometer}")
+                    return {
                         "vehicle": self.name,
                         "soc": int(soc),
                         "range_km": range_km,
