@@ -64,13 +64,22 @@
     let chartInstance = null;
 
     function loadPlan() {
-        fetch('/api/plan')
+        fetch('/api/plan?t=' + new Date().getTime())
             .then(response => response.json())
             .then(data => {
                 renderChart(data.prices, data.plan);
                 renderAnalysis(data.analysis);
             });
     }
+
+    // Reload when tab becomes visible
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'visible') {
+            loadPlan();
+        }
+    });
+    // Also reload on window focus (for some mobile behaviors)
+    window.addEventListener("focus", loadPlan);
 
     function renderAnalysis(items) {
         const list = document.getElementById('analysis-list');

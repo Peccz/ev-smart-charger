@@ -79,13 +79,21 @@
 
 <script>
     function getStatus() {
-        fetch('/api/status')
+        fetch('/api/status?t=' + new Date().getTime())
             .then(response => response.json())
             .then(data => {
                 renderSystemStatus(data);
                 renderCars(data.cars);
             });
     }
+
+    // Refresh immediately when switching back to this tab
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === 'visible') {
+            getStatus();
+        }
+    });
+    window.addEventListener("focus", getStatus);
 
     function renderSystemStatus(data) {
         const bar = document.getElementById('system-status');
