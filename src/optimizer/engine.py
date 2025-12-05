@@ -47,7 +47,7 @@ class Optimizer:
     def _generate_price_forecast(self, current_prices, weather_forecast, forecast_horizon_days=3):
         """
         Extends official price data with a forecast based on historical patterns and weather.
-        Simple model: Assume average price, adjust based on wind speed (low wind = higher price).
+        Includes diurnal cycles (morning/evening peaks) and wind adjustments.
         """
         now = datetime.now()
         forecast_end_time = now + timedelta(days=forecast_horizon_days)
@@ -57,16 +57,33 @@ class Optimizer:
         if not official_prices_df.empty:
             official_prices_df['time_start'] = pd.to_datetime(official_prices_df['time_start'], utc=True).dt.tz_convert('Europe/Berlin').dt.tz_localize(None)
             official_prices_df = official_prices_df.set_index('time_start')
-            # Resample to hourly if we have 15-min data, taking the mean price for the hour
-            # This ensures we have a value for the :00 timestamp that represents the hour
             official_prices_df = official_prices_df.resample('1h').mean()
         
+        # Calculate a realistic base price from recent official data or fallback
+        base_price_sek = official_prices_df['price_sek'].mean() if not official_prices_df.empty else 0.5
+
+        # --- Diurnal Profiles (Hourly Multipliers) ---
+        # 00-23 index
+        weekday_profile = [
+            0.60, 0.55, 0.50, 0.55, 0.65, 0.80, # 00-05 (Night dip)
+            1.10, 1.40, 1.50, 1.30, 1.20, 1.10, # 06-11 (Morning peak)
+            1.05, 1.00, 1.00, 1.10, 1.20, 1.50, # 12-17 (Day/Afternoon start)
+            1.60, 1.50, 1.30, 1.10, 0.90, 0.75  # 18-23 (Evening peak -> Night)
+        ]
+        
+        weekend_profile = [
+            0.65, 0.60, 0.55, 0.55, 0.60, 0.65, # 00-05 (Night dip, flatter)
+            0.70, 0.80, 0.90, 1.00, 1.05, 1.05, # 06-11 (Slow rise)
+            1.00, 0.95, 0.90, 0.95, 1.05, 1.20, # 12-17 (Day)
+            1.30, 1.25, 1.15, 1.05, 0.95, 0.80  # 18-23 (Evening peak, smaller)
+        ]
+
         all_forecast_prices = []
 
         for hour_data in weather_forecast:
-            hour_time = pd.to_datetime(hour_data['time']) # These are naive local times from OpenMeteo (Europe/Berlin requested)
+            hour_time = pd.to_datetime(hour_data['time'])
             
-            if hour_time < now.replace(minute=0, second=0, microsecond=0): # Skip past hours (align to hour start)
+            if hour_time < now.replace(minute=0, second=0, microsecond=0):
                 continue
             
             # If we have an official price, use it
@@ -78,27 +95,29 @@ class Optimizer:
                 })
                 continue
 
-            # If no official price, generate a forecast
-            if hour_time > forecast_end_time: # Only forecast up to desired horizon
+            if hour_time > forecast_end_time:
                 continue
             
-            # Simple heuristic: average price + wind factor
-            base_price_sek = official_prices_df['price_sek'].mean() if not official_prices_df.empty else 0.5 # Fallback to 0.5 SEK
+            # --- FORECAST GENERATION ---
             
-            # Wind speed (use 80m for better correlation with wind power generation)
-            wind_speed = hour_data.get('wind_kmh_80m', 10) # Default to 10 if not available
-
-            # Wind factor: Lower wind = higher price, up to a certain threshold
+            # 1. Wind Factor
+            wind_speed = hour_data.get('wind_kmh_80m', 10)
             wind_price_factor = 1.0
-            if wind_speed < 10: # Low wind (e.g., < 10 km/h)
-                wind_price_factor = 1.0 + (10 - wind_speed) * 0.05 # +5% for every 1 km/h below 10
-            elif wind_speed > 30: # Very high wind (e.g., > 30 km/h)
-                wind_price_factor = 1.0 - (wind_speed - 30) * 0.01 # -1% for every 1 km/h above 30
+            if wind_speed < 10:
+                wind_price_factor = 1.0 + (10 - wind_speed) * 0.05
+            elif wind_speed > 30:
+                wind_price_factor = 1.0 - (wind_speed - 30) * 0.01
 
-            forecasted_price_sek = base_price_sek * wind_price_factor
+            # 2. Diurnal/Time Factor
+            is_weekend = hour_time.weekday() >= 5
+            hour_idx = hour_time.hour
+            time_factor = weekend_profile[hour_idx] if is_weekend else weekday_profile[hour_idx]
+
+            # Calculate final price
+            forecasted_price_sek = base_price_sek * wind_price_factor * time_factor
             
-            # Ensure price is not negative or excessively high
-            forecasted_price_sek = max(0.01, min(forecasted_price_sek, 5.0)) # 0.01 to 5 SEK
+            # Sanity limits
+            forecasted_price_sek = max(0.05, min(forecasted_price_sek, 6.0))
             
             all_forecast_prices.append({
                 "time_start": hour_time,
@@ -106,12 +125,12 @@ class Optimizer:
                 "source": "Forecasted"
             })
         
-        # Sort and remove duplicates (if official prices overlapped)
+        # Sort and clean
         full_price_df = pd.DataFrame(all_forecast_prices)
         if not full_price_df.empty:
             full_price_df = full_price_df.drop_duplicates(subset=['time_start'], keep='first')
             full_price_df = full_price_df.sort_values(by='time_start')
-            full_price_df['time_start'] = full_price_df['time_start'].apply(lambda x: x.isoformat()) # Corrected line
+            full_price_df['time_start'] = full_price_df['time_start'].apply(lambda x: x.isoformat())
             return full_price_df.to_dict(orient='records')
         return []
 
