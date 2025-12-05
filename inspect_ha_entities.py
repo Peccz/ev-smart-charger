@@ -36,18 +36,21 @@ def main():
         response.raise_for_status()
         all_states = response.json()
         
-        print(f"Found {len(all_states)} entities. Filtering for potential Mercedes candidates...")
+        print(f"Found {len(all_states)} entities. Filtering for Mercedes charging/connection indicators...")
         
-        keywords = ["merc", "eqv", "urg", "plug", "charg", "cable", "lock"]
+        keywords = ["urg48t"]
+        secondary_keywords = ["charg", "plug", "cable", "conn", "status", "range"]
         
         candidates = []
         for entity in all_states:
             entity_id = entity['entity_id'].lower()
-            attributes = entity.get('attributes', {})
-            friendly_name = attributes.get('friendly_name', '').lower()
             
-            # Check if any keyword is in entity_id or friendly_name
-            if any(k in entity_id for k in keywords) or any(k in friendly_name for k in keywords):
+            # Must contain 'urg48t'
+            if not any(k in entity_id for k in keywords):
+                continue
+                
+            # And ideally one of the secondary keywords
+            if any(k in entity_id for k in secondary_keywords):
                 candidates.append(entity)
 
         print(f"Found {len(candidates)} candidates:\n")

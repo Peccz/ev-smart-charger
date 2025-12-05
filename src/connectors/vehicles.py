@@ -141,16 +141,23 @@ class MercedesEQV(Vehicle):
                     
                     # Check explicitly configured plugged/charging status sensor
                     if self.ha_merc_plugged_entity_id:
-                        plug_state = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
-                        if plug_state and 'state' in plug_state:
-                            val = str(plug_state['state']).lower()
-                            logger.info(f"MercedesEQV: Raw plugged state value for {self.ha_merc_plugged_entity_id}: '{val}'")
-                            # Common values for "Not Plugged": 0, off, unknown, unavailable, disconnected
-                            if val not in ['0', 'off', 'unknown', 'unavailable', 'disconnected', 'null']:
+                        plug_status_entity = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
+                        if plug_status_entity and 'attributes' in plug_status_entity:
+                            attrs = plug_status_entity['attributes']
+                            # Option 1: Look for chargingactive attribute (binary)
+                            if attrs.get('chargingactive', False):
                                 plugged_in = True
-                            logger.info(f"MercedesEQV: Plugged check ({self.ha_merc_plugged_entity_id}) = {val} -> {plugged_in}")
+                            # Option 2: Interpret chargingstatus attribute (state code)
+                            elif 'chargingstatus' in attrs:
+                                val = str(attrs['chargingstatus']).lower()
+                                logger.info(f"MercedesEQV: Raw plugged status attribute value for {self.ha_merc_plugged_entity_id} (chargingstatus): '{val}'")
+                                # Based on observed '3' when unplugged, let's assume 0 and 3 are unplugged
+                                if val not in ['0', '3', 'disconnected', 'null', 'off', 'unavailable', 'unknown']:
+                                    plugged_in = True
+                            
+                            logger.info(f"MercedesEQV: Plugged check ({self.ha_merc_plugged_entity_id} attributes) -> {plugged_in}")
                     
-                    # Fallback: Look for common HA attributes if no explicit sensor provided
+                    # Fallback: Original guess logic (if no dedicated plugged_entity_id provided)
                     elif state.get('attributes', {}).get('charging', False) or \
                          state.get('attributes', {}).get('pluggedIn', False) or \
                          state.get('attributes', {}).get('charge_port_door_closed', False) : 
