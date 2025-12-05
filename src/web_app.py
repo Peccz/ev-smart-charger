@@ -323,13 +323,24 @@ def api_plan():
             # This is a bit of a hack, calling job() logic parts here, but needed for UI.
             # In a perfect world, optimizer_state would contain the actual schedule.
             current_car_status = car_obj.get_status()
-            current_car_target = get_settings().get(f"{priority_car_from_state['id']}_target", 80) # Use get_settings() for latest target
             
-            # Recalculate based on current values
-            soc_needed_percent = current_car_target - current_car_status['soc']
+            # Calculate dynamic target SoC using the same logic as the engine
+            target_soc, mode = optimizer._calculate_dynamic_target(priority_car_from_state['id'], prices_with_forecast)
+            
+            # Get min/max from settings for display
+            settings = get_settings()
+            min_soc = settings.get(f"{priority_car_from_state['id']}_min_soc", 40)
+            max_soc = settings.get(f"{priority_car_from_state['id']}_max_soc", 80)
+
+            # Recalculate based on current values and dynamic target
+            soc_needed_percent = target_soc - current_car_status['soc']
             kwh_needed = (soc_needed_percent / 100.0) * car_obj.capacity_kwh
             hours_needed = math.ceil(kwh_needed / car_obj.max_charge_kw)
             
+            analysis.append(f"Målstrategi: <b>{mode}</b>")
+            analysis.append(f"Intervall: {min_soc}% - {max_soc}%")
+            analysis.append(f"Valt mål: <b>{target_soc}%</b>")
+
             if hours_needed > 0:
                 df_prices_with_forecast = pd.DataFrame(prices_with_forecast)
                 df_sorted = df_prices_with_forecast.sort_values(by='price_sek', ascending=True)
@@ -347,7 +358,7 @@ def api_plan():
                 analysis.append(f"Valde billigaste timmarna (Snitt: {df_sorted.head(hours_needed)['price_sek'].mean():.2f} kr).")
             else:
                 charging_plan = [0] * len(prices_with_forecast)
-                analysis.append("Inget laddbehov just nu för den prioriterade bilen (mål uppnått).")
+                analysis.append(f"Inget laddbehov just nu för {priority_car_from_state['name']} (Mål {target_soc}% uppnått).")
         else:
             charging_plan = [0] * len(prices_with_forecast)
             analysis.append("Inget laddbehov just nu.")
