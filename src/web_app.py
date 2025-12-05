@@ -121,7 +121,7 @@ def _load_full_config_for_optimizer():
     nis_base = full_config['cars'].get('nissan_leaf', {})
     full_config['cars']['nissan_leaf'] = {
         'capacity_kwh': nis_base.get('capacity_kwh', 40),
-        'max_charge_kw': nis_base.get('max_charge_kw', 6.6),
+        'max_charge_kw': nis_base.get('max_charge_kw', 3.7),
         'vin': user_settings.get('nissan_vin', nis_base.get('vin')),
         'target_soc': user_settings.get('nissan_leaf_target', user_settings.get('nissan_target', nis_base.get('target_soc', 80))),
         'min_soc': user_settings.get('nissan_leaf_min_soc', 40),
