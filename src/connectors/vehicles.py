@@ -176,7 +176,9 @@ class MercedesEQV(Vehicle):
                     if self.ha_climate_status_id:
                         c_state = self.ha_client.get_state(self.ha_climate_status_id)
                         if c_state and 'state' in c_state:
-                            if str(c_state['state']).lower() in ['on', 'true', '1', 'active']:
+                            val = str(c_state['state']).lower()
+                            logger.info(f"MercedesEQV: Climate status ({self.ha_climate_status_id}) = {val}")
+                            if val in ['on', 'true', '1', 'active']:
                                 climate_active = True
 
                     logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Odometer={odometer}, Range={range_km}km")
