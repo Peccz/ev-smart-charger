@@ -1,6 +1,9 @@
 import requests
 import json
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ZaptecCharger:
     def __init__(self, config):
@@ -16,7 +19,7 @@ class ZaptecCharger:
         Authenticates with Zaptec API using User/Pass to get OAuth token.
         """
         if self.token and time.time() < self.token_expires:
-            return
+            return True # Token is still valid
 
         url = "https://api.zaptec.com/oauth/token"
         payload = {
@@ -31,15 +34,24 @@ class ZaptecCharger:
             data = response.json()
             self.token = data['access_token']
             self.token_expires = time.time() + data['expires_in'] - 60 # Buffer
-        except Exception as e:
-            print(f"Zaptec Auth Error: {e}")
+            logger.info("Zaptec: Successfully authenticated and obtained new token.")
+            return True
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Zaptec Auth HTTP Error: {e.response.status_code} - {e.response.text}")
             self.token = None
+            return False
+        except Exception as e:
+            logger.error(f"Zaptec Auth Error: {e}")
+            self.token = None
+            return False
 
     def _get_headers(self):
-        self._authenticate()
+        if not self._authenticate(): # Ensure token is fresh before getting headers
+            return None
         return {
             "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "EV-SmartCharger/1.0 (+https://github.com/Peccz/ev-smart-charger)" # Custom User-Agent
         }
 
     def get_status(self):
@@ -47,64 +59,84 @@ class ZaptecCharger:
         Check if a car is connected and charging via the Installation state.
         """
         if not self.installation_id:
-            return {"is_charging": False, "power_kw": 0.0}
+            logger.warning("Zaptec: Installation ID is not configured.")
+            return {"operating_mode": "UNKNOWN", "power_kw": 0.0, "is_charging": False}
+        
+        headers = self._get_headers()
+        if not headers:
+            logger.error("Zaptec: Failed to get API headers, authentication failed.")
+            return {"operating_mode": "AUTH_FAILED", "power_kw": 0.0, "is_charging": False}
 
-        # Endpoint for installation state
         url = f"{self.api_url}/chargers/{self.installation_id}/state"
         
         try:
-            response = requests.get(url, headers=self._get_headers())
+            response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
             
-            # Observation ID 506 is "Operating Mode" (1=Disconnected, 2=Connected, 3=Charging)
-            # Observation ID 507 is "Active Power Phase 1" etc...
-            # But easier is usually to look at 'Power' if available, or interpret mode.
-            
-            # Simplify: Find operating mode
+            operating_mode = "UNKNOWN"
+            power_kw = 0.0
             is_charging = False
-            power = 0.0
-            
-            # Depending on API version, data structure varies. 
-            # Typically data is list of observations.
-            # We will assume basic API response structure here.
-            
-            # Note: For Zaptec Go, we might need to query the specific charger ID, not installation ID 
-            # if there are multiple. Assuming installation_id IS the charger ID for home use.
-            
-            # Example logic:
+
             for obs in data:
                 if obs['stateId'] == 506: # Operating Mode
-                    mode = int(obs['valueAsString'])
-                    if mode == 3: # Charging
-                        is_charging = True
-                if obs['stateId'] == 510: # Total Power (W)
-                    power = float(obs['valueAsString']) / 1000.0 # to kW
+                    mode_val = int(obs['valueAsString'])
+                    if mode_val == 1: operating_mode = "DISCONNECTED"
+                    elif mode_val == 2: operating_mode = "CONNECTED_WAITING"
+                    elif mode_val == 3: operating_mode = "CHARGING"
+                    
+                    if mode_val == 3: is_charging = True
+                elif obs['stateId'] == 510: # Total Power (W)
+                    power_kw = float(obs['valueAsString']) / 1000.0
 
             return {
-                "is_charging": is_charging,
-                "power_kw": power,
-                "session_energy": 0.0 # Need separate call for session details usually
+                "operating_mode": operating_mode,
+                "power_kw": power_kw,
+                "is_charging": is_charging
             }
 
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Zaptec Status HTTP Error ({self.installation_id}): {e.response.status_code} - {e.response.text}")
+            return {"operating_mode": "API_ERROR", "power_kw": 0.0, "is_charging": False}
         except Exception as e:
-            print(f"Zaptec Status Error: {e}")
+            logger.error(f"Zaptec Status Error ({self.installation_id}): {e}")
             return {"is_charging": False, "power_kw": 0.0}
 
     def start_charging(self):
-        print(f"Zaptec: Sending START command to {self.installation_id}")
-        self._send_command(501) # 501 = Start Charging
+        logger.info(f"Zaptec: Sending START command to {self.installation_id}")
+        if self._send_command(501):
+            logger.info(f"Zaptec: START command sent successfully to {self.installation_id}")
+            return True
+        else:
+            logger.error(f"Zaptec: Failed to send START command to {self.installation_id}")
+            return False
 
     def stop_charging(self):
-        print(f"Zaptec: Sending STOP command to {self.installation_id}")
-        self._send_command(502) # 502 = Stop Charging
+        logger.info(f"Zaptec: Sending STOP command to {self.installation_id}")
+        if self._send_command(502):
+            logger.info(f"Zaptec: STOP command sent successfully to {self.installation_id}")
+            return True
+        else:
+            logger.error(f"Zaptec: Failed to send STOP command to {self.installation_id}")
+            return False
 
     def _send_command(self, command_id):
+        headers = self._get_headers()
+        if not headers:
+            logger.error("Zaptec: Failed to get API headers for command, authentication failed.")
+            return False
+
         url = f"{self.api_url}/chargers/{self.installation_id}/sendCommand"
         payload = {
             "commandId": command_id
         }
         try:
-            requests.post(url, json=payload, headers=self._get_headers())
+            response = requests.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Zaptec Command HTTP Error ({command_id}, {self.installation_id}): {e.response.status_code} - {e.response.text}")
+            return False
         except Exception as e:
-            print(f"Zaptec Command Error: {e}")
+            logger.error(f"Zaptec Command Error ({command_id}, {self.installation_id}): {e}")
+            return False

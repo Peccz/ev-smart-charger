@@ -1,0 +1,14 @@
+[Unit]
+Description=Home Assistant Entity Monitor
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/peccz/ev_smart_charger/monitor_changes.py
+WorkingDirectory=/home/peccz/ev_smart_charger
+StandardOutput=journal
+StandardError=journal
+Restart=always
+User=peccz
+
+[Install]
+WantedBy=multi-user.target
