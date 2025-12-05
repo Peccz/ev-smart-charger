@@ -21,12 +21,15 @@ OVERRIDES_PATH = "data/manual_overrides.json"
 STATE_PATH = "data/optimizer_state.json"
 MANUAL_STATUS_PATH = "data/manual_status.json"
 YAML_CONFIG_PATH = "config/settings.yaml"
+FORECAST_HISTORY_FILE = "data/forecast_history.json" # Added
 
 DEFAULT_SETTINGS = {
-    "mercedes_target": 80,
-    "nissan_target": 80,
+    "mercedes_eqv_min_soc": 40, # New default keys
+    "mercedes_eqv_max_soc": 80,
+    "nissan_leaf_min_soc": 40,
+    "nissan_leaf_max_soc": 80,
     "departure_time": "07:00",
-    "smart_buffering": True,
+    "smart_buffering": True, # Still present, but the new logic mostly replaces it.
     "ha_url": "http://100.100.118.62:8123",
     "ha_token": "",
     "ha_merc_soc_entity_id": ""
@@ -41,11 +44,41 @@ def get_settings():
     try:
         with open(SETTINGS_PATH, 'r') as f:
             current_settings = json.load(f)
-            # Merge with defaults to ensure new fields exist
+            # Merge with defaults to ensure new fields exist.
+            # Handle potential old keys for migration:
+            if 'mercedes_target' in current_settings and 'mercedes_eqv_max_soc' not in current_settings:
+                current_settings['mercedes_eqv_max_soc'] = current_settings['mercedes_target']
+            if 'nissan_target' in current_settings and 'nissan_leaf_max_soc' not in current_settings:
+                current_settings['nissan_leaf_max_soc'] = current_settings['nissan_target']
+            # Migrate old min/max if they exist under the wrong keys
+            if 'mercedes_min_soc' in current_settings and 'mercedes_eqv_min_soc' not in current_settings:
+                current_settings['mercedes_eqv_min_soc'] = current_settings['mercedes_min_soc']
+            if 'mercedes_max_soc' in current_settings and 'mercedes_eqv_max_soc' not in current_settings:
+                current_settings['mercedes_eqv_max_soc'] = current_settings['mercedes_max_soc']
+            if 'nissan_min_soc' in current_settings and 'nissan_leaf_min_soc' not in current_settings:
+                current_settings['nissan_leaf_min_soc'] = current_settings['nissan_min_soc']
+            if 'nissan_max_soc' in current_settings and 'nissan_leaf_max_soc' not in current_settings:
+                current_settings['nissan_leaf_max_soc'] = current_settings['nissan_max_soc']
+
+
             return {**DEFAULT_SETTINGS, **current_settings}
     except Exception as e:
         app.logger.error(f"Error loading user_settings.json: {e}")
         return DEFAULT_SETTINGS
+
+def _load_forecast_history():
+    """Loads historical price forecasts from file."""
+    if not os.path.exists(FORECAST_HISTORY_FILE):
+        return {}
+    try:
+        with open(FORECAST_HISTORY_FILE, 'r') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        app.logger.warning(f"Could not decode {FORECAST_HISTORY_FILE}, returning empty history.")
+        return {}
+    except Exception as e:
+        app.logger.error(f"Error loading forecast history: {e}")
+        return {}
 
 # --- CONFIGURATION LOADING FOR OPTIMIZER INSTANCE (USED BY WEBAPP) ---
 # This is a function to ensure it loads the complete config
@@ -377,6 +410,50 @@ def api_plan():
         else:
             charging_plan = [0] * len(prices_with_forecast)
             analysis.append("Inget laddbehov just nu.")
+
+        # --- FORECAST BACKTESTING / FACIT ---
+        analysis.append("<hr>")
+        analysis.append("<h6>🎯 Prognos Facit (Igår)</h6>")
+        
+        forecast_history = _load_forecast_history()
+        yesterday = datetime.now() - timedelta(days=1)
+        yesterday_str = yesterday.strftime("%Y-%m-%d")
+        
+        if yesterday_str in forecast_history:
+            forecast_data_yesterday = forecast_history[yesterday_str]
+            actual_prices_yesterday = spot_service.get_prices(yesterday) # Get actual prices for yesterday
+            
+            if actual_prices_yesterday and forecast_data_yesterday:
+                df_forecast = pd.DataFrame(forecast_data_yesterday)
+                df_actual = pd.DataFrame(actual_prices_yesterday)
+
+                # Convert time_start to datetime for easy comparison and merging
+                df_forecast['time_start'] = pd.to_datetime(df_forecast['time_start'])
+                df_actual['time_start'] = pd.to_datetime(df_actual['time_start'])
+                
+                # Resample actual prices to hourly to match forecast (if spot service returns 15min)
+                df_actual = df_actual.set_index('time_start').resample('1h').mean().reset_index()
+
+                # Merge on time_start
+                df_compare = pd.merge(df_forecast, df_actual, on='time_start', suffixes=('_forecast', '_actual'))
+                
+                if not df_compare.empty:
+                    df_compare['abs_diff'] = abs(df_compare['price_sek_forecast'] - df_compare['price_sek_actual'])
+                    
+                    avg_abs_diff = df_compare['abs_diff'].mean()
+                    forecast_avg = df_compare['price_sek_forecast'].mean()
+                    actual_avg = df_compare['price_sek_actual'].mean()
+
+                    analysis.append(f"Prognos från {yesterday_str} (Medel: {forecast_avg:.2f} kr)")
+                    analysis.append(f"Faktiskt pris igår (Medel: {actual_avg:.2f} kr)")
+                    analysis.append(f"Genomsnittlig avvikelse: {avg_abs_diff:.2f} kr")
+                else:
+                    analysis.append("Inga matchande timmar för jämförelse igår.")
+            else:
+                analysis.append("Kunde inte hämta faktiska priser eller historisk prognos för igår.")
+        else:
+            analysis.append(f"Ingen historisk prognos sparad för {yesterday_str}.")
+        # --- END FACIT ---
 
         return jsonify({
             "prices": prices_with_forecast,

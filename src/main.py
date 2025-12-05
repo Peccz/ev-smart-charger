@@ -26,10 +26,44 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 STATE_FILE = "data/optimizer_state.json"
+HISTORY_FILE = "data/forecast_history.json"
+
+def _save_forecast_history(forecast_data):
+    """
+    Saves the generated price forecast to a historical file.
+    Trims old forecasts to prevent the file from growing indefinitely.
+    """
+    os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
+    
+    history = {}
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE, 'r') as f:
+                history = json.load(f)
+        except json.JSONDecodeError:
+            logger.warning(f"Could not decode {HISTORY_FILE}, starting new history.")
+    
+    # Key by the start date of the forecast (e.g., "2025-12-05")
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    history[today_str] = forecast_data
+    
+    # Trim old entries (e.g., keep last 7 days)
+    seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    keys_to_remove = [date_str for date_str in history if date_str < seven_days_ago]
+    for key in keys_to_remove:
+        del history[key]
+
+    try:
+        with open(HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2)
+        logger.info(f"Forecast history saved to {HISTORY_FILE}")
+    except Exception as e:
+        logger.error(f"Failed to save forecast history to {HISTORY_FILE}: {e}")
 
 def load_config():
     with open("config/settings.yaml", "r") as f:
         base_config = yaml.safe_load(f)
+    
     
     # Load user settings from JSON
     user_settings = {}
@@ -119,6 +153,9 @@ def job():
     
     # Generate full price forecast (official + estimated)
     prices = optimizer._generate_price_forecast(official_prices, weather_forecast)
+    
+    # Save this forecast for historical comparison (backtesting)
+    _save_forecast_history(prices)
 
     cars = [eqv, leaf]
     state_data = {}
