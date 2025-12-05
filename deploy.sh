@@ -27,11 +27,22 @@ else
     echo "No local changes to push."
 fi
 
-# 2. Clone repository on RPi
-echo "[2/5] Cloning repository on Raspberry Pi..."
-ssh $RPI_USER@$RPI_HOST "git clone https://github.com/Peccz/ev-smart-charger.git $RPI_DIR"
+# 2. Clone or Update repository on RPi
+echo "[2/5] Updating repository on Raspberry Pi..."
+ssh $RPI_USER@$RPI_HOST << EOF
+    if [ -d "$RPI_DIR" ]; then
+        echo "Directory exists. Pulling latest changes..."
+        cd $RPI_DIR
+        git fetch origin
+        git reset --hard origin/main
+    else
+        echo "Cloning repository..."
+        git clone https://github.com/Peccz/ev-smart-charger.git $RPI_DIR
+    fi
+EOF
+
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to clone repository."
+    echo "Error: Failed to update repository."
     exit 1
 fi
 
