@@ -392,6 +392,7 @@ def api_plan():
 def api_settings():
     if request.method == 'POST':
         data = request.json
+        app.logger.info(f"Saving settings: {data}")
         current = get_settings()
         current.update(data)
         save_settings(current)

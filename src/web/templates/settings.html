@@ -178,7 +178,7 @@
     }
 
     // Load Settings
-    fetch('/api/settings')
+    fetch('/api/settings?t=' + new Date().getTime())
         .then(res => res.json())
         .then(data => {
             // Mercedes Defaults
