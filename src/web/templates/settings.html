@@ -181,18 +181,18 @@
     fetch('/api/settings?t=' + new Date().getTime())
         .then(res => res.json())
         .then(data => {
-            // Mercedes Defaults
-            const mercMin = data.mercedes_min_soc || 40;
-            const mercMax = data.mercedes_max_soc || data.mercedes_target || 80;
+            // Mercedes Defaults (ID: mercedes_eqv)
+            const mercMin = data.mercedes_eqv_min_soc || 40;
+            const mercMax = data.mercedes_eqv_max_soc || data.mercedes_target || 80;
             
             document.getElementById('mercedes_min_soc').value = mercMin;
             updateDualVal('mercedes', 'min', mercMin);
             document.getElementById('mercedes_max_soc').value = mercMax;
             updateDualVal('mercedes', 'max', mercMax);
             
-            // Nissan Defaults
-            const leafMin = data.nissan_min_soc || 40;
-            const leafMax = data.nissan_max_soc || data.nissan_target || 80;
+            // Nissan Defaults (ID: nissan_leaf)
+            const leafMin = data.nissan_leaf_min_soc || 40;
+            const leafMax = data.nissan_leaf_max_soc || data.nissan_target || 80;
             
             document.getElementById('nissan_min_soc').value = leafMin;
             updateDualVal('nissan', 'min', leafMin);
@@ -212,13 +212,13 @@
 
     function saveSettings() {
         const data = {
-            mercedes_min_soc: parseInt(document.getElementById('mercedes_min_soc').value),
-            mercedes_max_soc: parseInt(document.getElementById('mercedes_max_soc').value),
-            // Keep old target for backward compatibility or fallback, set to Max
+            mercedes_eqv_min_soc: parseInt(document.getElementById('mercedes_min_soc').value),
+            mercedes_eqv_max_soc: parseInt(document.getElementById('mercedes_max_soc').value),
+            // Keep old target for backward compatibility or fallback, set to Max. Also update key.
             mercedes_target: parseInt(document.getElementById('mercedes_max_soc').value), 
             
-            nissan_min_soc: parseInt(document.getElementById('nissan_min_soc').value),
-            nissan_max_soc: parseInt(document.getElementById('nissan_max_soc').value),
+            nissan_leaf_min_soc: parseInt(document.getElementById('nissan_min_soc').value),
+            nissan_leaf_max_soc: parseInt(document.getElementById('nissan_max_soc').value),
             // Keep old target for backward compatibility
             nissan_target: parseInt(document.getElementById('nissan_max_soc').value),
 
