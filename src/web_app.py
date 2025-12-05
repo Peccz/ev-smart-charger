@@ -208,6 +208,10 @@ def planning_page():
 def settings_page():
     return render_template('settings.html')
 
+@app.route('/cars')
+def cars_page():
+    return render_template('cars.html')
+
 @app.route('/api/status')
 def api_status():
     settings = get_settings()
@@ -275,6 +279,7 @@ def api_status():
         max_soc = settings.get(f"{key_id}_max_soc", 80)
 
         plugged_in = car_state.get('plugged_in', False)
+        range_km = car_state.get('range_km', 0)
         urgency = car_state.get('urgency_score', 0)
         
         is_priority = (key_id == priority_car_id)
@@ -323,6 +328,7 @@ def api_status():
             "min_soc": min_soc,
             "max_soc": max_soc,
             "plugged_in": plugged_in,
+            "range_km": range_km,
             "override": overrides.get(key_id),
             "action": display_action,
             "reason": display_reason,

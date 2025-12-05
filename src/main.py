@@ -181,6 +181,7 @@ def job():
             "id": vid,
             "last_updated": datetime.now().isoformat(),
             "soc": status['soc'],
+            "range_km": status.get('range_km', 0),
             "plugged_in": status['plugged_in'],
             "action": decision['action'],
             "reason": decision['reason'],
