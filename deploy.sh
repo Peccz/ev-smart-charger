@@ -111,12 +111,12 @@ ssh $RPI_USER@$RPI_HOST << EOF
     sudo systemctl enable $SERVICE_CORE
     sudo systemctl enable $SERVICE_WEB
     
-    echo "Starting services..."
-    sudo systemctl start $SERVICE_CORE
-    sudo systemctl start $SERVICE_WEB
+    echo "Restarting services..."
+    sudo systemctl restart $SERVICE_CORE
+    sudo systemctl restart $SERVICE_WEB
 EOF
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to start services."
+    echo "Error: Failed to restart services."
     exit 1
 fi
 
