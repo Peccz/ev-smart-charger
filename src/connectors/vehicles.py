@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 import logging
-# Removed pycarwings2 as it's not working reliably
-# Removed kamereon_python as it's not working reliably
 import requests
 
 logger = logging.getLogger(__name__)

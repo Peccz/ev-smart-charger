@@ -1,7 +1,6 @@
 requests
 pyyaml
 pandas
-pydantic
 schedule
 python-dateutil
 flask
