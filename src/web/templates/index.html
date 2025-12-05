@@ -170,7 +170,10 @@
                             ${car.soc}%
                         </div>
                         <div>
-                            <div class="text-muted small mb-1">Mål: <strong>${car.target}%</strong></div>
+                            <div class="text-muted small mb-1">
+                                Mål: <strong>${car.target}%</strong>
+                                <span class="ms-1" style="font-size: 0.85em; opacity: 0.7;">(${car.min_soc || 40}-${car.max_soc || 80}%)</span>
+                            </div>
                             <div class="small text-primary">${statusText}</div>
                             <div class="small text-muted mt-1" style="font-size: 10px;">(Klicka på cirkeln för att ändra %)</div>
                         </div>
@@ -186,8 +189,8 @@
                     </div>
                     
                     <div class="d-grid gap-2 mt-3">
-                        ${car.override ? 
-                            `<button class="btn btn-sm btn-outline-secondary" onclick="setOverride('${car.id}', 'AUTO')">Återgå till Auto</button>` :
+                        ${car.override && car.override.action === 'CHARGE' ? 
+                            `<button class="btn btn-sm btn-outline-danger" onclick="setOverride('${car.id}', 'AUTO')">Avbryt (Återgå till Auto)</button>` :
                             `<button class="btn btn-sm btn-primary" onclick="setOverride('${car.id}', 'CHARGE')">⚡ Ladda Nu</button>`
                         }
                     </div>

@@ -227,6 +227,9 @@ def api_status():
 
         # Now, fetch other details from car_state or settings
         target = settings.get(target_key, 80)
+        min_soc = settings.get(f"{key_id}_min_soc", 40)
+        max_soc = settings.get(f"{key_id}_max_soc", 80)
+
         plugged_in = car_state.get('plugged_in', False)
         urgency = car_state.get('urgency_score', 0)
         
@@ -259,6 +262,8 @@ def api_status():
             "soc": display_soc, # Use the determined display_soc
             "manual_soc": display_manual_soc, # Ensure UI slider shows something reasonable
             "target": target,
+            "min_soc": min_soc,
+            "max_soc": max_soc,
             "plugged_in": plugged_in,
             "override": overrides.get(key_id),
             "action": car_state.get('action', 'IDLE'),
