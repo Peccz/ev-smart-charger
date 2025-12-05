@@ -98,26 +98,50 @@ class Optimizer:
             if hour_time > forecast_end_time:
                 continue
             
-            # --- FORECAST GENERATION ---
+            # --- FORECAST GENERATION (Fundamental Model) ---
             
-            # 1. Wind Factor
+            # 1. Wind Factor (High wind = Low price)
             wind_speed = hour_data.get('wind_kmh_80m', 10)
-            wind_price_factor = 1.0
+            wind_factor = 1.0
             if wind_speed < 10:
-                wind_price_factor = 1.0 + (10 - wind_speed) * 0.05
-            elif wind_speed > 30:
-                wind_price_factor = 1.0 - (wind_speed - 30) * 0.01
+                wind_factor = 1.0 + (10 - wind_speed) * 0.03 # +3% per km/h below 10
+            elif wind_speed > 25:
+                wind_factor = max(0.7, 1.0 - (wind_speed - 25) * 0.015) # -1.5% per km/h above 25, max -30%
 
-            # 2. Diurnal/Time Factor
+            # 2. Solar Factor (High sun = Low price)
+            solar_rad = hour_data.get('solar_w_m2', 0)
+            solar_factor = 1.0
+            if solar_rad > 100:
+                # Reduce price up to 15% at full sun (e.g. 800 W/m2)
+                reduction = min(0.15, (solar_rad - 100) * 0.0002)
+                solar_factor = 1.0 - reduction
+
+            # 3. Temperature/Demand Factor (Low temp = High price)
+            temp = hour_data.get('temp_c', 10)
+            temp_factor = 1.0
+            if temp < 5:
+                # Increase price as it gets colder
+                # e.g. at -10C: (5 - (-10)) * 0.02 = 15 * 0.02 = +30%
+                temp_factor = 1.0 + (5 - temp) * 0.02 
+            
+            # 4. Seasonal Factor (Month based approximation of hydro/demand)
+            month = hour_time.month
+            seasonal_factor = 1.0
+            if month in [12, 1, 2]:   seasonal_factor = 1.15 # Winter (High demand, low hydro flow)
+            elif month in [5, 6]:     seasonal_factor = 0.85 # Spring flood (High hydro)
+            elif month in [7, 8]:     seasonal_factor = 0.90 # Summer (Low demand)
+            elif month in [10, 11]:   seasonal_factor = 1.05 # Late Autumn (Increasing demand)
+
+            # 5. Diurnal/Time Factor (Consumption profile)
             is_weekend = hour_time.weekday() >= 5
             hour_idx = hour_time.hour
             time_factor = weekend_profile[hour_idx] if is_weekend else weekday_profile[hour_idx]
 
             # Calculate final price
-            forecasted_price_sek = base_price_sek * wind_price_factor * time_factor
+            forecasted_price_sek = base_price_sek * wind_factor * solar_factor * temp_factor * seasonal_factor * time_factor
             
-            # Sanity limits
-            forecasted_price_sek = max(0.05, min(forecasted_price_sek, 6.0))
+            # Sanity limits (ensure we don't go crazy)
+            forecasted_price_sek = max(0.05, min(forecasted_price_sek, 8.0))
             
             all_forecast_prices.append({
                 "time_start": hour_time,

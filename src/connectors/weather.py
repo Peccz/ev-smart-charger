@@ -11,12 +11,12 @@ class WeatherService:
 
     def get_forecast(self, days=5): # Increased to 5 days for longer term planning
         """
-        Fetches weather forecast (temp, wind) for optimization.
+        Fetches weather forecast (temp, wind, solar) for optimization.
         """
         params = {
             "latitude": self.lat,
             "longitude": self.lon,
-            "hourly": "temperature_2m,wind_speed_10m,wind_speed_80m,wind_speed_120m", # More detailed wind
+            "hourly": "temperature_2m,wind_speed_10m,wind_speed_80m,wind_speed_120m,shortwave_radiation", # Added solar radiation
             "forecast_days": days,
             "timezone": "Europe/Berlin"
         }
@@ -32,6 +32,7 @@ class WeatherService:
             winds_10m = hourly.get("wind_speed_10m", [])
             winds_80m = hourly.get("wind_speed_80m", [])
             winds_120m = hourly.get("wind_speed_120m", [])
+            rads = hourly.get("shortwave_radiation", []) # Solar radiation
             
             forecast = []
             for i in range(len(times)):
@@ -40,7 +41,8 @@ class WeatherService:
                     "temp_c": temps[i],
                     "wind_kmh_10m": winds_10m[i],
                     "wind_kmh_80m": winds_80m[i],
-                    "wind_kmh_120m": winds_120m[i]
+                    "wind_kmh_120m": winds_120m[i],
+                    "solar_w_m2": rads[i] if i < len(rads) else 0
                 })
             logger.info(f"WeatherService: Fetched {len(forecast)} hours of forecast data.")
             return forecast
