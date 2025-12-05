@@ -24,6 +24,18 @@ class HomeAssistantClient:
         except requests.exceptions.RequestException as e:
             logger.error(f"HA: Error fetching state for {entity_id} from HA: {e}")
             return None
+
+    def call_service(self, domain, service, entity_id):
+        url = f"{self.base_url}/api/services/{domain}/{service}"
+        payload = {"entity_id": entity_id}
+        logger.info(f"HA: Calling service {domain}.{service} for {entity_id}")
+        try:
+            response = requests.post(url, json=payload, headers=self.headers)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"HA: Error calling service {domain}.{service}: {e}")
+            return False
             
 # --- Vehicle Classes ---
 
@@ -44,6 +56,22 @@ class Vehicle(ABC):
     def get_status(self):
         """Returns dict with soc, range, plugged_in status"""
         pass
+    
+    def start_climate(self):
+        logger.warning(f"{self.name}: Climate control not implemented/configured.")
+        return False
+
+    def stop_climate(self):
+        logger.warning(f"{self.name}: Climate control not implemented/configured.")
+        return False
+
+    def lock(self):
+        logger.warning(f"{self.name}: Lock control not implemented/configured.")
+        return False
+
+    def unlock(self):
+        logger.warning(f"{self.name}: Unlock control not implemented/configured.")
+        return False
 
 class MercedesEQV(Vehicle):
     def __init__(self, config):
@@ -58,6 +86,8 @@ class MercedesEQV(Vehicle):
         self.ha_token = config.get('ha_token')
         self.ha_merc_soc_entity_id = config.get('ha_merc_soc_entity_id')
         self.ha_merc_plugged_entity_id = config.get('ha_merc_plugged_entity_id')
+        self.ha_climate_id = config.get('climate_entity_id')
+        self.ha_lock_id = config.get('lock_entity_id')
         
         self.ha_client = None
         if self.ha_url and self.ha_token:
@@ -66,6 +96,36 @@ class MercedesEQV(Vehicle):
         else:
             logger.warning("MercedesEQV: HA credentials incomplete. Will use fallback.")
 
+    def start_climate(self):
+        if self.ha_client and self.ha_climate_id:
+            # Detect if it's a button or switch
+            domain = self.ha_climate_id.split('.')[0]
+            service = "press" if domain == "button" else "turn_on"
+            return self.ha_client.call_service(domain, service, self.ha_climate_id)
+        return super().start_climate()
+
+    def stop_climate(self):
+        if self.ha_client and self.ha_climate_id:
+            # Assuming separate stop entity OR toggle. 
+            if "start" in self.ha_climate_id:
+                stop_id = self.ha_climate_id.replace("start", "stop")
+                return self.ha_client.call_service("button", "press", stop_id)
+            
+            domain = self.ha_climate_id.split('.')[0]
+            if domain == "switch":
+                return self.ha_client.call_service("switch", "turn_off", self.ha_climate_id)
+        
+        return super().stop_climate()
+
+    def lock(self):
+        if self.ha_client and self.ha_lock_id:
+            return self.ha_client.call_service("lock", "lock", self.ha_lock_id)
+        return super().lock()
+
+    def unlock(self):
+        if self.ha_client and self.ha_lock_id:
+            return self.ha_client.call_service("lock", "unlock", self.ha_lock_id)
+        return super().unlock()
 
     def get_status(self):
         logger.info("MercedesEQV: Attempting to get status from HA.")
@@ -129,6 +189,7 @@ class NissanLeaf(Vehicle):
         self.ha_nissan_soc_entity_id = config.get('ha_nissan_soc_entity_id')
         self.ha_nissan_plugged_entity_id = config.get('ha_nissan_plugged_entity_id')
         self.ha_nissan_range_entity_id = config.get('ha_nissan_range_entity_id')
+        self.ha_climate_id = config.get('climate_entity_id')
 
         # Debug Logging for Configuration
         token_masked = "***" if self.ha_token else "None"
@@ -142,6 +203,16 @@ class NissanLeaf(Vehicle):
             logger.info("NissanLeaf: HA client initialized successfully.")
         else:
             logger.warning(f"NissanLeaf: HA credentials incomplete (URL or Token missing). Client NOT created.")
+
+    def start_climate(self):
+        if self.ha_client and self.ha_climate_id:
+            return self.ha_client.call_service("switch", "turn_on", self.ha_climate_id)
+        return super().start_climate()
+    
+    def stop_climate(self):
+        if self.ha_client and self.ha_climate_id:
+            return self.ha_client.call_service("switch", "turn_off", self.ha_climate_id)
+        return super().stop_climate()
 
     def get_status(self):
         logger.info("NissanLeaf: Attempting to get status from HA.")

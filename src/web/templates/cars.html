@@ -122,8 +122,31 @@
     }
 
     function controlCar(id, action) {
-        alert(`Kommando '${action}' skickat till ${id}! (Funktionalitet under utveckling)`);
-        // TODO: Implement API call
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        fetch('/api/control', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ vehicle_id: id, action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            if (data.status === 'ok') {
+                alert(data.message);
+            } else {
+                alert("Fel: " + data.message);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            alert("Kommunikationsfel: " + err);
+        });
     }
 
     loadCars();

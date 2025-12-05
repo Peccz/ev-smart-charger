@@ -114,7 +114,9 @@ def _load_full_config_for_optimizer():
         'ha_url': user_settings.get('ha_url'),
         'ha_token': user_settings.get('ha_token'),
         'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id'),
-        'ha_merc_plugged_entity_id': user_settings.get('ha_merc_plugged_entity_id')
+        'ha_merc_plugged_entity_id': user_settings.get('ha_merc_plugged_entity_id'),
+        'climate_entity_id': user_settings.get('mercedes_eqv_climate_entity_id'),
+        'lock_entity_id': user_settings.get('mercedes_eqv_lock_entity_id')
     }
 
     # Nissan Config Merge
@@ -130,7 +132,8 @@ def _load_full_config_for_optimizer():
         'ha_token': user_settings.get('ha_token'),
         'ha_nissan_soc_entity_id': user_settings.get('ha_nissan_soc_entity_id'),
         'ha_nissan_plugged_entity_id': user_settings.get('ha_nissan_plugged_entity_id'),
-        'ha_nissan_range_entity_id': user_settings.get('ha_nissan_range_entity_id')
+        'ha_nissan_range_entity_id': user_settings.get('ha_nissan_range_entity_id'),
+        'climate_entity_id': user_settings.get('nissan_leaf_climate_entity_id')
     }
 
     return full_config
@@ -503,6 +506,45 @@ def api_override():
     data = request.json
     set_override(data.get('vehicle_id'), data.get('action'), data.get('duration', 60))
     return jsonify({"status": "ok"})
+
+@app.route('/api/control', methods=['POST'])
+def api_control():
+    try:
+        data = request.json
+        vehicle_id = data.get('vehicle_id')
+        action = data.get('action')
+        
+        full_config = _load_full_config_for_optimizer()
+        car_obj = None
+        
+        if vehicle_id == 'mercedes_eqv':
+            car_obj = MercedesEQV(full_config['cars']['mercedes_eqv'])
+        elif vehicle_id == 'nissan_leaf':
+            car_obj = NissanLeaf(full_config['cars']['nissan_leaf'])
+            
+        if not car_obj:
+            return jsonify({"status": "error", "message": "Vehicle not found"}), 404
+
+        success = False
+        if action == 'climate_start':
+            success = car_obj.start_climate()
+        elif action == 'climate_stop':
+            success = car_obj.stop_climate()
+        elif action == 'lock':
+            success = car_obj.lock()
+        elif action == 'unlock':
+            success = car_obj.unlock()
+        else:
+            return jsonify({"status": "error", "message": "Unknown action"}), 400
+            
+        if success:
+            return jsonify({"status": "ok", "message": f"Command {action} sent."})
+        else:
+            return jsonify({"status": "error", "message": "Command failed or not configured."}), 500
+
+    except Exception as e:
+        app.logger.error(f"Error in api_control: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/manual_soc', methods=['POST'])
 def api_manual_soc():
