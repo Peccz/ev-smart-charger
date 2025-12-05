@@ -153,12 +153,22 @@ class MercedesEQV(Vehicle):
                          state.get('attributes', {}).get('charge_port_door_closed', False) : 
                         plugged_in = True
                         
-                    logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}")
+                    
+                    odometer = 0
+                    odometer_state = self.ha_client.get_state("sensor.urg48t_odometer") # Hardcoding for now, should be configurable
+                    if odometer_state and 'state' in odometer_state:
+                        try:
+                            odometer = int(float(odometer_state['state']))
+                        except ValueError:
+                            pass
+
+                    logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Odometer={odometer}")
                     return {
                         "vehicle": self.name,
                         "soc": int(soc),
-                        "range_km": int(state.get('attributes', {}).get('range', 0)),
-                        "plugged_in": plugged_in
+                        "range_km": int(state.get('attributes', {}).get('range', 0)), # Range is often in SoC attributes
+                        "plugged_in": plugged_in,
+                        "odometer": odometer
                     }
                 except ValueError:
                     logger.error(f"MercedesEQV: HA SoC state is not a number: {state['state']}. Using fallback.")

@@ -321,6 +321,10 @@ def api_status():
             # Also clear start time text as it might be invalid
             start_time_text = ""
 
+        # Get control entity IDs from settings for frontend to enable/disable buttons
+        climate_entity_id = settings.get(f"{key_id}_climate_entity_id")
+        lock_entity_id = settings.get(f"{key_id}_lock_entity_id")
+        
         return {
             "name": name,
             "id": key_id,
@@ -332,6 +336,7 @@ def api_status():
             "max_soc": max_soc,
             "plugged_in": plugged_in,
             "range_km": range_km,
+            "odometer": car_state.get('odometer', '-'), # Include odometer
             "override": overrides.get(key_id),
             "action": display_action,
             "reason": display_reason,
@@ -340,7 +345,9 @@ def api_status():
             "needs_plugging": needs_plugging,
             "urgency_msg": urgency_msg,
             "swap_msg": swap_msg,
-            "start_time_text": start_time_text
+            "start_time_text": start_time_text,
+            "climate_entity_id": climate_entity_id,
+            "lock_entity_id": lock_entity_id
         }
 
     cars_data['mercedes'] = build_car("Mercedes EQV", "mercedes_eqv")
