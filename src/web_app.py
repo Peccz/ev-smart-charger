@@ -75,6 +75,8 @@ def _load_full_config_for_optimizer():
         'max_charge_kw': merc_base.get('max_charge_kw', 11),
         'vin': merc_base.get('vin'),
         'target_soc': user_settings.get('mercedes_target', merc_base.get('target_soc', 80)),
+        'min_soc': user_settings.get('mercedes_min_soc', 40),
+        'max_soc': user_settings.get('mercedes_max_soc', 80),
         'ha_url': user_settings.get('ha_url'),
         'ha_token': user_settings.get('ha_token'),
         'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id')
@@ -87,6 +89,8 @@ def _load_full_config_for_optimizer():
         'max_charge_kw': nis_base.get('max_charge_kw', 6.6),
         'vin': user_settings.get('nissan_vin', nis_base.get('vin')),
         'target_soc': user_settings.get('nissan_target', nis_base.get('target_soc', 80)),
+        'min_soc': user_settings.get('nissan_min_soc', 40),
+        'max_soc': user_settings.get('nissan_max_soc', 80),
         'ha_url': user_settings.get('ha_url'),
         'ha_token': user_settings.get('ha_token'),
         'ha_nissan_soc_entity_id': user_settings.get('ha_nissan_soc_entity_id'),

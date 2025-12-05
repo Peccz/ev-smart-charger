@@ -178,6 +178,48 @@ class Optimizer:
         hours_needed = needed_kwh / vehicle.max_charge_kw if vehicle.max_charge_kw > 0 else 0.0
         return hours_needed
 
+    def _calculate_dynamic_target(self, vehicle_id, prices):
+        """
+        Calculates the dynamic target SoC based on current price vs long-term average.
+        Returns (target_soc, mode_string)
+        """
+        user_settings = self._get_user_settings()
+        
+        # Get constraints
+        min_soc = user_settings.get(f"{vehicle_id}_min_soc", 40)
+        max_soc = user_settings.get(f"{vehicle_id}_max_soc", 80) # Default max same as old target default
+        
+        if not prices:
+            return max_soc, "Fallback (No Data)"
+
+        # Calculate price stats
+        df = pd.DataFrame(prices)
+        
+        # Long term average (entire forecast horizon)
+        long_term_avg = df['price_sek'].mean()
+        
+        # Short term average (next 12 hours, representing "immediate future")
+        short_term_df = df.head(12)
+        short_term_avg = short_term_df['price_sek'].mean()
+        
+        # Determine strategy
+        # If short term is significantly cheaper (>15%) than long term -> Charge to MAX
+        # If short term is significantly more expensive (>15%) -> Charge to MIN
+        # Otherwise -> Linear interpolation
+        
+        ratio = short_term_avg / long_term_avg if long_term_avg > 0 else 1.0
+        
+        if ratio < 0.85:
+            return max_soc, "Aggressive (Cheap)"
+        elif ratio > 1.15:
+            return min_soc, "Conservative (Expensive)"
+        else:
+            # Linear interpolation between 0.85 (Max) and 1.15 (Min)
+            # Map ratio 0.85..1.15 to Max..Min
+            factor = (ratio - 0.85) / (1.15 - 0.85) # 0.0 at 0.85, 1.0 at 1.15
+            dynamic_soc = max_soc - (factor * (max_soc - min_soc))
+            return int(dynamic_soc), "Balanced"
+
     def suggest_action(self, vehicle, prices, weather_forecast):
         # 0. Check Manual Overrides
         overrides = self._get_overrides()
@@ -193,19 +235,18 @@ class Optimizer:
         status = vehicle.get_status()
         current_soc = status['soc']
         
-        # Determine target SoC
-        user_settings = self._get_user_settings()
-        target_soc = user_settings.get(f"{vehicle_id}_target", 80)
+        # 1. Calculate Dynamic Target SoC
+        target_soc, mode = self._calculate_dynamic_target(vehicle_id, prices)
         
-        is_buffering = False
-        if self._should_buffer(prices, weather_forecast): # Still use the simple buffer logic
-            target_soc = 95
-            is_buffering = True
+        # Also keep the old "buffer" logic as a safety override if extreme weather
+        if self._should_buffer(prices, weather_forecast):
+            target_soc = max(target_soc, 95) # Force high target if storm incoming
+            mode = "Storm Buffering"
 
         if current_soc >= target_soc:
-            return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached"}
+            return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
 
-        # 1. Calculate Energy Needs
+        # 2. Calculate Energy Needs
         capacity_kwh = vehicle.capacity_kwh
         charge_speed_kw = vehicle.max_charge_kw
         
@@ -213,22 +254,19 @@ class Optimizer:
         kwh_needed = (soc_needed_percent / 100.0) * capacity_kwh
         hours_needed = math.ceil(kwh_needed / charge_speed_kw)
         
-        # 2. Basic checks
+        # 3. Basic checks
         if not status['plugged_in']:
-            return {"action": "IDLE", "reason": "Vehicle not plugged in (Waiting for connection)"}
+            return {"action": "IDLE", "reason": f"Vehicle not plugged in. Target: {target_soc}% ({mode})"}
 
         if hours_needed <= 0:
              return {"action": "IDLE", "reason": "Calculation error: 0 hours needed"}
 
-        # 3. Analyze Prices (Planning Horizon)
+        # 4. Analyze Prices (Planning Horizon)
         if not prices:
             logger.warning("Optimizer: No price data. Failsafe charging enabled.")
             return {"action": "CHARGE", "reason": "No price data, failsafe charging"}
 
-        now = datetime.now()
         df = pd.DataFrame(prices)
-        
-        # The prices passed here are already the full (official + forecasted) list
         
         if len(df) < hours_needed:
              logger.warning(f"Optimizer: Not enough price data ({len(df)}h) to plan {hours_needed}h. Failsafe charging enabled.")
@@ -239,18 +277,17 @@ class Optimizer:
         
         current_time_start = df.iloc[0]['time_start']
         
-        if current_time_start in cheapest_hours: # Check using the full ISO string
+        if current_time_start in cheapest_hours:
             current_price = df.iloc[0]['price_sek']
-            mode = "Buffering" if is_buffering else "Normal"
             return {
                 "action": "CHARGE", 
-                "reason": f"{mode}: Current hour ({current_price:.2f} SEK) is cheap."
+                "reason": f"{mode}: Charging to {target_soc}%. Current price ({current_price:.2f} SEK) is optimal."
             }
 
-        next_best_price = df_sorted.head(hours_needed)['price_sek'].max() # Price of the most expensive hour in the cheapest block
+        next_best_price = df_sorted.head(hours_needed)['price_sek'].max()
         return {
             "action": "IDLE", 
-            "reason": f"Waiting for cheaper hours (Need < {next_best_price:.2f} SEK). Current is {df.iloc[0]['price_sek']:.2f} SEK."
+            "reason": f"{mode}: Target {target_soc}%. Waiting for < {next_best_price:.2f} SEK. Current: {df.iloc[0]['price_sek']:.2f} SEK."
         }
 
     def _should_buffer(self, prices, weather):

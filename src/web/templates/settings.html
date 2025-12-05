@@ -29,22 +29,53 @@
 
     <!-- Charge Targets -->
     <div class="card p-4">
-        <h5 class="mb-4">🚗 Laddmål</h5>
+        <h5 class="mb-4">🚗 Laddmål & Flexibilitet</h5>
+        <p class="small text-muted mb-4">
+            Systemet väljer ett mål mellan <b>Min</b> och <b>Max</b> beroende på elpriset kommande dagar.
+            <br>• Är det billigt laddas bilen till <b>Max</b>.
+            <br>• Är det dyrt laddas bilen bara till <b>Min</b>.
+        </p>
         
-        <div class="mb-4">
-            <label class="form-label d-flex justify-content-between">
-                <span>Mercedes EQV (Mål)</span>
-                <span id="merc-val" class="fw-bold">80%</span>
-            </label>
-            <input type="range" class="form-range" min="20" max="100" step="5" id="mercedes_target" oninput="updateVal('merc-val', this.value)">
+        <!-- Mercedes -->
+        <div class="mb-4 border-bottom pb-4">
+            <h6 class="fw-bold text-primary">Mercedes EQV</h6>
+            
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between small">
+                    <span>Min SoC (Måste ha)</span>
+                    <span id="merc-min-val" class="fw-bold">40%</span>
+                </label>
+                <input type="range" class="form-range" min="10" max="90" step="5" id="mercedes_min_soc" oninput="updateDualVal('mercedes', 'min', this.value)">
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label d-flex justify-content-between small">
+                    <span>Max SoC (Om billigt)</span>
+                    <span id="merc-max-val" class="fw-bold">80%</span>
+                </label>
+                <input type="range" class="form-range" min="20" max="100" step="5" id="mercedes_max_soc" oninput="updateDualVal('mercedes', 'max', this.value)">
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label d-flex justify-content-between">
-                <span>Nissan Leaf (Mål)</span>
-                <span id="leaf-val" class="fw-bold">80%</span>
-            </label>
-            <input type="range" class="form-range" min="20" max="100" step="5" id="nissan_target" oninput="updateVal('leaf-val', this.value)">
+        <!-- Nissan -->
+        <div class="mb-2">
+            <h6 class="fw-bold text-primary">Nissan Leaf</h6>
+            
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between small">
+                    <span>Min SoC (Måste ha)</span>
+                    <span id="leaf-min-val" class="fw-bold">40%</span>
+                </label>
+                <input type="range" class="form-range" min="10" max="90" step="5" id="nissan_min_soc" oninput="updateDualVal('nissan', 'min', this.value)">
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label d-flex justify-content-between small">
+                    <span>Max SoC (Om billigt)</span>
+                    <span id="leaf-max-val" class="fw-bold">80%</span>
+                </label>
+                <input type="range" class="form-range" min="20" max="100" step="5" id="nissan_max_soc" oninput="updateDualVal('nissan', 'max', this.value)">
+            </div>
         </div>
     </div>
     
@@ -123,19 +154,50 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    function updateVal(id, val) {
-        document.getElementById(id).innerText = val + '%';
+    function updateDualVal(car, type, val) {
+        // Constraint logic: Min cannot be > Max, Max cannot be < Min
+        const minId = car === 'mercedes' ? 'mercedes_min_soc' : 'nissan_min_soc';
+        const maxId = car === 'mercedes' ? 'mercedes_max_soc' : 'nissan_max_soc';
+        const valId = car === 'mercedes' ? (type === 'min' ? 'merc-min-val' : 'merc-max-val') : (type === 'min' ? 'leaf-min-val' : 'leaf-max-val');
+        
+        const minEl = document.getElementById(minId);
+        const maxEl = document.getElementById(maxId);
+        
+        let minVal = parseInt(minEl.value);
+        let maxVal = parseInt(maxEl.value);
+
+        if (type === 'min' && minVal > maxVal) {
+            maxEl.value = minVal;
+            document.getElementById(valId.replace('min', 'max')).innerText = minVal + '%';
+        } else if (type === 'max' && maxVal < minVal) {
+            minEl.value = maxVal;
+            document.getElementById(valId.replace('max', 'min')).innerText = maxVal + '%';
+        }
+
+        document.getElementById(valId).innerText = val + '%';
     }
 
     // Load Settings
     fetch('/api/settings')
         .then(res => res.json())
         .then(data => {
-            document.getElementById('mercedes_target').value = data.mercedes_target || 80;
-            updateVal('merc-val', data.mercedes_target || 80);
+            // Mercedes Defaults
+            const mercMin = data.mercedes_min_soc || 40;
+            const mercMax = data.mercedes_max_soc || data.mercedes_target || 80;
             
-            document.getElementById('nissan_target').value = data.nissan_target || 80;
-            updateVal('leaf-val', data.nissan_target || 80);
+            document.getElementById('mercedes_min_soc').value = mercMin;
+            updateDualVal('mercedes', 'min', mercMin);
+            document.getElementById('mercedes_max_soc').value = mercMax;
+            updateDualVal('mercedes', 'max', mercMax);
+            
+            // Nissan Defaults
+            const leafMin = data.nissan_min_soc || 40;
+            const leafMax = data.nissan_max_soc || data.nissan_target || 80;
+            
+            document.getElementById('nissan_min_soc').value = leafMin;
+            updateDualVal('nissan', 'min', leafMin);
+            document.getElementById('nissan_max_soc').value = leafMax;
+            updateDualVal('nissan', 'max', leafMax);
             
             document.getElementById('departure_time').value = data.departure_time || "07:00";
             
@@ -150,8 +212,16 @@
 
     function saveSettings() {
         const data = {
-            mercedes_target: parseInt(document.getElementById('mercedes_target').value),
-            nissan_target: parseInt(document.getElementById('nissan_target').value),
+            mercedes_min_soc: parseInt(document.getElementById('mercedes_min_soc').value),
+            mercedes_max_soc: parseInt(document.getElementById('mercedes_max_soc').value),
+            // Keep old target for backward compatibility or fallback, set to Max
+            mercedes_target: parseInt(document.getElementById('mercedes_max_soc').value), 
+            
+            nissan_min_soc: parseInt(document.getElementById('nissan_min_soc').value),
+            nissan_max_soc: parseInt(document.getElementById('nissan_max_soc').value),
+            // Keep old target for backward compatibility
+            nissan_target: parseInt(document.getElementById('nissan_max_soc').value),
+
             departure_time: document.getElementById('departure_time').value,
             ha_url: document.getElementById('ha_url').value,
             ha_token: document.getElementById('ha_token').value,
