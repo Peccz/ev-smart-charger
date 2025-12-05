@@ -12,3 +12,6 @@ env/
 config/settings.yaml
 # Keep the template if we create one
 !config/settings.template.yaml
+
+# Ignore data directory (contains local state and user settings with secrets)
+data/

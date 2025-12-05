@@ -49,6 +49,17 @@ if [ -f "config/settings.yaml" ]; then
         exit 1
     fi
     echo "Settings file copied successfully."
+    
+    # Copy user_settings.json if it exists
+    if [ -f "data/user_settings.json" ]; then
+        echo "Copying user_settings.json..."
+        scp data/user_settings.json $RPI_USER@$RPI_HOST:$RPI_DIR/data/user_settings.json
+        if [ $? -ne 0 ]; then
+             echo "Warning: Failed to copy user_settings.json"
+        else
+             echo "user_settings.json copied successfully."
+        fi
+    fi
 else
     echo "Warning: config/settings.yaml not found locally. Please create it."
     exit 1

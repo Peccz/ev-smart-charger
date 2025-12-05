@@ -68,7 +68,12 @@ def load_config():
         'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)),
         'username': user_settings.get('nissan_username', nissan_config_from_yaml.get('username')),
         'password': user_settings.get('nissan_password', nissan_config_from_yaml.get('password')),
-        'region': nissan_config_from_yaml.get('region')
+        'region': nissan_config_from_yaml.get('region'),
+        'ha_url': user_settings.get('ha_url'),
+        'ha_token': user_settings.get('ha_token'),
+        'ha_nissan_soc_entity_id': user_settings.get('ha_nissan_soc_entity_id'),
+        'ha_nissan_plugged_entity_id': user_settings.get('ha_nissan_plugged_entity_id'),
+        'ha_nissan_range_entity_id': user_settings.get('ha_nissan_range_entity_id')
     }
     base_config['cars']['nissan_leaf'] = nissan_final_config
             

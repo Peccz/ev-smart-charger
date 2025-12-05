@@ -46,15 +46,41 @@ def _load_full_config_for_optimizer():
         except Exception as e:
             app.logger.error(f"Error loading base config for Optimizer in web_app: {e}")
     
+    user_settings = get_settings()
+
     # Ensure 'optimization' key exists even if config is minimal
     if 'optimization' not in full_config:
         full_config['optimization'] = {'price_buffer_threshold': 0.10, 'planning_horizon_days': 3}
-    # And 'cars' key
+    
+    # Ensure 'cars' structure
     if 'cars' not in full_config:
         full_config['cars'] = {}
-        # Add minimal car config if missing, to prevent crashes
-        full_config['cars']['mercedes_eqv'] = {'capacity_kwh': 90, 'max_charge_kw': 11}
-        full_config['cars']['nissan_leaf'] = {'capacity_kwh': 40, 'max_charge_kw': 6.6}
+        
+    # Mercedes Config Merge
+    merc_base = full_config['cars'].get('mercedes_eqv', {})
+    full_config['cars']['mercedes_eqv'] = {
+        'capacity_kwh': merc_base.get('capacity_kwh', 90),
+        'max_charge_kw': merc_base.get('max_charge_kw', 11),
+        'vin': merc_base.get('vin'),
+        'target_soc': user_settings.get('mercedes_target', merc_base.get('target_soc', 80)),
+        'ha_url': user_settings.get('ha_url'),
+        'ha_token': user_settings.get('ha_token'),
+        'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id')
+    }
+
+    # Nissan Config Merge
+    nis_base = full_config['cars'].get('nissan_leaf', {})
+    full_config['cars']['nissan_leaf'] = {
+        'capacity_kwh': nis_base.get('capacity_kwh', 40),
+        'max_charge_kw': nis_base.get('max_charge_kw', 6.6),
+        'vin': user_settings.get('nissan_vin', nis_base.get('vin')),
+        'target_soc': user_settings.get('nissan_target', nis_base.get('target_soc', 80)),
+        'ha_url': user_settings.get('ha_url'),
+        'ha_token': user_settings.get('ha_token'),
+        'ha_nissan_soc_entity_id': user_settings.get('ha_nissan_soc_entity_id'),
+        'ha_nissan_plugged_entity_id': user_settings.get('ha_nissan_plugged_entity_id'),
+        'ha_nissan_range_entity_id': user_settings.get('ha_nissan_range_entity_id')
+    }
 
     return full_config
 

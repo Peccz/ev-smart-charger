@@ -119,12 +119,18 @@ class NissanLeaf(Vehicle):
         self.ha_nissan_plugged_entity_id = config.get('ha_nissan_plugged_entity_id')
         self.ha_nissan_range_entity_id = config.get('ha_nissan_range_entity_id')
 
+        # Debug Logging for Configuration
+        token_masked = "***" if self.ha_token else "None"
+        logger.info(f"NissanLeaf Config Check: URL={self.ha_url}, Token={token_masked}, "
+                    f"SoC_ID={self.ha_nissan_soc_entity_id}, "
+                    f"Plugged_ID={self.ha_nissan_plugged_entity_id}")
+
         self.ha_client = None
         if self.ha_url and self.ha_token:
             self.ha_client = HomeAssistantClient(self.ha_url, self.ha_token)
-            logger.info("NissanLeaf: HA client initialized.")
+            logger.info("NissanLeaf: HA client initialized successfully.")
         else:
-            logger.warning("NissanLeaf: HA credentials incomplete. Will use fallback.")
+            logger.warning(f"NissanLeaf: HA credentials incomplete (URL or Token missing). Client NOT created.")
 
     def get_status(self):
         logger.info("NissanLeaf: Attempting to get status from HA.")
