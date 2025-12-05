@@ -13,6 +13,7 @@ from connectors.vehicles import MercedesEQV, NissanLeaf
 from connectors.zaptec import ZaptecCharger
 from database.db_manager import DatabaseManager
 from optimizer.engine import Optimizer
+from config_manager import ConfigManager # Import new manager
 
 # Setup logging
 logging.basicConfig(
@@ -60,59 +61,6 @@ def _save_forecast_history(forecast_data):
     except Exception as e:
         logger.error(f"Failed to save forecast history to {HISTORY_FILE}: {e}")
 
-def load_config():
-    with open("config/settings.yaml", "r") as f:
-        base_config = yaml.safe_load(f)
-    
-    
-    # Load user settings from JSON
-    user_settings = {}
-    try:
-        with open("data/user_settings.json", "r") as f:
-            user_settings = json.load(f)
-    except FileNotFoundError:
-        logger.info("user_settings.json not found, using defaults for user preferences.")
-    except Exception as e:
-        logger.error(f"Error loading user_settings.json: {e}")
-        
-    # --- MERGE CONFIGURATIONS ---
-    # Create a new merged config for each car,
-    # prioritizing user_settings for HA/API credentials and targets,
-    # but keeping base_config for static car properties like capacity/max_charge.
-    
-    # Mercedes EQV Configuration
-    merc_config_from_yaml = base_config['cars'].get('mercedes_eqv', {})
-    mercedes_final_config = {
-        'vin': merc_config_from_yaml.get('vin'),
-        'capacity_kwh': merc_config_from_yaml.get('capacity_kwh', 90),
-        'max_charge_kw': merc_config_from_yaml.get('max_charge_kw', merc_config_from_yaml.get('max_charge_rate_kw', 11)),
-        'target_soc': user_settings.get('mercedes_target', merc_config_from_yaml.get('target_soc', 80)),
-        'ha_url': user_settings.get('ha_url'),
-        'ha_token': user_settings.get('ha_token'),
-        'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id')
-    }
-    base_config['cars']['mercedes_eqv'] = mercedes_final_config
-
-    # Nissan Leaf Configuration
-    nissan_config_from_yaml = base_config['cars'].get('nissan_leaf', {})
-    nissan_final_config = {
-        'vin': user_settings.get('nissan_vin', nissan_config_from_yaml.get('vin')),
-        'capacity_kwh': nissan_config_from_yaml.get('capacity_kwh', 40),
-        'max_charge_kw': nissan_config_from_yaml.get('max_charge_kw', nissan_config_from_yaml.get('max_charge_rate_kw', 3.7)),
-        'target_soc': user_settings.get('nissan_target', nissan_config_from_yaml.get('target_soc', 80)),
-        'username': user_settings.get('nissan_username', nissan_config_from_yaml.get('username')),
-        'password': user_settings.get('nissan_password', nissan_config_from_yaml.get('password')),
-        'region': nissan_config_from_yaml.get('region'),
-        'ha_url': user_settings.get('ha_url'),
-        'ha_token': user_settings.get('ha_token'),
-        'ha_nissan_soc_entity_id': user_settings.get('ha_nissan_soc_entity_id'),
-        'ha_nissan_plugged_entity_id': user_settings.get('ha_nissan_plugged_entity_id'),
-        'ha_nissan_range_entity_id': user_settings.get('ha_nissan_range_entity_id')
-    }
-    base_config['cars']['nissan_leaf'] = nissan_final_config
-            
-    return base_config
-
 def save_state(state):
     logger.info(f"Attempting to save state to {STATE_FILE}")
     os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
@@ -123,17 +71,10 @@ def save_state(state):
     except Exception as e:
         logger.error(f"Failed to save state to {STATE_FILE}: {e}")
 
-def get_user_settings():
-    try:
-        with open("data/user_settings.json", "r") as f:
-            return json.load(f)
-    except:
-        return {}
-
 def job():
     logger.info("Starting optimization cycle...")
-    config = load_config()
-    user_settings = get_user_settings() # Still needed for target_soc etc
+    config = ConfigManager.load_full_config() # Use ConfigManager
+    user_settings = ConfigManager.get_settings() # Use ConfigManager
     
     # Initialize services
     db = DatabaseManager()

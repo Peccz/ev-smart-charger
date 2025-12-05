@@ -1,72 +1,14 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for
-import json
-import os
-import math
-from datetime import datetime, timedelta
-import pandas as pd
-import yaml # Import yaml to load config/settings.yaml
-import requests # Needed for HomeAssistantClient
-# import pycarwings2 # Not needed, Kamereon client is used by vehicles.py
-
-from connectors.spot_price import SpotPriceService
-from connectors.weather import WeatherService
-from optimizer.engine import Optimizer # Import Optimizer to generate price forecast
-from connectors.vehicles import MercedesEQV, NissanLeaf # Import NissanLeaf directly
+from config_manager import ConfigManager, FORECAST_HISTORY_FILE
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
-app.secret_key = "super_secret_key_change_me" 
+app.secret_key = ConfigManager.get_flask_secret_key()
 
-SETTINGS_PATH = "data/user_settings.json"
 OVERRIDES_PATH = "data/manual_overrides.json"
 STATE_PATH = "data/optimizer_state.json"
 MANUAL_STATUS_PATH = "data/manual_status.json"
-YAML_CONFIG_PATH = "config/settings.yaml"
-FORECAST_HISTORY_FILE = "data/forecast_history.json" # Added
-
-DEFAULT_SETTINGS = {
-    "mercedes_eqv_min_soc": 40, # New default keys
-    "mercedes_eqv_max_soc": 80,
-    "nissan_leaf_min_soc": 40,
-    "nissan_leaf_max_soc": 80,
-    "departure_time": "07:00",
-    "smart_buffering": True, # Still present, but the new logic mostly replaces it.
-    "ha_url": "http://100.100.118.62:8123",
-    "ha_token": "",
-    "ha_merc_soc_entity_id": "",
-    "ha_merc_plugged_entity_id": "",
-    "ha_merc_climate_status_id": ""
-}
 
 spot_service = SpotPriceService()
 weather_service = WeatherService(59.5196, 17.9285)
-
-def get_settings():
-    if not os.path.exists(SETTINGS_PATH):
-        return DEFAULT_SETTINGS
-    try:
-        with open(SETTINGS_PATH, 'r') as f:
-            current_settings = json.load(f)
-            # Merge with defaults to ensure new fields exist.
-            # Handle potential old keys for migration:
-            if 'mercedes_target' in current_settings and 'mercedes_eqv_max_soc' not in current_settings:
-                current_settings['mercedes_eqv_max_soc'] = current_settings['mercedes_target']
-            if 'nissan_target' in current_settings and 'nissan_leaf_max_soc' not in current_settings:
-                current_settings['nissan_leaf_max_soc'] = current_settings['nissan_target']
-            # Migrate old min/max if they exist under the wrong keys
-            if 'mercedes_min_soc' in current_settings and 'mercedes_eqv_min_soc' not in current_settings:
-                current_settings['mercedes_eqv_min_soc'] = current_settings['mercedes_min_soc']
-            if 'mercedes_max_soc' in current_settings and 'mercedes_eqv_max_soc' not in current_settings:
-                current_settings['mercedes_eqv_max_soc'] = current_settings['mercedes_max_soc']
-            if 'nissan_min_soc' in current_settings and 'nissan_leaf_min_soc' not in current_settings:
-                current_settings['nissan_leaf_min_soc'] = current_settings['nissan_min_soc']
-            if 'nissan_max_soc' in current_settings and 'nissan_leaf_max_soc' not in current_settings:
-                current_settings['nissan_leaf_max_soc'] = current_settings['nissan_max_soc']
-
-
-            return {**DEFAULT_SETTINGS, **current_settings}
-    except Exception as e:
-        app.logger.error(f"Error loading user_settings.json: {e}")
-        return DEFAULT_SETTINGS
 
 def _load_forecast_history():
     """Loads historical price forecasts from file."""
@@ -81,71 +23,6 @@ def _load_forecast_history():
     except Exception as e:
         app.logger.error(f"Error loading forecast history: {e}")
         return {}
-
-# --- CONFIGURATION LOADING FOR OPTIMIZER INSTANCE (USED BY WEBAPP) ---
-# This is a function to ensure it loads the complete config
-def _load_full_config_for_optimizer():
-    full_config = {}
-    if os.path.exists(YAML_CONFIG_PATH):
-        try:
-            with open(YAML_CONFIG_PATH, 'r') as f:
-                full_config = yaml.safe_load(f)
-        except Exception as e:
-            app.logger.error(f"Error loading base config for Optimizer in web_app: {e}")
-    
-    user_settings = get_settings()
-
-    # Ensure 'optimization' key exists even if config is minimal
-    if 'optimization' not in full_config:
-        full_config['optimization'] = {'price_buffer_threshold': 0.10, 'planning_horizon_days': 3}
-    
-    # Ensure 'cars' structure
-    if 'cars' not in full_config:
-        full_config['cars'] = {}
-        
-    # Mercedes Config Merge
-    merc_base = full_config['cars'].get('mercedes_eqv', {})
-    full_config['cars']['mercedes_eqv'] = {
-        'capacity_kwh': merc_base.get('capacity_kwh', 90),
-        'max_charge_kw': merc_base.get('max_charge_kw', merc_base.get('max_charge_rate_kw', 11)),
-        'vin': merc_base.get('vin'),
-        'target_soc': user_settings.get('mercedes_eqv_target', user_settings.get('mercedes_target', merc_base.get('target_soc', 80))),
-        'min_soc': user_settings.get('mercedes_eqv_min_soc', 40),
-        'max_soc': user_settings.get('mercedes_eqv_max_soc', 80),
-        'ha_url': user_settings.get('ha_url'),
-        'ha_token': user_settings.get('ha_token'),
-        'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id'),
-        'ha_merc_plugged_entity_id': user_settings.get('ha_merc_plugged_entity_id'),
-        'climate_entity_id': user_settings.get('mercedes_eqv_climate_entity_id'),
-        'climate_status_id': user_settings.get('mercedes_eqv_climate_status_id'),
-        'lock_entity_id': user_settings.get('mercedes_eqv_lock_entity_id')
-    }
-
-    # Nissan Config Merge
-    nis_base = full_config['cars'].get('nissan_leaf', {})
-    full_config['cars']['nissan_leaf'] = {
-        'capacity_kwh': nis_base.get('capacity_kwh', 40),
-        'max_charge_kw': nis_base.get('max_charge_kw', nis_base.get('max_charge_rate_kw', 3.7)),
-        'vin': user_settings.get('nissan_vin', nis_base.get('vin')),
-        'target_soc': user_settings.get('nissan_leaf_target', user_settings.get('nissan_target', nis_base.get('target_soc', 80))),
-        'min_soc': user_settings.get('nissan_leaf_min_soc', 40),
-        'max_soc': user_settings.get('nissan_leaf_max_soc', 80),
-        'ha_url': user_settings.get('ha_url'),
-        'ha_token': user_settings.get('ha_token'),
-        'ha_nissan_soc_entity_id': user_settings.get('ha_nissan_soc_entity_id'),
-        'ha_nissan_plugged_entity_id': user_settings.get('ha_nissan_plugged_entity_id'),
-        'ha_nissan_range_entity_id': user_settings.get('ha_nissan_range_entity_id'),
-        'climate_entity_id': user_settings.get('nissan_leaf_climate_entity_id')
-    }
-
-    return full_config
-
-optimizer_instance = Optimizer(_load_full_config_for_optimizer())
-# --- END CONFIGURATION LOADING ---
-
-def save_settings(settings):
-    with open(SETTINGS_PATH, 'w') as f:
-        json.dump(settings, f, indent=2)
 
 def get_overrides():
     if not os.path.exists(OVERRIDES_PATH):
@@ -219,13 +96,13 @@ def cars_page():
 
 @app.route('/api/status')
 def api_status():
-    settings = get_settings()
+    settings = ConfigManager.get_settings()
     overrides = get_overrides()
     state = get_optimizer_state()
     manual_status = get_manual_status() # Always load manual status
     
     # Initialize Optimizer and fetch prices for dynamic target calculation
-    full_merged_config = _load_full_config_for_optimizer() # Use the new loader
+    full_merged_config = ConfigManager.load_full_config()
     optimizer = Optimizer(full_merged_config)
     official_prices = spot_service.get_prices_upcoming()
     weather_forecast = weather_service.get_forecast()
@@ -279,7 +156,6 @@ def api_status():
         dynamic_target_soc, current_mode = optimizer._calculate_dynamic_target(key_id, prices_with_forecast)
         
         # Now, fetch other details from car_state or settings
-        # target = settings.get(target_key, 80) # No longer needed, using dynamic_target_soc
         min_soc = settings.get(f"{key_id}_min_soc", 40)
         max_soc = settings.get(f"{key_id}_max_soc", 80)
 
@@ -312,16 +188,12 @@ def api_status():
              start_time_text = "Startar senare..."
 
         # --- UI CONSISTENCY CHECK ---
-        # If settings changed recently, the stored state might say "Target reached" (e.g. 40%)
-        # but the new dynamic target is higher (e.g. 60%). This looks like a bug.
-        # We detect this mismatch and display a "Pending" message instead.
         display_action = car_state.get('action', 'IDLE')
         display_reason = car_state.get('reason', '-')
         
         if display_soc < dynamic_target_soc and "reached" in str(display_reason):
             display_action = "PENDING"
             display_reason = "Mål ändrat. Inväntar nästa beräkning..."
-            # Also clear start time text as it might be invalid
             start_time_text = ""
 
         # Get control entity IDs from settings for frontend to enable/disable buttons
@@ -331,16 +203,16 @@ def api_status():
         return {
             "name": name,
             "id": key_id,
-            "soc": display_soc, # Use the determined display_soc
-            "manual_soc": display_manual_soc, # Ensure UI slider shows something reasonable
-            "target": dynamic_target_soc, # THIS IS THE DYNAMICALLY CALCULATED TARGET
-            "target_mode": current_mode, # Pass the mode for future use if needed
+            "soc": display_soc, 
+            "manual_soc": display_manual_soc,
+            "target": dynamic_target_soc,
+            "target_mode": current_mode,
             "min_soc": min_soc,
             "max_soc": max_soc,
             "plugged_in": plugged_in,
             "range_km": range_km,
-            "odometer": car_state.get('odometer', '-'), # Include odometer
-            "climate_active": climate_active, # Include climate status
+            "odometer": car_state.get('odometer', '-'),
+            "climate_active": climate_active,
             "override": overrides.get(key_id),
             "action": display_action,
             "reason": display_reason,
@@ -368,7 +240,7 @@ def api_status():
 def api_plan():
     try:
         # Reload full config for optimizer with latest user settings
-        full_merged_config = _load_full_config_for_optimizer() # Use the new loader
+        full_merged_config = ConfigManager.load_full_config()
         optimizer = Optimizer(full_merged_config)
 
         official_prices = spot_service.get_prices_upcoming()
@@ -381,7 +253,6 @@ def api_plan():
         analysis = []
         charging_plan = [] 
         
-        # The optimizer_state will tell us WHICH car is priority and what its plan is
         state = get_optimizer_state()
         cars_in_state = []
         for k, v in state.items():
@@ -392,26 +263,18 @@ def api_plan():
         priority_car_from_state = cars_in_state[0] if cars_in_state else None
         
         if priority_car_from_state and priority_car_from_state.get('urgency_score', 0) > 0:
-            # We need to re-run the planning to get the specific hours for the UI
-            # This is duplicating logic but ensures UI matches current config.
-            
-            # Simulate getting the car object (need full config for that)
-            # Rerunning load_config here for the car objects
-            full_merged_config = _load_full_config_for_optimizer() # Reload config, now it will include merged user settings
             if priority_car_from_state['id'] == 'mercedes_eqv':
                 car_obj = MercedesEQV(full_merged_config['cars']['mercedes_eqv'])
             else: # nissan_leaf
                 car_obj = NissanLeaf(full_merged_config['cars']['nissan_leaf'])
             
-            # This is a bit of a hack, calling job() logic parts here, but needed for UI.
-            # In a perfect world, optimizer_state would contain the actual schedule.
             current_car_status = car_obj.get_status()
             
             # Calculate dynamic target SoC using the same logic as the engine
             target_soc, mode = optimizer._calculate_dynamic_target(priority_car_from_state['id'], prices_with_forecast)
             
             # Get min/max from settings for display
-            settings = get_settings()
+            settings = ConfigManager.get_settings()
             min_soc = settings.get(f"{priority_car_from_state['id']}_min_soc", 40)
             max_soc = settings.get(f"{priority_car_from_state['id']}_max_soc", 80)
 
@@ -505,12 +368,14 @@ def api_settings():
     if request.method == 'POST':
         data = request.json
         app.logger.info(f"Saving settings: {data}")
-        current = get_settings()
+        current = ConfigManager.get_settings()
         current.update(data)
-        save_settings(current)
-        return jsonify({"status": "ok"})
+        if ConfigManager.save_settings(current):
+            return jsonify({"status": "ok"})
+        else:
+            return jsonify({"status": "error", "message": "Failed to save settings"}), 500
     else:
-        return jsonify(get_settings())
+        return jsonify(ConfigManager.get_settings())
 
 @app.route('/api/override', methods=['POST'])
 def api_override():
@@ -525,7 +390,7 @@ def api_control():
         vehicle_id = data.get('vehicle_id')
         action = data.get('action')
         
-        full_config = _load_full_config_for_optimizer()
+        full_config = ConfigManager.load_full_config()
         car_obj = None
         
         if vehicle_id == 'mercedes_eqv':
@@ -560,19 +425,23 @@ def api_control():
 @app.route('/api/manual_soc', methods=['POST'])
 def api_manual_soc():
     data = request.json
-    set_manual_soc(data.get('vehicle_id'), int(data.get('soc')))
-    return jsonify({"status": "ok"})
+    try:
+        soc = int(data.get('soc'))
+        if not (0 <= soc <= 100):
+            return jsonify({"status": "error", "message": "SoC must be between 0 and 100"}), 400
+            
+        set_manual_soc(data.get('vehicle_id'), soc)
+        return jsonify({"status": "ok"})
+    except ValueError:
+        return jsonify({"status": "error", "message": "Invalid SoC value"}), 400
 
 @app.route('/api/nissan/debug_login')
 def nissan_debug_login():
     try:
-        user_settings = get_settings() # This will load from user_settings.json
+        user_settings = ConfigManager.get_settings()
         
         # Simulate loading full config as main.py does
-        full_config = {}
-        if os.path.exists(YAML_CONFIG_PATH):
-            with open(YAML_CONFIG_PATH, 'r') as f:
-                full_config = yaml.safe_load(f)
+        full_config = ConfigManager.load_full_config()
         
         # Inject Nissan credentials from user_settings
         nissan_config_for_test = full_config['cars'].get('nissan_leaf', {})
@@ -593,7 +462,3 @@ def nissan_debug_login():
     except Exception as e:
         app.logger.error(f"Error in nissan_debug_login: {e}")
         return jsonify({"status": "Error", "message": str(e)})
-
-if __name__ == '__main__':
-    os.makedirs("data", exist_ok=True)
-    app.run(host='0.0.0.0', port=5000, debug=True)

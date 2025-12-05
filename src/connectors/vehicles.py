@@ -89,6 +89,7 @@ class MercedesEQV(Vehicle):
         self.ha_climate_id = config.get('climate_entity_id')
         self.ha_climate_status_id = config.get('climate_status_id')
         self.ha_lock_id = config.get('lock_entity_id')
+        self.ha_odometer_id = config.get('odometer_entity_id')
         
         self.ha_client = None
         if self.ha_url and self.ha_token:
@@ -157,12 +158,13 @@ class MercedesEQV(Vehicle):
                         
                     
                     odometer = 0
-                    odometer_state = self.ha_client.get_state("sensor.urg48t_odometer") # Hardcoding for now, should be configurable
-                    if odometer_state and 'state' in odometer_state:
-                        try:
-                            odometer = int(float(odometer_state['state']))
-                        except ValueError:
-                            pass
+                    if self.ha_odometer_id:
+                        odometer_state = self.ha_client.get_state(self.ha_odometer_id)
+                        if odometer_state and 'state' in odometer_state:
+                            try:
+                                odometer = int(float(odometer_state['state']))
+                            except ValueError:
+                                pass
 
                     range_km = 0
                     range_state = self.ha_client.get_state("sensor.urg48t_range_electric") # Get range from dedicated sensor
@@ -220,6 +222,7 @@ class NissanLeaf(Vehicle):
         self.ha_nissan_plugged_entity_id = config.get('ha_nissan_plugged_entity_id')
         self.ha_nissan_range_entity_id = config.get('ha_nissan_range_entity_id')
         self.ha_climate_id = config.get('climate_entity_id')
+        self.ha_odometer_id = config.get('odometer_entity_id')
 
         # Debug Logging for Configuration
         token_masked = "***" if self.ha_token else "None"
@@ -266,28 +269,21 @@ class NissanLeaf(Vehicle):
                         range_state = self.ha_client.get_state(self.ha_nissan_range_entity_id)
                         if range_state and 'state' in range_state:
                             try:
-                                range_km = int(float(range_state['state']))
-                            except ValueError:
-                                pass
-                    
-                    odometer = 0
-                    odometer_state = self.ha_client.get_state("sensor.leaf_odometer") # Assuming this exists
-                    if odometer_state and 'state' in odometer_state:
-                        try:
-                            odometer = int(float(odometer_state['state']))
-                        except ValueError:
-                            pass
-                    
-                    climate_active = False
-                    if self.ha_climate_id:
-                        c_state = self.ha_client.get_state(self.ha_climate_id)
-                        if c_state and 'state' in c_state:
-                            if str(c_state['state']).lower() in ['on', 'true', '1', 'active']:
-                                climate_active = True
-
-
-                    logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km, Odometer={odometer}")
-                    return {
+                                                                range_km = int(float(range_state['state']))
+                                                            except ValueError:
+                                                                pass
+                                                    
+                                odometer = 0
+                                                    if self.ha_odometer_id:
+                                                        odometer_state = self.ha_client.get_state(self.ha_odometer_id)
+                                                        if odometer_state and 'state' in odometer_state:
+                                                            try:
+                                                                odometer = int(float(odometer_state['state']))
+                                                            except ValueError:
+                                                                pass
+                                
+                                
+                                                    logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km, Odometer={odometer}")                    return {
                         "vehicle": self.name,
                         "soc": int(soc),
                         "range_km": range_km,
