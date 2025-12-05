@@ -55,14 +55,18 @@ class Optimizer:
         # Convert official prices to DataFrame
         official_prices_df = pd.DataFrame(current_prices)
         if not official_prices_df.empty:
-            official_prices_df['time_start'] = pd.to_datetime(official_prices_df['time_start'])
+            official_prices_df['time_start'] = pd.to_datetime(official_prices_df['time_start'], utc=True).dt.tz_convert('Europe/Berlin').dt.tz_localize(None)
             official_prices_df = official_prices_df.set_index('time_start')
+            # Resample to hourly if we have 15-min data, taking the mean price for the hour
+            # This ensures we have a value for the :00 timestamp that represents the hour
+            official_prices_df = official_prices_df.resample('1h').mean()
         
         all_forecast_prices = []
 
         for hour_data in weather_forecast:
-            hour_time = pd.to_datetime(hour_data['time'])
-            if hour_time < now: # Skip past hours
+            hour_time = pd.to_datetime(hour_data['time']) # These are naive local times from OpenMeteo (Europe/Berlin requested)
+            
+            if hour_time < now.replace(minute=0, second=0, microsecond=0): # Skip past hours (align to hour start)
                 continue
             
             # If we have an official price, use it
