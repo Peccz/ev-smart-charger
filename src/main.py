@@ -183,6 +183,7 @@ def job():
             "soc": status['soc'],
             "range_km": status.get('range_km', 0),
             "odometer": status.get('odometer', 0),
+            "climate_active": status.get('climate_active', False),
             "plugged_in": status['plugged_in'],
             "action": decision['action'],
             "reason": decision['reason'],

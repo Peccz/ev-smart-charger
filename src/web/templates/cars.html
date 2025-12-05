@@ -77,7 +77,10 @@
                         <i class="bi bi-car-front-fill car-icon"></i>
                         <div>
                             <h5 class="mb-0 fw-bold">${car.name}</h5>
-                            <span class="text-muted small">${car.plugged_in ? 'Inkopplad' : 'Ej ansluten'} • ${car.soc}%</span>
+                            <span class="text-muted small">
+                                ${car.plugged_in ? 'Inkopplad' : 'Ej ansluten'} • ${car.soc}%
+                                ${car.climate_active ? '<span class="badge bg-danger ms-2"><i class="bi bi-thermometer-high"></i> Värme PÅ</span>' : ''}
+                            </span>
                         </div>
                     </div>
                     

@@ -87,6 +87,7 @@ class MercedesEQV(Vehicle):
         self.ha_merc_soc_entity_id = config.get('ha_merc_soc_entity_id')
         self.ha_merc_plugged_entity_id = config.get('ha_merc_plugged_entity_id')
         self.ha_climate_id = config.get('climate_entity_id')
+        self.ha_climate_status_id = config.get('climate_status_id')
         self.ha_lock_id = config.get('lock_entity_id')
         
         self.ha_client = None
@@ -170,6 +171,13 @@ class MercedesEQV(Vehicle):
                             range_km = int(float(range_state['state']))
                         except ValueError:
                             pass
+                    
+                    climate_active = False
+                    if self.ha_climate_status_id:
+                        c_state = self.ha_client.get_state(self.ha_climate_status_id)
+                        if c_state and 'state' in c_state:
+                            if str(c_state['state']).lower() in ['on', 'true', '1', 'active']:
+                                climate_active = True
 
                     logger.info(f"MercedesEQV: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Odometer={odometer}, Range={range_km}km")
                     return {
@@ -177,7 +185,8 @@ class MercedesEQV(Vehicle):
                         "soc": int(soc),
                         "range_km": range_km, 
                         "plugged_in": plugged_in,
-                        "odometer": odometer
+                        "odometer": odometer,
+                        "climate_active": climate_active
                     }
                 except ValueError:
                     logger.error(f"MercedesEQV: HA SoC state is not a number: {state['state']}. Using fallback.")
@@ -266,6 +275,13 @@ class NissanLeaf(Vehicle):
                             odometer = int(float(odometer_state['state']))
                         except ValueError:
                             pass
+                    
+                    climate_active = False
+                    if self.ha_climate_id:
+                        c_state = self.ha_client.get_state(self.ha_climate_id)
+                        if c_state and 'state' in c_state:
+                            if str(c_state['state']).lower() in ['on', 'true', '1', 'active']:
+                                climate_active = True
 
 
                     logger.info(f"NissanLeaf: HA data parsed: SoC={soc}%, Plugged={plugged_in}, Range={range_km}km, Odometer={odometer}")
@@ -274,7 +290,8 @@ class NissanLeaf(Vehicle):
                         "soc": int(soc),
                         "range_km": range_km,
                         "plugged_in": plugged_in,
-                        "odometer": odometer
+                        "odometer": odometer,
+                        "climate_active": climate_active
                     }
                 except ValueError:
                     logger.error(f"NissanLeaf: HA SoC state is not a number: {state['state']}. Using fallback.")

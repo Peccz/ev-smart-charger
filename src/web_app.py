@@ -33,7 +33,8 @@ DEFAULT_SETTINGS = {
     "ha_url": "http://100.100.118.62:8123",
     "ha_token": "",
     "ha_merc_soc_entity_id": "",
-    "ha_merc_plugged_entity_id": ""
+    "ha_merc_plugged_entity_id": "",
+    "ha_merc_climate_status_id": ""
 }
 
 spot_service = SpotPriceService()
@@ -116,6 +117,7 @@ def _load_full_config_for_optimizer():
         'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id'),
         'ha_merc_plugged_entity_id': user_settings.get('ha_merc_plugged_entity_id'),
         'climate_entity_id': user_settings.get('mercedes_eqv_climate_entity_id'),
+        'climate_status_id': user_settings.get('mercedes_eqv_climate_status_id'),
         'lock_entity_id': user_settings.get('mercedes_eqv_lock_entity_id')
     }
 
@@ -283,6 +285,7 @@ def api_status():
 
         plugged_in = car_state.get('plugged_in', False)
         range_km = car_state.get('range_km', 0)
+        climate_active = car_state.get('climate_active', False)
         urgency = car_state.get('urgency_score', 0)
         
         is_priority = (key_id == priority_car_id)
@@ -337,6 +340,7 @@ def api_status():
             "plugged_in": plugged_in,
             "range_km": range_km,
             "odometer": car_state.get('odometer', '-'), # Include odometer
+            "climate_active": climate_active, # Include climate status
             "override": overrides.get(key_id),
             "action": display_action,
             "reason": display_reason,
