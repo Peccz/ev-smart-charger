@@ -62,6 +62,12 @@ else
     echo "  Warning: config/settings.yaml not found locally"
 fi
 
+if [ -f "data/user_settings.json" ]; then
+    ssh "$RPI_HOST" "mkdir -p $RPI_GIT_ROOT/data"
+    scp data/user_settings.json "$RPI_HOST:$RPI_GIT_ROOT/data/user_settings.json"
+    echo "  user_settings.json copied"
+fi
+
 # Step 6: Setup virtual environment if needed
 echo "✓ Step 6: Setting up Python environment on RPi..."
 ssh "$RPI_HOST" bash << ENDSSH
@@ -90,8 +96,8 @@ scp ev_web_app.service "$RPI_HOST:/tmp/ev_web_app.service"
 # Update WorkingDirectory in service files to use detected path
 ssh "$RPI_HOST" bash << ENDSSH
 # Update WorkingDirectory to actual path
-sed -i "s|WorkingDirectory=.*|WorkingDirectory=$RPI_GIT_ROOT/src|" /tmp/ev_smart_charger.service
-sed -i "s|ExecStart=.*|ExecStart=$RPI_GIT_ROOT/venv/bin/python main.py|" /tmp/ev_smart_charger.service
+sed -i "s|WorkingDirectory=.*|WorkingDirectory=$RPI_GIT_ROOT|" /tmp/ev_smart_charger.service
+sed -i "s|ExecStart=.*|ExecStart=$RPI_GIT_ROOT/venv/bin/python src/main.py|" /tmp/ev_smart_charger.service
 
 sed -i "s|WorkingDirectory=.*|WorkingDirectory=$RPI_GIT_ROOT|" /tmp/ev_web_app.service
 sed -i "s|ExecStart=.*|ExecStart=$RPI_GIT_ROOT/venv/bin/python src/web_app.py|" /tmp/ev_web_app.service
