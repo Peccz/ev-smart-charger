@@ -475,3 +475,6 @@ def nissan_debug_login():
     except Exception as e:
         app.logger.error(f"Error in nissan_debug_login: {e}")
         return jsonify({"status": "Error", "message": str(e)})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

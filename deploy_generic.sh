@@ -90,8 +90,8 @@ scp ev_web_app.service "$RPI_HOST:/tmp/ev_web_app.service"
 # Update WorkingDirectory in service files to use detected path
 ssh "$RPI_HOST" bash << ENDSSH
 # Update WorkingDirectory to actual path
-sed -i "s|WorkingDirectory=.*|WorkingDirectory=$RPI_GIT_ROOT/ev_smart_charger/src|" /tmp/ev_smart_charger.service
-sed -i "s|ExecStart=.*|ExecStart=$RPI_GIT_ROOT/ev_smart_charger/venv/bin/python main.py|" /tmp/ev_smart_charger.service
+sed -i "s|WorkingDirectory=.*|WorkingDirectory=$RPI_GIT_ROOT/src|" /tmp/ev_smart_charger.service
+sed -i "s|ExecStart=.*|ExecStart=$RPI_GIT_ROOT/venv/bin/python main.py|" /tmp/ev_smart_charger.service
 
 sed -i "s|WorkingDirectory=.*|WorkingDirectory=$RPI_GIT_ROOT|" /tmp/ev_web_app.service
 sed -i "s|ExecStart=.*|ExecStart=$RPI_GIT_ROOT/venv/bin/python src/web_app.py|" /tmp/ev_web_app.service
