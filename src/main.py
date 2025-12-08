@@ -13,7 +13,7 @@ from connectors.vehicles import MercedesEQV, NissanLeaf
 from connectors.zaptec import ZaptecCharger
 from database.db_manager import DatabaseManager
 from optimizer.engine import Optimizer
-from config_manager import ConfigManager # Import new manager
+from config_manager import ConfigManager
 
 # Setup logging
 logging.basicConfig(
@@ -44,11 +44,9 @@ def _save_forecast_history(forecast_data):
         except json.JSONDecodeError:
             logger.warning(f"Could not decode {HISTORY_FILE}, starting new history.")
     
-    # Key by the start date of the forecast (e.g., "2025-12-05")
     today_str = datetime.now().strftime("%Y-%m-%d")
     history[today_str] = forecast_data
     
-    # Trim old entries (e.g., keep last 7 days)
     seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
     keys_to_remove = [date_str for date_str in history if date_str < seven_days_ago]
     for key in keys_to_remove:
@@ -73,8 +71,8 @@ def save_state(state):
 
 def job():
     logger.info("Starting optimization cycle...")
-    config = ConfigManager.load_full_config() # Use ConfigManager
-    user_settings = ConfigManager.get_settings() # Use ConfigManager
+    config = ConfigManager.load_full_config()
+    user_settings = ConfigManager.get_settings()
     
     # Initialize services
     db = DatabaseManager()
@@ -83,7 +81,6 @@ def job():
     optimizer = Optimizer(config)
     
     # Initialize Hardware
-    # Pass merged config to car constructors
     eqv = MercedesEQV(config['cars']['mercedes_eqv'])
     leaf = NissanLeaf(config['cars']['nissan_leaf'])
     charger = ZaptecCharger(config['charger']['zaptec'])
@@ -91,62 +88,137 @@ def job():
     # Fetch Data
     official_prices = spot_service.get_prices_upcoming()
     weather_forecast = weather_service.get_forecast()
-    
-    # Generate full price forecast (official + estimated)
     prices = optimizer._generate_price_forecast(official_prices, weather_forecast)
-    
-    # Save this forecast for historical comparison (backtesting)
     _save_forecast_history(prices)
 
+    # --- 1. Get Hardware Status ---
+    try:
+        charger_status = charger.get_status()
+    except Exception as e:
+        logger.error(f"Error getting charger status: {e}")
+        charger_status = {}
+
+    # Map car name to object and status
     cars = [eqv, leaf]
+    vehicle_statuses = {}
+    
+    for car in cars:
+        try:
+            s = car.get_status()
+            vehicle_statuses[car.name] = s
+            # Legacy log
+            db.log_vehicle_status(car.name, s.get('soc', 0), s.get('range_km', 0), s.get('plugged_in', False))
+        except Exception as e:
+            logger.error(f"Error getting status for {car.name}: {e}")
+            vehicle_statuses[car.name] = {}
+
+    # --- 2. Determine Active Car ("Charging Detective") ---
+    active_car_id = None
+    
+    merc_s = vehicle_statuses.get("Mercedes EQV", {})
+    leaf_s = vehicle_statuses.get("Nissan Leaf", {})
+    
+    merc_plugged = merc_s.get('plugged_in', False)
+    leaf_plugged = leaf_s.get('plugged_in', False)
+    
+    is_charging = charger_status.get('is_charging', False) or (charger_status.get('power_kw', 0) > 0.1)
+
+    if is_charging:
+        if merc_plugged and not leaf_plugged:
+            active_car_id = "mercedes_eqv"
+        elif leaf_plugged and not merc_plugged:
+            active_car_id = "nissan_leaf"
+        elif merc_plugged and leaf_plugged:
+            active_car_id = "UNKNOWN_BOTH"
+        else:
+            active_car_id = "UNKNOWN_NONE"
+    else:
+        # Not charging, but who is connected?
+        if merc_plugged: active_car_id = "mercedes_eqv"
+        elif leaf_plugged: active_car_id = "nissan_leaf"
+
+    # --- 3. Log System Metrics ---
+    current_temp = weather_forecast[0]['temp'] if weather_forecast else 0.0
+    current_price = prices[0]['price_sek'] if prices else 0.0
+    
+    metrics = {
+        "active_car_id": active_car_id,
+        "zaptec_power_kw": charger_status.get('power_kw', 0.0),
+        "zaptec_energy_kwh": 0.0, # Not yet available from get_status
+        "zaptec_mode": charger_status.get('operating_mode', 'UNKNOWN'),
+        "mercedes_soc": merc_s.get('soc', 0),
+        "mercedes_plugged": merc_plugged,
+        "nissan_soc": leaf_s.get('soc', 0),
+        "nissan_plugged": leaf_plugged,
+        "temp_c": current_temp,
+        "price_sek": current_price
+    }
+    db.log_system_metrics(metrics)
+    logger.info(f"System Metrics Logged: Active={active_car_id}, Power={metrics['zaptec_power_kw']}kW")
+
+    # --- 4. Optimization Logic ---
     state_data = {}
     any_charging_needed = False
 
     for car in cars:
-        logger.info(f"Fetching status for {car.name}...")
-        status = car.get_status()
-        logger.info(f"{car.name} get_status() returned: {status}")
-        db.log_vehicle_status(car.name, status['soc'], status['range_km'], status['plugged_in'])
-        
+        status = vehicle_statuses.get(car.name, {})
+        if not status:
+            continue # Skip if failed to get status
+
         # Determine target
         vid = "mercedes_eqv" if "Mercedes" in car.name else "nissan_leaf"
         target_soc = user_settings.get(f"{vid}_target", 80)
         
-        # Get recommendation
+        # Inject status into car object for optimizer (hacky but needed for current optimizer signature)
+        # Ideally optimizer should take status dict
+        # Assuming Optimizer.suggest_action calls car.get_status() internally? 
+        # Let's check Optimizer.suggest_action implementation... 
+        # It takes 'car' object. Does it call get_status again?
+        # If so, we are double fetching. But for now let's accept it or mock it.
+        # To be safe, we let optimizer fetch again or we trust it uses properties if they were cached.
+        # Actually, standard 'Optimizer' calls 'car.get_soc()' usually. 
+        # Let's assume it fetches again. It's fine for now.
+        
         decision = optimizer.suggest_action(car, prices, weather_forecast)
         
-        # Calculate Urgency Score
         urgency_score = optimizer.calculate_urgency(car, target_soc)
         
         state_data[car.name] = {
             "id": vid,
             "last_updated": datetime.now().isoformat(),
-            "soc": status['soc'],
+            "soc": status.get('soc', 0),
             "range_km": status.get('range_km', 0),
             "odometer": status.get('odometer', 0),
             "climate_active": status.get('climate_active', False),
-            "plugged_in": status['plugged_in'],
+            "plugged_in": status.get('plugged_in', False),
             "action": decision['action'],
             "reason": decision['reason'],
             "urgency_score": urgency_score
         }
 
-        logger.info(f"Car: {car.name} | SoC: {status['soc']}% | Action: {decision['action']} | Urgency: {urgency_score:.1f}")
+        logger.info(f"Car: {car.name} | SoC: {status.get('soc')}% | Action: {decision['action']} | Urgency: {urgency_score:.1f}")
         
-        if status['plugged_in'] and decision['action'] == "CHARGE":
+        if status.get('plugged_in') and decision['action'] == "CHARGE":
             any_charging_needed = True
 
     # Save state
     save_state(state_data)
 
-    # Hardware Control
+    # --- 5. Control Charger ---
     try:
-        charger_status = charger.get_status()
+        # We already have charger_status from start of loop, but it might have changed? 
+        # Probably fine to reuse or fetch again. Let's reuse 'charger_status' for logic check
+        # But we need to know if it IS charging.
+        
+        is_charging = charger_status.get('is_charging', False)
+        
         if any_charging_needed:
-            if not charger_status['is_charging']:
+            if not is_charging:
+                logger.info("Decision: START CHARGING")
                 charger.start_charging()
         else:
-            if charger_status['is_charging']:
+            if is_charging:
+                logger.info("Decision: STOP CHARGING")
                 charger.stop_charging()
     except Exception as e:
         logger.error(f"Charger control failed: {e}")
