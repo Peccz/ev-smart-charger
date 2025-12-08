@@ -147,10 +147,11 @@ class ZaptecCharger(Charger):
             logger.error("Zaptec: Failed to get API headers for command, authentication failed.")
             return False
 
-        url = f"{self.api_url}/chargers/{target_id}/sendCommand"
-        payload = {
-            "commandId": command_id
-        }
+        # Fix: commandId is part of the URL path
+        url = f"{self.api_url}/chargers/{target_id}/sendCommand/{command_id}"
+        # Payload might be needed for parameters, but for start/stop (501/502) it's often empty or just empty json
+        payload = {} 
+        
         try:
             response = requests.post(url, json=payload, headers=headers, timeout=10)
             response.raise_for_status()
