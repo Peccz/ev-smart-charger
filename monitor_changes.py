@@ -74,20 +74,32 @@ class ZaptecMonitor:
             response.raise_for_status()
             data = response.json()
             
+            # --- DEBUG LOGGING ---
+            # logger.info(f"DEBUG ZAPTEC RAW DATA: {json.dumps(data)}")
+            with open(LOG_FILE, "a", encoding='utf-8') as f:
+                f.write(f"[{datetime.now().strftime('%H:%M:%S')}] DEBUG ZAPTEC RAW DATA: {json.dumps(data)}\n")
+            # ---------------------
+            
             operating_mode = "UNKNOWN"
             power_kw = 0.0
             is_charging = False
-
-            for obs in data:
-                if obs['stateId'] == 506: # Operating Mode
-                    mode_val = int(obs['valueAsString'])
-                    if mode_val == 1: operating_mode = "DISCONNECTED"
-                    elif mode_val == 2: operating_mode = "CONNECTED_WAITING"
-                    elif mode_val == 3: operating_mode = "CHARGING"
-                    
-                    if mode_val == 3: is_charging = True
-                elif obs['stateId'] == 510: # Total Power (W)
-                    power_kw = float(obs['valueAsString']) / 1000.0
+            
+            if isinstance(data, list): 
+                # Try to parse, but catch errors gracefully
+                try:
+                    for obs in data:
+                        if obs.get('stateId') == 506: 
+                            mode_val = int(obs['valueAsString'])
+                            if mode_val == 1: operating_mode = "DISCONNECTED"
+                            elif mode_val == 2: operating_mode = "CONNECTED_WAITING"
+                            elif mode_val == 3: operating_mode = "CHARGING"
+                            if mode_val == 3: is_charging = True
+                        elif obs.get('stateId') == 510:
+                            power_kw = float(obs['valueAsString']) / 1000.0
+                except Exception as parse_err:
+                    logger.error(f"Error parsing Zaptec data: {parse_err}")
+            else:
+                logger.error(f"Zaptec Status Error ({target_id}): Unexpected API response format: {type(data)}")
 
             return {
                 "operating_mode": operating_mode,
@@ -98,7 +110,7 @@ class ZaptecMonitor:
         except requests.exceptions.HTTPError as e:
             logger.error(f"Zaptec Status HTTP Error ({target_id}): {e.response.status_code} - {e.response.text}")
             return {"operating_mode": "API_ERROR", "power_kw": 0.0, "is_charging": False}
-        except Exception as e: # Catch all other errors, including KeyError
+        except Exception as e:
             logger.error(f"Zaptec Status Error ({target_id}): {e}")
             return {"operating_mode": "API_ERROR", "power_kw": 0.0, "is_charging": False}
 
@@ -117,13 +129,13 @@ def load_base_config():
     """Loads base YAML config."""
     if not os.path.exists(YAML_CONFIG_PATH):
         logger.warning(f"Base config file not found at {YAML_CONFIG_PATH}.")
-        return {}
+        return {{}}
     try:
         with open(YAML_CONFIG_PATH, 'r') as f:
             return yaml.safe_load(f)
     except Exception as e:
         logger.error(f"Error loading settings.yaml: {e}")
-        return {}
+        return {{}}
 
 def get_ha_states(base_url, token):
     headers = {
@@ -154,7 +166,7 @@ def main():
             ha_monitor_enabled = True
 
     base_config = load_base_config()
-    zaptec_config = base_config.get('charger', {}).get('zaptec', {})
+    zaptec_config = base_config.get('charger', {{}}).get('zaptec', {{}})
     
     if not (zaptec_config.get('username') and zaptec_config.get('password') and 
             (zaptec_config.get('installation_id') or zaptec_config.get('charger_id'))):
@@ -172,8 +184,8 @@ def main():
     
     ha_keywords = ["urg48t", "leaf"]
     
-    last_ha_states = {}
-    last_zaptec_status = {}
+    last_ha_states = {{}} # CORRECT
+    last_zaptec_status = {{}} # CORRECT
 
     logger.info("Fetching initial state...")
     if ha_monitor_enabled:
@@ -196,7 +208,7 @@ def main():
         # --- Monitor HA Entities ---
         if ha_monitor_enabled:
             current_ha_states_list = get_ha_states(ha_base_url, ha_token)
-            current_ha_states_map = {}
+            current_ha_states_map = {{}}
             ha_interesting_attrs = ['charging', 'pluggedIn', 'chargingstatus', 'chargingactive', 'state'] # Added 'state'
 
             for entity in current_ha_states_list:
@@ -214,8 +226,8 @@ def main():
                         with open(LOG_FILE, "a", encoding='utf-8') as f: f.write(msg + "\n", flush=True)
                     
                     for attr in ha_interesting_attrs:
-                        old_val = old.get('attributes', {}).get(attr)
-                        new_val = entity.get('attributes', {}).get(attr)
+                        old_val = old.get('attributes', {{}}).get(attr)
+                        new_val = entity.get('attributes', {{}}).get(attr)
                         if old_val != new_val:
                             msg = f"[{timestamp}] HA {eid}: ATTR '{attr}' changed '{old_val}' -> '{new_val}'"
                             logger.info(msg)
