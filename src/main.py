@@ -226,10 +226,10 @@ def job():
 def main():
     logger.info("EV Smart Charger System Started")
     job()
-    schedule.every().hour.at(":01").do(job)
+    schedule.every(1).minutes.do(job)
     while True:
         schedule.run_pending()
-        time.sleep(60)
+        time.sleep(10) # Sleep less to catch minute schedule accurately
 
 if __name__ == "__main__":
     main()
