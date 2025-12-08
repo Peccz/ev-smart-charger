@@ -206,3 +206,13 @@ class NissanLeaf(Vehicle):
         if self.ha_client and cid:
             return self.ha_client.call_service("switch", "turn_off", cid)
         return False
+
+    def wake_up(self):
+        # Use hardcoded default if not in config, as we discovered it via find_ha_entities.py
+        update_id = self.config.get('update_entity_id', "button.leaf_update_data")
+        if self.ha_client and update_id:
+            logger.info(f"NissanLeaf: Sending wake_up/update command to {update_id}")
+            return self.ha_client.call_service("button", "press", update_id)
+        return False
+
+    def get_status(self):

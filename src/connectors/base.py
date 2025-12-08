@@ -26,6 +26,13 @@ class Vehicle(BaseConnector):
         """
         pass
 
+    def wake_up(self):
+        """
+        Force vehicle to wake up and update status.
+        Returns True if command sent successfully.
+        """
+        return False
+
 class Charger(BaseConnector):
     @abstractmethod
     def get_status(self):
