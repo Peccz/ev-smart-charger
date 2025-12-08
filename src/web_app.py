@@ -340,7 +340,8 @@ def api_plan():
 
                 # Convert time_start to datetime for easy comparison and merging
                 df_forecast['time_start'] = pd.to_datetime(df_forecast['time_start'])
-                df_actual['time_start'] = pd.to_datetime(df_actual['time_start'])
+                # Ensure df_actual is timezone-naive to match df_forecast (from JSON)
+                df_actual['time_start'] = pd.to_datetime(df_actual['time_start']).dt.tz_localize(None)
                 
                 # Resample actual prices to hourly to match forecast (if spot service returns 15min)
                 df_actual = df_actual.set_index('time_start').resample('1h').mean().reset_index()
