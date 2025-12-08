@@ -22,21 +22,33 @@ DEFAULT_SETTINGS = {
     "nissan_leaf_min_soc": 40,
     "nissan_leaf_max_soc": 80,
     "departure_time": "07:00",
-    "smart_buffering": True,
-    "ha_merc_soc_entity_id": "",
-    "ha_merc_plugged_entity_id": "",
-    "ha_merc_climate_status_id": "",
-    "mercedes_eqv_climate_entity_id": "",
-    "mercedes_eqv_lock_entity_id": "",
-    "mercedes_eqv_odometer_entity_id": "",
-    "nissan_leaf_climate_entity_id": "",
-    "nissan_leaf_odometer_entity_id": ""
+    "smart_buffering": True
+}
+
+# STRIKT KONFIGURATION AV SENSORER
+# Dessa värden skriver över allt annat för att garantera funktion.
+HARDCODED_SENSORS = {
+    # Mercedes EQV
+    "ha_merc_soc_entity_id": "sensor.urg48t_state_of_charge",
+    "ha_merc_plugged_entity_id": "sensor.urg48t_range_electric", # Logic based on chargingstatus attr
+    "ha_merc_range_entity_id": "sensor.urg48t_range_electric",
+    "mercedes_eqv_odometer_entity_id": "sensor.urg48t_odometer",
+    "mercedes_eqv_climate_entity_id": "button.urg48t_preclimate_start",
+    "mercedes_eqv_climate_status_id": "binary_sensor.urg48t_preclimate_status", # If available
+    "mercedes_eqv_lock_entity_id": "lock.urg48t_lock",
+
+    # Nissan Leaf
+    "ha_nissan_soc_entity_id": "sensor.leaf_battery_level",
+    "ha_nissan_plugged_entity_id": "binary_sensor.leaf_plugged_in",
+    "ha_nissan_range_entity_id": "sensor.leaf_range_ac_on",
+    "nissan_leaf_climate_entity_id": "switch.leaf_climate_control",
+    "nissan_leaf_update_entity_id": "button.leaf_update_data",
+    # "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer" # Uncomment if found
 }
 
 class ConfigManager:
     @staticmethod
     def get_flask_secret_key():
-        """Gets or generates a persistent secret key for Flask sessions."""
         if os.path.exists(SECRET_KEY_PATH):
             try:
                 with open(SECRET_KEY_PATH, 'r') as f:
@@ -44,13 +56,11 @@ class ConfigManager:
             except Exception as e:
                 logger.error(f"Error reading secret key: {e}")
         
-        # Generate new key
         new_key = secrets.token_hex(32)
         try:
             os.makedirs(os.path.dirname(SECRET_KEY_PATH), exist_ok=True)
             with open(SECRET_KEY_PATH, 'w') as f:
                 f.write(new_key)
-            logger.info("Generated and saved new Flask secret key.")
         except Exception as e:
             logger.error(f"Error saving secret key: {e}")
         
@@ -64,7 +74,9 @@ class ConfigManager:
         try:
             with open(SETTINGS_PATH, 'r') as f:
                 current_settings = json.load(f)
-                return {**DEFAULT_SETTINGS, **current_settings}
+                # Merge defaults -> user settings -> hardcoded sensors
+                # This ensures get_settings() also returns the correct sensor IDs for the UI
+                return {**DEFAULT_SETTINGS, **current_settings, **HARDCODED_SENSORS}
         except Exception as e:
             logger.error(f"Error loading user_settings.json: {e}")
             return DEFAULT_SETTINGS.copy()
@@ -74,10 +86,13 @@ class ConfigManager:
         """Saves user settings to JSON."""
         try:
             os.makedirs(os.path.dirname(SETTINGS_PATH), exist_ok=True)
-            # Atomic write
+            # We filter out the hardcoded sensors before saving to keep the file clean, 
+            # although saving them doesn't hurt since they are enforced on load.
+            to_save = {k: v for k, v in settings.items() if k not in HARDCODED_SENSORS}
+            
             temp_path = SETTINGS_PATH + ".tmp"
             with open(temp_path, 'w') as f:
-                json.dump(settings, f, indent=2)
+                json.dump(to_save, f, indent=2)
                 f.flush()
                 os.fsync(f.fileno())
             os.rename(temp_path, SETTINGS_PATH)
@@ -87,21 +102,10 @@ class ConfigManager:
             return False
 
     @staticmethod
-    def _deep_merge(dict1, dict2):
-        """Recursive merge of dictionaries."""
-        for key, value in dict2.items():
-            if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
-                ConfigManager._deep_merge(dict1[key], value)
-            else:
-                dict1[key] = value
-        return dict1
-
-    @staticmethod
     def load_full_config():
         """Loads YAML config, merges with secrets and user settings."""
         base_config = {}
         
-        # 1. Load base YAML (Structure & Defaults)
         if os.path.exists(YAML_CONFIG_PATH):
             try:
                 with open(YAML_CONFIG_PATH, 'r') as f:
@@ -109,7 +113,6 @@ class ConfigManager:
             except Exception as e:
                 logger.error(f"Error loading settings.yaml: {e}")
         
-        # 2. Load Secrets (Overrides base config credentials)
         secrets = {}
         if os.path.exists(SECRETS_PATH):
             try:
@@ -118,28 +121,21 @@ class ConfigManager:
             except Exception as e:
                 logger.error(f"Error loading secrets.json: {e}")
         
-        # 3. Merge Secrets into Base Config
-        # Map flat secrets structure to nested config structure
+        # Merge Secrets
         if secrets.get('zaptec'):
             if 'charger' not in base_config: base_config['charger'] = {}
             if 'zaptec' not in base_config['charger']: base_config['charger']['zaptec'] = {}
             base_config['charger']['zaptec'].update(secrets['zaptec'])
             
-        # HA secrets are a bit tricky as they are often used in user_settings or main config
-        # Let's prioritize secrets for HA
         ha_secrets = secrets.get('home_assistant', {})
-        
-        user_settings = ConfigManager.get_settings()
+        user_settings = ConfigManager.get_settings() # This now includes HARDCODED_SENSORS
 
-        # Helper to prioritize user settings ONLY if they are not empty strings
-        # This prevents empty fields in UI from overwriting valid YAML config
         def get_val(key, default=None):
             user_val = user_settings.get(key)
             if user_val is not None and user_val != "":
                 return user_val
             return default
 
-        # Ensure sections exist
         if 'optimization' not in base_config:
             base_config['optimization'] = {'price_buffer_threshold': 0.10, 'planning_horizon_days': 3}
         if 'cars' not in base_config:
@@ -149,51 +145,49 @@ class ConfigManager:
         merc_base = base_config['cars'].get('mercedes_eqv', {})
         base_config['cars']['mercedes_eqv'] = {
             'capacity_kwh': merc_base.get('capacity_kwh', 90),
-            'max_charge_kw': merc_base.get('max_charge_kw', merc_base.get('max_charge_rate_kw', 11)),
+            'max_charge_kw': merc_base.get('max_charge_kw', 11),
             'vin': merc_base.get('vin'),
-            'target_soc': get_val('mercedes_eqv_target', get_val('mercedes_target', merc_base.get('target_soc', 80))),
+            'target_soc': get_val('mercedes_eqv_target', 80),
             'min_soc': get_val('mercedes_eqv_min_soc', 40),
             'max_soc': get_val('mercedes_eqv_max_soc', 80),
-            # HA Credentials Priority: 1. Secrets, 2. User Settings (if not empty), 3. Base Config
             'ha_url': ha_secrets.get('url', get_val('ha_url', merc_base.get('ha_url'))),
             'ha_token': ha_secrets.get('token', get_val('ha_token', merc_base.get('ha_token'))),
             
-            'ha_merc_soc_entity_id': get_val('ha_merc_soc_entity_id', merc_base.get('ha_merc_soc_entity_id')),
-            'ha_merc_plugged_entity_id': get_val('ha_merc_plugged_entity_id', merc_base.get('ha_merc_plugged_entity_id')),
-            'climate_entity_id': get_val('mercedes_eqv_climate_entity_id', merc_base.get('ha_merc_climate_entity_id')),
-            'climate_status_id': get_val('mercedes_eqv_climate_status_id', merc_base.get('ha_merc_climate_status_id')),
-            'lock_entity_id': get_val('mercedes_eqv_lock_entity_id', merc_base.get('ha_merc_lock_entity_id')),
-            'odometer_entity_id': get_val('mercedes_eqv_odometer_entity_id', merc_base.get('ha_merc_odometer_entity_id'))
+            # HARDCODED ENFORCEMENT
+            'ha_merc_soc_entity_id': HARDCODED_SENSORS['ha_merc_soc_entity_id'],
+            'ha_merc_plugged_entity_id': HARDCODED_SENSORS['ha_merc_plugged_entity_id'],
+            'climate_entity_id': HARDCODED_SENSORS['mercedes_eqv_climate_entity_id'],
+            'climate_status_id': HARDCODED_SENSORS.get('mercedes_eqv_climate_status_id'),
+            'lock_entity_id': HARDCODED_SENSORS['mercedes_eqv_lock_entity_id'],
+            'odometer_entity_id': HARDCODED_SENSORS['mercedes_eqv_odometer_entity_id']
         }
 
         # --- Nissan Config Merge ---
         nis_base = base_config['cars'].get('nissan_leaf', {})
-        # Check secrets for Nissan
         nis_secrets = secrets.get('nissan', {})
         
         base_config['cars']['nissan_leaf'] = {
             'capacity_kwh': nis_base.get('capacity_kwh', 40),
-            'max_charge_kw': nis_base.get('max_charge_kw', nis_base.get('max_charge_rate_kw', 3.7)),
+            'max_charge_kw': nis_base.get('max_charge_kw', 3.7),
             'vin': nis_secrets.get('vin', get_val('nissan_vin', nis_base.get('vin'))),
-            'target_soc': get_val('nissan_leaf_target', get_val('nissan_target', nis_base.get('target_soc', 80))),
+            'target_soc': get_val('nissan_leaf_target', 80),
             'min_soc': get_val('nissan_leaf_min_soc', 40),
             'max_soc': get_val('nissan_leaf_max_soc', 80),
-            # HA Credentials
             'ha_url': ha_secrets.get('url', get_val('ha_url', nis_base.get('ha_url'))),
             'ha_token': ha_secrets.get('token', get_val('ha_token', nis_base.get('ha_token'))),
             
-            'ha_nissan_soc_entity_id': get_val('ha_nissan_soc_entity_id', nis_base.get('ha_leaf_soc_entity_id')),
-            'ha_nissan_plugged_entity_id': get_val('ha_nissan_plugged_entity_id', nis_base.get('ha_leaf_plugged_entity_id')),
-            'ha_nissan_range_entity_id': get_val('ha_nissan_range_entity_id', nis_base.get('ha_leaf_range_entity_id')),
-            'climate_entity_id': get_val('nissan_leaf_climate_entity_id', nis_base.get('ha_leaf_climate_entity_id')),
-            'odometer_entity_id': get_val('nissan_leaf_odometer_entity_id', nis_base.get('ha_leaf_odometer_entity_id')),
+            # HARDCODED ENFORCEMENT
+            'ha_nissan_soc_entity_id': HARDCODED_SENSORS['ha_nissan_soc_entity_id'],
+            'ha_nissan_plugged_entity_id': HARDCODED_SENSORS['ha_nissan_plugged_entity_id'],
+            'ha_nissan_range_entity_id': HARDCODED_SENSORS['ha_nissan_range_entity_id'],
+            'climate_entity_id': HARDCODED_SENSORS['nissan_leaf_climate_entity_id'],
+            'odometer_entity_id': HARDCODED_SENSORS.get('nissan_leaf_odometer_entity_id'),
+            'update_entity_id': HARDCODED_SENSORS['nissan_leaf_update_entity_id'],
             
-            # Nissan Legacy Credentials (if we ever use direct API again)
             'username': nis_secrets.get('username', get_val('nissan_username')),
             'password': nis_secrets.get('password', get_val('nissan_password'))
         }
         
-        # Inject grid/location if missing
         if 'grid' not in base_config:
             base_config['grid'] = {'region': 'SE3'}
         if 'location' not in base_config:
