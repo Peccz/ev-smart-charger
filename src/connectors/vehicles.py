@@ -214,5 +214,3 @@ class NissanLeaf(Vehicle):
             logger.info(f"NissanLeaf: Sending wake_up/update command to {update_id}")
             return self.ha_client.call_service("button", "press", update_id)
         return False
-
-    def get_status(self):
