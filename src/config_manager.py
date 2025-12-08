@@ -131,6 +131,14 @@ class ConfigManager:
         
         user_settings = ConfigManager.get_settings()
 
+        # Helper to prioritize user settings ONLY if they are not empty strings
+        # This prevents empty fields in UI from overwriting valid YAML config
+        def get_val(key, default=None):
+            user_val = user_settings.get(key)
+            if user_val is not None and user_val != "":
+                return user_val
+            return default
+
         # Ensure sections exist
         if 'optimization' not in base_config:
             base_config['optimization'] = {'price_buffer_threshold': 0.10, 'planning_horizon_days': 3}
@@ -143,18 +151,19 @@ class ConfigManager:
             'capacity_kwh': merc_base.get('capacity_kwh', 90),
             'max_charge_kw': merc_base.get('max_charge_kw', merc_base.get('max_charge_rate_kw', 11)),
             'vin': merc_base.get('vin'),
-            'target_soc': user_settings.get('mercedes_eqv_target', user_settings.get('mercedes_target', merc_base.get('target_soc', 80))),
-            'min_soc': user_settings.get('mercedes_eqv_min_soc', 40),
-            'max_soc': user_settings.get('mercedes_eqv_max_soc', 80),
-            # HA Credentials Priority: 1. Secrets, 2. User Settings, 3. Base Config (should be empty)
-            'ha_url': ha_secrets.get('url', user_settings.get('ha_url')),
-            'ha_token': ha_secrets.get('token', user_settings.get('ha_token')),
-            'ha_merc_soc_entity_id': user_settings.get('ha_merc_soc_entity_id'),
-            'ha_merc_plugged_entity_id': user_settings.get('ha_merc_plugged_entity_id'),
-            'climate_entity_id': user_settings.get('mercedes_eqv_climate_entity_id'),
-            'climate_status_id': user_settings.get('mercedes_eqv_climate_status_id'),
-            'lock_entity_id': user_settings.get('mercedes_eqv_lock_entity_id'),
-            'odometer_entity_id': user_settings.get('mercedes_eqv_odometer_entity_id')
+            'target_soc': get_val('mercedes_eqv_target', get_val('mercedes_target', merc_base.get('target_soc', 80))),
+            'min_soc': get_val('mercedes_eqv_min_soc', 40),
+            'max_soc': get_val('mercedes_eqv_max_soc', 80),
+            # HA Credentials Priority: 1. Secrets, 2. User Settings (if not empty), 3. Base Config
+            'ha_url': ha_secrets.get('url', get_val('ha_url', merc_base.get('ha_url'))),
+            'ha_token': ha_secrets.get('token', get_val('ha_token', merc_base.get('ha_token'))),
+            
+            'ha_merc_soc_entity_id': get_val('ha_merc_soc_entity_id', merc_base.get('ha_merc_soc_entity_id')),
+            'ha_merc_plugged_entity_id': get_val('ha_merc_plugged_entity_id', merc_base.get('ha_merc_plugged_entity_id')),
+            'climate_entity_id': get_val('mercedes_eqv_climate_entity_id', merc_base.get('ha_merc_climate_entity_id')),
+            'climate_status_id': get_val('mercedes_eqv_climate_status_id', merc_base.get('ha_merc_climate_status_id')),
+            'lock_entity_id': get_val('mercedes_eqv_lock_entity_id', merc_base.get('ha_merc_lock_entity_id')),
+            'odometer_entity_id': get_val('mercedes_eqv_odometer_entity_id', merc_base.get('ha_merc_odometer_entity_id'))
         }
 
         # --- Nissan Config Merge ---
@@ -165,23 +174,23 @@ class ConfigManager:
         base_config['cars']['nissan_leaf'] = {
             'capacity_kwh': nis_base.get('capacity_kwh', 40),
             'max_charge_kw': nis_base.get('max_charge_kw', nis_base.get('max_charge_rate_kw', 3.7)),
-            'vin': nis_secrets.get('vin', user_settings.get('nissan_vin', nis_base.get('vin'))),
-            'target_soc': user_settings.get('nissan_leaf_target', user_settings.get('nissan_target', nis_base.get('target_soc', 80))),
-            'min_soc': user_settings.get('nissan_leaf_min_soc', 40),
-            'max_soc': user_settings.get('nissan_leaf_max_soc', 80),
+            'vin': nis_secrets.get('vin', get_val('nissan_vin', nis_base.get('vin'))),
+            'target_soc': get_val('nissan_leaf_target', get_val('nissan_target', nis_base.get('target_soc', 80))),
+            'min_soc': get_val('nissan_leaf_min_soc', 40),
+            'max_soc': get_val('nissan_leaf_max_soc', 80),
             # HA Credentials
-            'ha_url': ha_secrets.get('url', user_settings.get('ha_url')),
-            'ha_token': ha_secrets.get('token', user_settings.get('ha_token')),
+            'ha_url': ha_secrets.get('url', get_val('ha_url', nis_base.get('ha_url'))),
+            'ha_token': ha_secrets.get('token', get_val('ha_token', nis_base.get('ha_token'))),
             
-            'ha_nissan_soc_entity_id': user_settings.get('ha_nissan_soc_entity_id'),
-            'ha_nissan_plugged_entity_id': user_settings.get('ha_nissan_plugged_entity_id'),
-            'ha_nissan_range_entity_id': user_settings.get('ha_nissan_range_entity_id'),
-            'climate_entity_id': user_settings.get('nissan_leaf_climate_entity_id'),
-            'odometer_entity_id': user_settings.get('nissan_leaf_odometer_entity_id'),
+            'ha_nissan_soc_entity_id': get_val('ha_nissan_soc_entity_id', nis_base.get('ha_leaf_soc_entity_id')),
+            'ha_nissan_plugged_entity_id': get_val('ha_nissan_plugged_entity_id', nis_base.get('ha_leaf_plugged_entity_id')),
+            'ha_nissan_range_entity_id': get_val('ha_nissan_range_entity_id', nis_base.get('ha_leaf_range_entity_id')),
+            'climate_entity_id': get_val('nissan_leaf_climate_entity_id', nis_base.get('ha_leaf_climate_entity_id')),
+            'odometer_entity_id': get_val('nissan_leaf_odometer_entity_id', nis_base.get('ha_leaf_odometer_entity_id')),
             
             # Nissan Legacy Credentials (if we ever use direct API again)
-            'username': nis_secrets.get('username', user_settings.get('nissan_username')),
-            'password': nis_secrets.get('password', user_settings.get('nissan_password'))
+            'username': nis_secrets.get('username', get_val('nissan_username')),
+            'password': nis_secrets.get('password', get_val('nissan_password'))
         }
         
         # Inject grid/location if missing
