@@ -2,19 +2,27 @@ import requests
 import json
 import time
 import logging
+from .base import Charger
 
 logger = logging.getLogger(__name__)
 
-class ZaptecCharger:
+class ZaptecCharger(Charger):
     def __init__(self, config):
-        self.username = config['username']
-        self.password = config['password']
+        super().__init__(config)
+        self.username = config.get('username')
+        self.password = config.get('password')
         self.installation_id = config.get('installation_id')
         self.charger_id = config.get('charger_id')
         self.api_url = "https://api.zaptec.com/api"
         self.token = None
         self.token_expires = 0
     
+    def validate_config(self):
+        if not self.config.get('username') or not self.config.get('password'):
+            logger.error("Zaptec: Username and password are required.")
+        if not self.config.get('installation_id') and not self.config.get('charger_id'):
+            logger.error("Zaptec: Either installation_id or charger_id is required.")
+
     def _authenticate(self):
         """
         Authenticates with Zaptec API using User/Pass to get OAuth token.
@@ -30,7 +38,7 @@ class ZaptecCharger:
         }
         
         try:
-            response = requests.post(url, data=payload)
+            response = requests.post(url, data=payload, timeout=10)
             response.raise_for_status()
             data = response.json()
             self.token = data['access_token']
@@ -60,26 +68,25 @@ class ZaptecCharger:
         Check if a car is connected and charging via the Installation state.
         """
         target_id = self.charger_id if self.charger_id else self.installation_id
+        
+        # Default error state
+        status = {"operating_mode": "UNKNOWN", "power_kw": 0.0, "is_charging": False}
+
         if not target_id:
-            logger.warning("Zaptec: No charger_id or installation_id configured.")
-            return {"operating_mode": "UNKNOWN", "power_kw": 0.0, "is_charging": False}
+            return status
         
         headers = self._get_headers()
         if not headers:
-            logger.error("Zaptec: Failed to get API headers, authentication failed.")
-            return {"operating_mode": "AUTH_FAILED", "power_kw": 0.0, "is_charging": False}
+            status["operating_mode"] = "AUTH_FAILED"
+            return status
 
         url = f"{self.api_url}/chargers/{target_id}/state"
         
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             data = response.json()
             
-            operating_mode = "UNKNOWN"
-            power_kw = 0.0
-            is_charging = False
-
             for obs in data:
                 # Handle case-sensitivity in API response (StateId vs stateId)
                 state_id = obs.get('StateId', obs.get('stateId'))
@@ -88,32 +95,30 @@ class ZaptecCharger:
                 if state_id == 506: # Operating Mode
                     try:
                         mode_val = int(val_str)
-                        if mode_val == 1: operating_mode = "DISCONNECTED"
-                        elif mode_val == 2: operating_mode = "CONNECTED_WAITING"
-                        elif mode_val == 3: operating_mode = "CHARGING"
-                        
-                        if mode_val == 3: is_charging = True
+                        if mode_val == 1: status["operating_mode"] = "DISCONNECTED"
+                        elif mode_val == 2: status["operating_mode"] = "CONNECTED_WAITING"
+                        elif mode_val == 3: 
+                            status["operating_mode"] = "CHARGING"
+                            status["is_charging"] = True
                     except ValueError:
                         logger.warning(f"Zaptec: Invalid Operating Mode value: {val_str}")
                         
                 elif state_id == 510: # Total Power (W)
                     try:
-                        power_kw = float(val_str) / 1000.0
+                        status["power_kw"] = float(val_str) / 1000.0
                     except ValueError:
                         logger.warning(f"Zaptec: Invalid Power value: {val_str}")
 
-            return {
-                "operating_mode": operating_mode,
-                "power_kw": power_kw,
-                "is_charging": is_charging
-            }
+            return status
 
         except requests.exceptions.HTTPError as e:
             logger.error(f"Zaptec Status HTTP Error ({target_id}): {e.response.status_code} - {e.response.text}")
-            return {"operating_mode": "API_ERROR", "power_kw": 0.0, "is_charging": False}
+            status["operating_mode"] = "API_ERROR"
+            return status
         except Exception as e:
             logger.error(f"Zaptec Status Error ({target_id}): {e}")
-            return {"is_charging": False, "power_kw": 0.0}
+            status["operating_mode"] = "ERROR"
+            return status
 
     def start_charging(self):
         target_id = self.charger_id if self.charger_id else self.installation_id
@@ -147,7 +152,7 @@ class ZaptecCharger:
             "commandId": command_id
         }
         try:
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
             response.raise_for_status()
             return True
         except requests.exceptions.HTTPError as e:
