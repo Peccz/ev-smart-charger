@@ -138,7 +138,7 @@ def job():
         elif leaf_plugged: active_car_id = "nissan_leaf"
 
     # --- 3. Log System Metrics ---
-    current_temp = weather_forecast[0]['temp'] if weather_forecast else 0.0
+    current_temp = weather_forecast[0]['temp_c'] if weather_forecast else 0.0
     current_price = prices[0]['price_sek'] if prices else 0.0
     
     metrics = {
