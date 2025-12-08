@@ -22,7 +22,7 @@ SENSORS = {
     "ha_nissan_soc_entity_id": "sensor.leaf_battery_level",
     "ha_nissan_plugged_entity_id": "binary_sensor.leaf_plugged_in",
     "ha_nissan_range_entity_id": "sensor.leaf_range_ac_on",
-    # "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer", # Uncomment if known
+    "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer", 
     "nissan_leaf_climate_entity_id": "switch.leaf_climate_control", # Common for Leaf integration
     "nissan_leaf_update_entity_id": "button.leaf_update_data"
 }

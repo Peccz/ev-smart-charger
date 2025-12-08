@@ -43,7 +43,7 @@ HARDCODED_SENSORS = {
     "ha_nissan_range_entity_id": "sensor.leaf_range_ac_on",
     "nissan_leaf_climate_entity_id": "switch.leaf_climate_control",
     "nissan_leaf_update_entity_id": "button.leaf_update_data",
-    # "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer" # Uncomment if found
+    "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer" 
 }
 
 class ConfigManager:
