@@ -49,6 +49,13 @@ class MercedesEQV(Vehicle):
             self.ha_client = HomeAssistantClient(self.config['ha_url'], self.config['ha_token'])
             logger.info("MercedesEQV: HA client initialized.")
 
+        self.ha_merc_soc_entity_id = config.get('ha_merc_soc_entity_id')
+        self.ha_merc_plugged_entity_id = config.get('ha_merc_plugged_entity_id')
+        self.ha_climate_id = config.get('climate_entity_id')
+        self.ha_climate_status_id = config.get('climate_status_id')
+        self.ha_lock_id = config.get('lock_entity_id')
+        self.ha_odometer_id = config.get('odometer_entity_id')
+
     def validate_config(self):
         required = ['ha_url', 'ha_token', 'ha_merc_soc_entity_id']
         missing = [key for key in required if not self.config.get(key)]
@@ -64,13 +71,16 @@ class MercedesEQV(Vehicle):
             "odometer": 0,
             "climate_active": False
         }
+        
+        # Debug log to verify IDs
+        logger.info(f"DEBUG: Odometer ID={self.ha_odometer_id}, Plugged ID={self.ha_merc_plugged_entity_id}")
 
         if not self.ha_client:
             return status
 
         # SoC
-        if self.config.get('ha_merc_soc_entity_id'):
-            state = self.ha_client.get_state(self.config['ha_merc_soc_entity_id'])
+        if self.ha_merc_soc_entity_id:
+            state = self.ha_client.get_state(self.ha_merc_soc_entity_id)
             if state and 'state' in state:
                 try:
                     status['soc'] = int(float(state['state']))
@@ -78,9 +88,8 @@ class MercedesEQV(Vehicle):
                     pass
 
         # Plugged In
-        plug_id = self.config.get('ha_merc_plugged_entity_id')
-        if plug_id:
-            state = self.ha_client.get_state(plug_id)
+        if self.ha_merc_plugged_entity_id:
+            state = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
             if state and 'attributes' in state:
                 attrs = state['attributes']
                 # Specific logic for Mercedes sensor attributes
@@ -102,10 +111,18 @@ class MercedesEQV(Vehicle):
                 except ValueError:
                     pass
 
+        # Odometer
+        if self.ha_odometer_id:
+            state = self.ha_client.get_state(self.ha_odometer_id)
+            if state and 'state' in state:
+                try:
+                    status['odometer'] = int(float(state['state']))
+                except ValueError:
+                    pass
+
         # Climate
-        climate_id = self.config.get('climate_status_id')
-        if climate_id:
-            state = self.ha_client.get_state(climate_id)
+        if self.ha_climate_status_id:
+            state = self.ha_client.get_state(self.ha_climate_status_id)
             if state and str(state.get('state')).lower() in ['on', 'true', '1', 'active']:
                 status['climate_active'] = True
 
@@ -113,7 +130,7 @@ class MercedesEQV(Vehicle):
         return status
 
     def start_climate(self):
-        cid = self.config.get('climate_entity_id')
+        cid = self.ha_climate_id
         if self.ha_client and cid:
             domain = cid.split('.')[0]
             service = "press" if domain == "button" else "turn_on"
@@ -121,7 +138,7 @@ class MercedesEQV(Vehicle):
         return False
 
     def stop_climate(self):
-        cid = self.config.get('climate_entity_id')
+        cid = self.ha_climate_id
         if self.ha_client and cid:
             if "start" in cid:
                 stop_id = cid.replace("start", "stop")
@@ -140,6 +157,13 @@ class NissanLeaf(Vehicle):
         if self.config.get('ha_url') and self.config.get('ha_token'):
             self.ha_client = HomeAssistantClient(self.config['ha_url'], self.config['ha_token'])
             logger.info("NissanLeaf: HA client initialized.")
+            
+        self.ha_nissan_soc_entity_id = config.get('ha_nissan_soc_entity_id')
+        self.ha_nissan_plugged_entity_id = config.get('ha_nissan_plugged_entity_id')
+        self.ha_nissan_range_entity_id = config.get('ha_nissan_range_entity_id')
+        self.ha_climate_id = config.get('climate_entity_id')
+        self.ha_odometer_id = config.get('odometer_entity_id')
+        self.ha_update_id = config.get('update_entity_id')
 
     def validate_config(self):
         required = ['ha_url', 'ha_token', 'ha_nissan_soc_entity_id']
@@ -160,8 +184,8 @@ class NissanLeaf(Vehicle):
             return status
 
         # SoC
-        if self.config.get('ha_nissan_soc_entity_id'):
-            state = self.ha_client.get_state(self.config['ha_nissan_soc_entity_id'])
+        if self.ha_nissan_soc_entity_id:
+            state = self.ha_client.get_state(self.ha_nissan_soc_entity_id)
             if state and 'state' in state:
                 try:
                     status['soc'] = int(float(state['state']))
@@ -169,26 +193,32 @@ class NissanLeaf(Vehicle):
                     pass
 
         # Plugged In
-        plug_id = self.config.get('ha_nissan_plugged_entity_id')
-        if plug_id:
-            state = self.ha_client.get_state(plug_id)
+        if self.ha_nissan_plugged_entity_id:
+            state = self.ha_client.get_state(self.ha_nissan_plugged_entity_id)
             if state and state.get('state') == 'on':
                 status['plugged_in'] = True
 
         # Range
-        range_id = self.config.get('ha_nissan_range_entity_id')
-        if range_id:
-            state = self.ha_client.get_state(range_id)
+        if self.ha_nissan_range_entity_id:
+            state = self.ha_client.get_state(self.ha_nissan_range_entity_id)
             if state and 'state' in state:
                 try:
                     status['range_km'] = int(float(state['state']))
                 except ValueError:
                     pass
+        
+        # Odometer
+        if self.ha_odometer_id:
+            state = self.ha_client.get_state(self.ha_odometer_id)
+            if state and 'state' in state:
+                try:
+                    status['odometer'] = int(float(state['state']))
+                except ValueError:
+                    pass
 
         # Climate
-        climate_id = self.config.get('climate_entity_id')
-        if climate_id:
-            state = self.ha_client.get_state(climate_id)
+        if self.ha_climate_id:
+            state = self.ha_client.get_state(self.ha_climate_id)
             if state and str(state.get('state')).lower() in ['on', 'true', '1', 'active']:
                 status['climate_active'] = True
 
@@ -196,21 +226,17 @@ class NissanLeaf(Vehicle):
         return status
 
     def start_climate(self):
-        cid = self.config.get('climate_entity_id')
-        if self.ha_client and cid:
-            return self.ha_client.call_service("switch", "turn_on", cid)
+        if self.ha_client and self.ha_climate_id:
+            return self.ha_client.call_service("switch", "turn_on", self.ha_climate_id)
         return False
 
     def stop_climate(self):
-        cid = self.config.get('climate_entity_id')
-        if self.ha_client and cid:
-            return self.ha_client.call_service("switch", "turn_off", cid)
+        if self.ha_client and self.ha_climate_id:
+            return self.ha_client.call_service("switch", "turn_off", self.ha_climate_id)
         return False
 
     def wake_up(self):
-        # Use hardcoded default if not in config, as we discovered it via find_ha_entities.py
-        update_id = self.config.get('update_entity_id', "button.leaf_update_data")
-        if self.ha_client and update_id:
-            logger.info(f"NissanLeaf: Sending wake_up/update command to {update_id}")
-            return self.ha_client.call_service("button", "press", update_id)
+        if self.ha_client and self.ha_update_id:
+            logger.info(f"NissanLeaf: Sending wake_up/update command to {self.ha_update_id}")
+            return self.ha_client.call_service("button", "press", self.ha_update_id)
         return False
