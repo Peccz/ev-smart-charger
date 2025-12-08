@@ -81,15 +81,26 @@ class ZaptecCharger:
             is_charging = False
 
             for obs in data:
-                if obs['stateId'] == 506: # Operating Mode
-                    mode_val = int(obs['valueAsString'])
-                    if mode_val == 1: operating_mode = "DISCONNECTED"
-                    elif mode_val == 2: operating_mode = "CONNECTED_WAITING"
-                    elif mode_val == 3: operating_mode = "CHARGING"
-                    
-                    if mode_val == 3: is_charging = True
-                elif obs['stateId'] == 510: # Total Power (W)
-                    power_kw = float(obs['valueAsString']) / 1000.0
+                # Handle case-sensitivity in API response (StateId vs stateId)
+                state_id = obs.get('StateId', obs.get('stateId'))
+                val_str = obs.get('ValueAsString', obs.get('valueAsString', '0'))
+                
+                if state_id == 506: # Operating Mode
+                    try:
+                        mode_val = int(val_str)
+                        if mode_val == 1: operating_mode = "DISCONNECTED"
+                        elif mode_val == 2: operating_mode = "CONNECTED_WAITING"
+                        elif mode_val == 3: operating_mode = "CHARGING"
+                        
+                        if mode_val == 3: is_charging = True
+                    except ValueError:
+                        logger.warning(f"Zaptec: Invalid Operating Mode value: {val_str}")
+                        
+                elif state_id == 510: # Total Power (W)
+                    try:
+                        power_kw = float(val_str) / 1000.0
+                    except ValueError:
+                        logger.warning(f"Zaptec: Invalid Power value: {val_str}")
 
             return {
                 "operating_mode": operating_mode,
