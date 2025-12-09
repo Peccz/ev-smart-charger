@@ -87,8 +87,10 @@ def job():
     
     # Fetch Data
     official_prices = spot_service.get_prices_upcoming()
+    logger.info(f"Fetched {len(official_prices)} official spot prices")
     weather_forecast = weather_service.get_forecast()
     prices = optimizer._generate_price_forecast(official_prices, weather_forecast)
+    logger.info(f"Generated price forecast with {len(prices)} entries")
     _save_forecast_history(prices)
 
     # --- 1. Get Hardware Status ---
