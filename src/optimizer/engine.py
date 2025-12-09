@@ -232,6 +232,21 @@ class Optimizer:
             dynamic_soc = max_soc - (factor * (max_soc - min_soc))
             return int(dynamic_soc), "Balanced"
 
+    def get_deadline(self):
+        user_settings = self._get_user_settings()
+        dep_str = user_settings.get('departure_time', '07:00')
+        try:
+            dep_hour, dep_minute = map(int, dep_str.split(':'))
+            now = datetime.now()
+            deadline = now.replace(hour=dep_hour, minute=dep_minute, second=0, microsecond=0)
+            if deadline <= now:
+                # If deadline has passed today, set to tomorrow
+                deadline += timedelta(days=1)
+            return deadline
+        except ValueError:
+            logger.error(f"Invalid departure time format: {dep_str}")
+            return datetime.now() + timedelta(hours=12) # Default fallback
+
     def suggest_action(self, vehicle, prices, weather_forecast):
         # 0. Check Manual Overrides
         overrides = self._get_overrides()
@@ -256,28 +271,7 @@ class Optimizer:
             target_soc = max(target_soc, 95) # Force high target if storm incoming
             mode = "Storm Buffering"
 
-        # Daily Charging Logic: Always aim to charge at least once per day
-        # This ensures battery health and readiness
-        user_settings = self._get_user_settings()
-        daily_charging = user_settings.get('daily_charging_enabled', True)  # Default: enabled
-
-        if current_soc >= target_soc and not daily_charging:
-            return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
-
-        # If daily charging enabled and target reached, still check if we should top-up during cheap hours
         if current_soc >= target_soc:
-            # Only charge further if price is in bottom 25% AND plugged in
-            if not status['plugged_in']:
-                return {"action": "IDLE", "reason": f"Target {target_soc}% reached, not plugged in"}
-
-            if prices:
-                df = pd.DataFrame(prices)
-                current_price = df.iloc[0]['price_sek'] if len(df) > 0 else 999
-                percentile_25 = df['price_sek'].quantile(0.25)
-
-                if current_price <= percentile_25:
-                    return {"action": "CHARGE", "reason": f"Daily top-up: Current price {current_price:.2f} SEK in bottom 25% (target {target_soc}% reached)"}
-
             return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
 
         # 2. Calculate Energy Needs
@@ -301,12 +295,22 @@ class Optimizer:
             return {"action": "CHARGE", "reason": "No price data, failsafe charging"}
 
         df = pd.DataFrame(prices)
+        df['time_start_dt'] = pd.to_datetime(df['time_start'])
         
-        if len(df) < hours_needed:
-             logger.warning(f"Optimizer: Not enough price data ({len(df)}h) to plan {hours_needed}h. Failsafe charging enabled.")
-             return {"action": "CHARGE", "reason": "Not enough price data, failsafe charging"}
+        # Deadline Logic
+        deadline = self.get_deadline()
+        df_valid = df[df['time_start_dt'] < deadline]
+        
+        valid_hours = len(df_valid)
+        
+        if valid_hours < hours_needed:
+             logger.warning(f"Optimizer: Not enough time before deadline ({deadline})! Need {hours_needed}h, have {valid_hours}h.")
+             # Fallback: Charge NOW to maximize time, or use all prices if it's way too late
+             # Logic: If we are short on time, every hour counts.
+             return {"action": "CHARGE", "reason": f"Panic Mode: Need {hours_needed}h before {deadline.strftime('%H:%M')}"}
 
-        df_sorted = df.sort_values(by='price_sek', ascending=True)
+        # Select cheapest hours BEFORE deadline
+        df_sorted = df_valid.sort_values(by='price_sek', ascending=True)
         cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
         
         current_time_start = df.iloc[0]['time_start']
@@ -315,13 +319,13 @@ class Optimizer:
             current_price = df.iloc[0]['price_sek']
             return {
                 "action": "CHARGE", 
-                "reason": f"{mode}: Charging to {target_soc}%. Current price ({current_price:.2f} SEK) is optimal."
+                "reason": f"{mode}: Charging to {target_soc}% by {deadline.strftime('%H:%M')}. Price: {current_price:.2f} SEK."
             }
 
         next_best_price = df_sorted.head(hours_needed)['price_sek'].max()
         return {
             "action": "IDLE", 
-            "reason": f"{mode}: Target {target_soc}%. Waiting for < {next_best_price:.2f} SEK. Current: {df.iloc[0]['price_sek']:.2f} SEK."
+            "reason": f"{mode}: Waiting for < {next_best_price:.2f} SEK before {deadline.strftime('%H:%M')}."
         }
 
     def _should_buffer(self, prices, weather):
