@@ -226,9 +226,10 @@ class Optimizer:
         # 0. Check Manual Overrides
         overrides = self._get_overrides()
         vehicle_id = "mercedes_eqv" if "Mercedes" in vehicle.name else "nissan_leaf"
-        
+
         if vehicle_id in overrides:
             ovr = overrides[vehicle_id]
+            logger.info(f"Manual override active for {vehicle_id}: {ovr['action']} (expires: {ovr['expires_at']})")
             if ovr['action'] == "CHARGE":
                 return {"action": "CHARGE", "reason": "Manual Override (Ladda Nu!)"}
             if ovr['action'] == "STOP":
