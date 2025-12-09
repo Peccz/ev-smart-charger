@@ -215,20 +215,20 @@ class Optimizer:
         short_term_avg = short_term_df['price_sek'].mean()
         
         # Determine strategy
-        # If short term is significantly cheaper (>15%) than long term -> Charge to MAX
-        # If short term is significantly more expensive (>15%) -> Charge to MIN
+        # If short term is significantly cheaper (>10%) than long term -> Charge to MAX
+        # If short term is significantly more expensive (>10%) -> Charge to MIN
         # Otherwise -> Linear interpolation
         
         ratio = short_term_avg / long_term_avg if long_term_avg > 0 else 1.0
         
-        if ratio < 0.85:
+        if ratio < 0.90:
             return max_soc, "Aggressive (Cheap)"
-        elif ratio > 1.15:
+        elif ratio > 1.10:
             return min_soc, "Conservative (Expensive)"
         else:
-            # Linear interpolation between 0.85 (Max) and 1.15 (Min)
-            # Map ratio 0.85..1.15 to Max..Min
-            factor = (ratio - 0.85) / (1.15 - 0.85) # 0.0 at 0.85, 1.0 at 1.15
+            # Linear interpolation between 0.90 (Max) and 1.10 (Min)
+            # Map ratio 0.90..1.10 to Max..Min
+            factor = (ratio - 0.90) / (1.10 - 0.90) # 0.0 at 0.90, 1.0 at 1.10
             dynamic_soc = max_soc - (factor * (max_soc - min_soc))
             return int(dynamic_soc), "Balanced"
 
