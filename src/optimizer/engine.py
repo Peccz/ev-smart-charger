@@ -256,7 +256,28 @@ class Optimizer:
             target_soc = max(target_soc, 95) # Force high target if storm incoming
             mode = "Storm Buffering"
 
+        # Daily Charging Logic: Always aim to charge at least once per day
+        # This ensures battery health and readiness
+        user_settings = self._get_user_settings()
+        daily_charging = user_settings.get('daily_charging_enabled', True)  # Default: enabled
+
+        if current_soc >= target_soc and not daily_charging:
+            return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
+
+        # If daily charging enabled and target reached, still check if we should top-up during cheap hours
         if current_soc >= target_soc:
+            # Only charge further if price is in bottom 25% AND plugged in
+            if not status['plugged_in']:
+                return {"action": "IDLE", "reason": f"Target {target_soc}% reached, not plugged in"}
+
+            if prices:
+                df = pd.DataFrame(prices)
+                current_price = df.iloc[0]['price_sek'] if len(df) > 0 else 999
+                percentile_25 = df['price_sek'].quantile(0.25)
+
+                if current_price <= percentile_25:
+                    return {"action": "CHARGE", "reason": f"Daily top-up: Current price {current_price:.2f} SEK in bottom 25% (target {target_soc}% reached)"}
+
             return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
 
         # 2. Calculate Energy Needs

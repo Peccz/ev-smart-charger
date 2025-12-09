@@ -27,7 +27,8 @@ DEFAULT_SETTINGS = {
     "nissan_leaf_min_soc": 40,
     "nissan_leaf_max_soc": 80,
     "departure_time": "07:00",
-    "smart_buffering": True
+    "smart_buffering": True,
+    "daily_charging_enabled": True  # Charge daily during cheapest hours
 }
 
 # STRIKT KONFIGURATION AV SENSORER
