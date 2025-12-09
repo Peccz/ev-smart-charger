@@ -82,6 +82,16 @@ class Optimizer:
 
         all_forecast_prices = []
 
+        # If no weather forecast, return official prices only
+        if not weather_forecast:
+            logger.warning("Optimizer: No weather forecast data, returning official prices only")
+            if not official_prices_df.empty:
+                official_prices_df_reset = official_prices_df.reset_index()
+                official_prices_df_reset['time_start'] = official_prices_df_reset['time_start'].apply(lambda x: x.isoformat())
+                official_prices_df_reset['source'] = 'Official'
+                return official_prices_df_reset.to_dict(orient='records')
+            return []
+
         for hour_data in weather_forecast:
             hour_time = pd.to_datetime(hour_data['time'])
             
