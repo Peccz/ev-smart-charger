@@ -73,7 +73,7 @@ class MercedesEQV(Vehicle):
         }
         
         # Debug log to verify IDs
-        logger.info(f"DEBUG: Odometer ID={self.ha_odometer_id}, Plugged ID={self.ha_merc_plugged_entity_id}")
+        # logger.info(f"DEBUG: Odometer ID={self.ha_odometer_id}, Plugged ID={self.ha_merc_plugged_entity_id}")
 
         if not self.ha_client:
             return status
@@ -224,6 +224,16 @@ class NissanLeaf(Vehicle):
 
         logger.info(f"NissanLeaf Status: {status}")
         return status
+
+    def start_charging(self):
+        """Start charging via HomeAssistant button.leaf_start_charge"""
+        if not self.ha_client:
+            logger.error("NissanLeaf: Cannot start charging - HA client not initialized")
+            return False
+
+        entity_id = "button.leaf_start_charge"
+        logger.info(f"NissanLeaf: Starting charging via {entity_id}")
+        return self.ha_client.call_service("button", "press", entity_id)
 
     def start_climate(self):
         if self.ha_client and self.ha_climate_id:
