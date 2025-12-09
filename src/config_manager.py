@@ -32,6 +32,12 @@ DEFAULT_SETTINGS = {
 
 # STRIKT KONFIGURATION AV SENSORER
 # Dessa värden skriver över allt annat för att garantera funktion.
+#
+# ARCHITECTURAL NOTE (Fas 2 Review):
+# Hårdkodade sensor-ID:n garanterar drift men är inte flexibla.
+# Alternativ framtida lösning: Flytta till secrets.json under "hardware" sektion
+# för bättre separation mellan användarsättningar och hårdvaru-specifik config.
+# Behålls som hårdkodade för nu för driftstabilitet.
 HARDCODED_SENSORS = {
     # Mercedes EQV
     "ha_merc_soc_entity_id": "sensor.urg48t_state_of_charge",

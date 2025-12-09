@@ -1,6 +1,9 @@
 import requests
 from datetime import datetime, timedelta
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SpotPriceService:
     def __init__(self, region="SE3"):
@@ -33,7 +36,7 @@ class SpotPriceService:
                 })
             return prices
         except requests.RequestException as e:
-            print(f"Error fetching prices: {e}")
+            logger.error(f"SpotPriceService: Error fetching prices: {e}")
             return []
 
     def get_prices_upcoming(self):

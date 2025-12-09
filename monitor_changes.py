@@ -3,16 +3,20 @@ import json
 import os
 import time
 from datetime import datetime
-import yaml
+import sys
 import logging
+
+# Add src/ to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+# Import paths from ConfigManager
+from config_manager import SETTINGS_PATH, YAML_CONFIG_PATH, PROJECT_ROOT
 
 # Configure basic logging for the monitor script itself
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-SETTINGS_PATH = "data/user_settings.json"
-YAML_CONFIG_PATH = "config/settings.yaml"
-LOG_FILE = "change_log.txt"
+LOG_FILE = os.path.join(PROJECT_ROOT, "change_log.txt")
 
 class ZaptecMonitor:
     def __init__(self, config):

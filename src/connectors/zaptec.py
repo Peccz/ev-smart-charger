@@ -140,25 +140,49 @@ class ZaptecCharger(Charger):
             logger.error(f"Zaptec: Failed to send STOP command to {target_id}")
             return False
 
-    def _send_command(self, command_id):
+    def _send_command(self, command_id, max_retries=3):
+        """
+        Send command to Zaptec charger with exponential backoff on 5xx errors.
+
+        Args:
+            command_id: Zaptec command ID (501=start, 502=stop)
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
         target_id = self.charger_id if self.charger_id else self.installation_id
         headers = self._get_headers()
         if not headers:
             logger.error("Zaptec: Failed to get API headers for command, authentication failed.")
             return False
 
-        # Fix: commandId is part of the URL path
         url = f"{self.api_url}/chargers/{target_id}/sendCommand/{command_id}"
-        # Payload might be needed for parameters, but for start/stop (501/502) it's often empty or just empty json
-        payload = {} 
-        
-        try:
-            response = requests.post(url, json=payload, headers=headers, timeout=10)
-            response.raise_for_status()
-            return True
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"Zaptec Command HTTP Error ({command_id}, {target_id}): {e.response.status_code} - {e.response.text}")
-            return False
-        except Exception as e:
-            logger.error(f"Zaptec Command Error ({command_id}, {target_id}): {e}")
-            return False
+        payload = {}
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(url, json=payload, headers=headers, timeout=10)
+                response.raise_for_status()
+                logger.info(f"Zaptec: Command {command_id} successful on attempt {attempt + 1}")
+                return True
+
+            except requests.exceptions.HTTPError as e:
+                status_code = e.response.status_code
+
+                # Retry on 5xx server errors with exponential backoff
+                if status_code >= 500 and attempt < max_retries - 1:
+                    wait_time = 2 ** attempt  # 1s, 2s, 4s
+                    logger.warning(f"Zaptec: Command HTTP {status_code} (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    # Don't retry on 4xx client errors or after max retries
+                    logger.error(f"Zaptec Command HTTP Error ({command_id}, {target_id}): {status_code} - {e.response.text}")
+                    return False
+
+            except Exception as e:
+                logger.error(f"Zaptec Command Error ({command_id}, {target_id}): {e}")
+                return False
+
+        return False
