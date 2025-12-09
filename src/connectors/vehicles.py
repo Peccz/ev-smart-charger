@@ -1,5 +1,6 @@
 import logging
 import requests
+from datetime import datetime, timedelta, timezone
 from .base import Vehicle
 
 logger = logging.getLogger(__name__)
@@ -161,9 +162,13 @@ class NissanLeaf(Vehicle):
         self.ha_nissan_soc_entity_id = config.get('ha_nissan_soc_entity_id')
         self.ha_nissan_plugged_entity_id = config.get('ha_nissan_plugged_entity_id')
         self.ha_nissan_range_entity_id = config.get('ha_nissan_range_entity_id')
+        self.ha_nissan_last_updated_id = config.get('ha_nissan_last_updated_id')
         self.ha_climate_id = config.get('climate_entity_id')
         self.ha_odometer_id = config.get('odometer_entity_id')
         self.ha_update_id = config.get('update_entity_id')
+        
+        # State for automatic wakeup
+        self._last_wakeup_time = datetime.min.replace(tzinfo=timezone.utc)
 
     def validate_config(self):
         required = ['ha_url', 'ha_token', 'ha_nissan_soc_entity_id']
@@ -221,6 +226,26 @@ class NissanLeaf(Vehicle):
             state = self.ha_client.get_state(self.ha_climate_id)
             if state and str(state.get('state')).lower() in ['on', 'true', '1', 'active']:
                 status['climate_active'] = True
+        
+        # Check staleness and wake up if needed
+        if self.ha_nissan_last_updated_id:
+            lu_state = self.ha_client.get_state(self.ha_nissan_last_updated_id)
+            if lu_state and 'state' in lu_state and lu_state['state'] not in ['unknown', 'unavailable']:
+                try:
+                    # Parse ISO format (e.g. 2025-12-08T11:10:42+00:00)
+                    last_updated = datetime.fromisoformat(lu_state['state'])
+                    now = datetime.now(timezone.utc)
+                    age = now - last_updated
+                    
+                    # If data is older than 4 hours, try to wake up
+                    # (with 60 min cooldown)
+                    if age > timedelta(hours=4):
+                        if (now - self._last_wakeup_time) > timedelta(minutes=60):
+                            logger.info(f"NissanLeaf: Data is old ({age}). Triggering wake_up...")
+                            self.wake_up()
+                            self._last_wakeup_time = now
+                except Exception as e:
+                    logger.warning(f"NissanLeaf: Failed to check staleness: {e}")
 
         logger.info(f"NissanLeaf Status: {status}")
         return status
