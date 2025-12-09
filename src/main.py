@@ -208,20 +208,25 @@ def job():
 
     # --- 5. Control Charger ---
     try:
-        # We already have charger_status from start of loop, but it might have changed? 
-        # Probably fine to reuse or fetch again. Let's reuse 'charger_status' for logic check
-        # But we need to know if it IS charging.
-        
-        is_charging = charger_status.get('is_charging', False)
-        
+        # Get fresh charger status before making control decision
+        fresh_charger_status = charger.get_status()
+        is_charging = fresh_charger_status.get('is_charging', False)
+        power_kw = fresh_charger_status.get('power_kw', 0.0)
+
+        logger.info(f"Charger Status: is_charging={is_charging}, power={power_kw:.2f}kW, any_charging_needed={any_charging_needed}")
+
         if any_charging_needed:
             if not is_charging:
                 logger.info("Decision: START CHARGING")
                 charger.start_charging()
+            else:
+                logger.info("Decision: Already charging, no action needed")
         else:
             if is_charging:
-                logger.info("Decision: STOP CHARGING")
+                logger.info("Decision: STOP CHARGING (waiting for cheaper prices)")
                 charger.stop_charging()
+            else:
+                logger.info("Decision: Not charging, no action needed")
     except Exception as e:
         logger.error(f"Charger control failed: {e}")
 

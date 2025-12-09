@@ -91,21 +91,29 @@ class ZaptecCharger(Charger):
                 # Handle case-sensitivity in API response (StateId vs stateId)
                 state_id = obs.get('StateId', obs.get('stateId'))
                 val_str = obs.get('ValueAsString', obs.get('valueAsString', '0'))
-                
-                if state_id == 506: # Operating Mode
+
+                # Check both StateId 506 and 710 for Operating Mode
+                # 710 is "Charger Operation Mode" and more reliable
+                if state_id == 506 or state_id == 710: # Operating Mode
                     try:
                         mode_val = int(val_str)
                         if mode_val == 1: status["operating_mode"] = "DISCONNECTED"
                         elif mode_val == 2: status["operating_mode"] = "CONNECTED_WAITING"
-                        elif mode_val == 3: 
+                        elif mode_val == 3:
                             status["operating_mode"] = "CHARGING"
                             status["is_charging"] = True
+                        elif mode_val == 5:
+                            status["operating_mode"] = "CHARGE_DONE"
                     except ValueError:
                         logger.warning(f"Zaptec: Invalid Operating Mode value: {val_str}")
-                        
+
                 elif state_id == 510: # Total Power (W)
                     try:
-                        status["power_kw"] = float(val_str) / 1000.0
+                        power_kw = float(val_str) / 1000.0
+                        status["power_kw"] = power_kw
+                        # Also set is_charging if power is significant (>0.5 kW)
+                        if power_kw > 0.5:
+                            status["is_charging"] = True
                     except ValueError:
                         logger.warning(f"Zaptec: Invalid Power value: {val_str}")
 
