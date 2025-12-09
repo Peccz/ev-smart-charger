@@ -301,7 +301,17 @@ def api_plan():
 
             if hours_needed > 0:
                 df_prices_with_forecast = pd.DataFrame(prices_with_forecast)
-                df_sorted = df_prices_with_forecast.sort_values(by='price_sek', ascending=True)
+                
+                # Filter by deadline (same logic as Optimizer)
+                deadline = optimizer.get_deadline()
+                df_prices_with_forecast['time_start_dt'] = pd.to_datetime(df_prices_with_forecast['time_start'])
+                df_valid = df_prices_with_forecast[df_prices_with_forecast['time_start_dt'] < deadline]
+                
+                # If not enough time before deadline, fallback to full dataframe (panic mode logic)
+                if len(df_valid) < hours_needed:
+                    df_valid = df_prices_with_forecast
+
+                df_sorted = df_valid.sort_values(by='price_sek', ascending=True)
                 cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
                 
                 for p in prices_with_forecast:
