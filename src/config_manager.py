@@ -6,15 +6,20 @@ import secrets
 
 logger = logging.getLogger(__name__)
 
-# Constants
-SETTINGS_PATH = "data/user_settings.json"
-OVERRIDES_PATH = "data/manual_overrides.json"
-STATE_PATH = "data/optimizer_state.json"
-MANUAL_STATUS_PATH = "data/manual_status.json"
-YAML_CONFIG_PATH = "config/settings.yaml"
-SECRETS_PATH = "data/secrets.json"
-FORECAST_HISTORY_FILE = "data/forecast_history.json"
-SECRET_KEY_PATH = "data/.flask_secret"
+# Get absolute project root directory
+# This file is in src/, so project root is one level up
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+# Constants - ALL PATHS ARE ABSOLUTE
+SETTINGS_PATH = os.path.join(PROJECT_ROOT, "data", "user_settings.json")
+OVERRIDES_PATH = os.path.join(PROJECT_ROOT, "data", "manual_overrides.json")
+STATE_PATH = os.path.join(PROJECT_ROOT, "data", "optimizer_state.json")
+MANUAL_STATUS_PATH = os.path.join(PROJECT_ROOT, "data", "manual_status.json")
+YAML_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "settings.yaml")
+SECRETS_PATH = os.path.join(PROJECT_ROOT, "data", "secrets.json")
+FORECAST_HISTORY_FILE = os.path.join(PROJECT_ROOT, "data", "forecast_history.json")
+SECRET_KEY_PATH = os.path.join(PROJECT_ROOT, "data", ".flask_secret")
+DATABASE_PATH = os.path.join(PROJECT_ROOT, "data", "ev_charger.db")
 
 DEFAULT_SETTINGS = {
     "mercedes_eqv_min_soc": 40,

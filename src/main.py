@@ -13,7 +13,7 @@ from connectors.vehicles import MercedesEQV, NissanLeaf
 from connectors.zaptec import ZaptecCharger
 from database.db_manager import DatabaseManager
 from optimizer.engine import Optimizer
-from config_manager import ConfigManager
+from config_manager import ConfigManager, DATABASE_PATH
 
 # Setup logging
 logging.basicConfig(
@@ -75,7 +75,7 @@ def job():
     user_settings = ConfigManager.get_settings()
     
     # Initialize services
-    db = DatabaseManager()
+    db = DatabaseManager(db_path=DATABASE_PATH)
     spot_service = SpotPriceService(region=config['grid']['region'])
     weather_service = WeatherService(config['location']['latitude'], config['location']['longitude'])
     optimizer = Optimizer(config)

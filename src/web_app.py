@@ -7,7 +7,8 @@ import pandas as pd
 import yaml
 import requests
 
-from config_manager import ConfigManager, FORECAST_HISTORY_FILE
+from config_manager import (ConfigManager, FORECAST_HISTORY_FILE,
+                            OVERRIDES_PATH, STATE_PATH, MANUAL_STATUS_PATH)
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
 from optimizer.engine import Optimizer
@@ -16,9 +17,7 @@ from connectors.vehicles import MercedesEQV, NissanLeaf
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 app.secret_key = ConfigManager.get_flask_secret_key()
 
-OVERRIDES_PATH = "data/manual_overrides.json"
-STATE_PATH = "data/optimizer_state.json"
-MANUAL_STATUS_PATH = "data/manual_status.json"
+# All paths now imported from ConfigManager (absolute paths)
 
 spot_service = SpotPriceService()
 weather_service = WeatherService(59.5196, 17.9285)

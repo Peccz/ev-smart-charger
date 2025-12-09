@@ -6,6 +6,7 @@ import json
 import os
 import dateutil.parser
 import logging
+from config_manager import SETTINGS_PATH, OVERRIDES_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +14,9 @@ class Optimizer:
     def __init__(self, config):
         self.config = config
         self.buffer_threshold_price = config['optimization']['price_buffer_threshold']
-        self.settings_path = "data/user_settings.json"
-        self.overrides_path = "data/manual_overrides.json"
+        # Use absolute paths from ConfigManager
+        self.settings_path = SETTINGS_PATH
+        self.overrides_path = OVERRIDES_PATH
 
     def _get_user_settings(self):
         if os.path.exists(self.settings_path):
