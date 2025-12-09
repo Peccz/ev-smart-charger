@@ -33,6 +33,14 @@ class Vehicle(BaseConnector):
         """
         return False
 
+    def start_charging(self):
+        """Optional: Send start charge command to vehicle."""
+        return False
+
+    def stop_charging(self):
+        """Optional: Send stop charge command to vehicle."""
+        return False
+
 class Charger(BaseConnector):
     @abstractmethod
     def get_status(self):
