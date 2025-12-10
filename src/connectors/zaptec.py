@@ -233,6 +233,19 @@ class ZaptecCharger(Charger):
             logger.error(f"Zaptec Set Current Exception: {e}")
             return False
 
+    def restart_charger(self):
+        """
+        Sends Restart command (102) to the charger.
+        """
+        target_id = self.charger_id if self.charger_id else self.installation_id
+        logger.info(f"Zaptec: Sending RESTART command (102) to {target_id}")
+        if self._send_command(102):
+            logger.info(f"Zaptec: RESTART command sent successfully to {target_id}")
+            return True
+        else:
+            logger.error(f"Zaptec: Failed to send RESTART command to {target_id}")
+            return False
+
     def _send_command(self, command_id, max_retries=3):
         """
         Send command to Zaptec charger with exponential backoff on 5xx errors.
