@@ -16,6 +16,7 @@ class ZaptecCharger(Charger):
         self.api_url = "https://api.zaptec.com/api"
         self.token = None
         self.token_expires = 0
+        self.last_status = {} # Cache last status for safe command logic
     
     def validate_config(self):
         if not self.config.get('username') or not self.config.get('password'):
@@ -66,11 +67,18 @@ class ZaptecCharger(Charger):
     def get_status(self):
         """
         Check if a car is connected and charging via the Installation state.
+        Refined to capture State IDs 710 (Mode), 510 (Power), 507 (Energy).
         """
         target_id = self.charger_id if self.charger_id else self.installation_id
         
         # Default error state
-        status = {"operating_mode": "UNKNOWN", "power_kw": 0.0, "is_charging": False}
+        status = {
+            "operating_mode": "UNKNOWN", 
+            "mode_code": -1,
+            "power_kw": 0.0, 
+            "energy_kwh": 0.0,
+            "is_charging": False
+        }
 
         if not target_id:
             return status
@@ -92,11 +100,12 @@ class ZaptecCharger(Charger):
                 state_id = obs.get('StateId', obs.get('stateId'))
                 val_str = obs.get('ValueAsString', obs.get('valueAsString', '0'))
 
-                # Check both StateId 506 and 710 for Operating Mode
-                # 710 is "Charger Operation Mode" and more reliable
-                if state_id == 506 or state_id == 710: # Operating Mode
+                # 710: Charger Operation Mode (Primary)
+                # 506: Older/Alternative mode, sometimes used for stop commands
+                if state_id == 710 or state_id == 506:
                     try:
                         mode_val = int(val_str)
+                        status["mode_code"] = mode_val
                         if mode_val == 1: status["operating_mode"] = "DISCONNECTED"
                         elif mode_val == 2: status["operating_mode"] = "CONNECTED_WAITING"
                         elif mode_val == 3:
@@ -104,6 +113,8 @@ class ZaptecCharger(Charger):
                             status["is_charging"] = True
                         elif mode_val == 5:
                             status["operating_mode"] = "CHARGE_DONE"
+                        else:
+                            status["operating_mode"] = f"UNKNOWN_MODE_{mode_val}"
                     except ValueError:
                         logger.warning(f"Zaptec: Invalid Operating Mode value: {val_str}")
 
@@ -111,12 +122,19 @@ class ZaptecCharger(Charger):
                     try:
                         power_kw = float(val_str) / 1000.0
                         status["power_kw"] = power_kw
-                        # Also set is_charging if power is significant (>0.5 kW)
-                        if power_kw > 0.5:
+                        # Secondary check: if power is significant, we are charging
+                        if power_kw > 0.1:
                             status["is_charging"] = True
                     except ValueError:
                         logger.warning(f"Zaptec: Invalid Power value: {val_str}")
+                
+                elif state_id == 507: # Session Energy (kWh)
+                    try:
+                         status["energy_kwh"] = float(val_str)
+                    except ValueError:
+                        pass
 
+            self.last_status = status
             return status
 
         except requests.exceptions.HTTPError as e:
@@ -129,7 +147,24 @@ class ZaptecCharger(Charger):
             return status
 
     def start_charging(self):
+        """
+        Sends Start command (501). 
+        Checks status first to avoid redundant calls.
+        """
         target_id = self.charger_id if self.charger_id else self.installation_id
+        
+        # 1. Check current status
+        current_status = self.get_status()
+        if current_status["is_charging"] or current_status["mode_code"] == 3:
+            logger.info(f"Zaptec: Already charging (Mode {current_status['mode_code']}). Skipping START command.")
+            return True
+
+        if current_status["mode_code"] == 1:
+            logger.warning("Zaptec: Cannot start charging - Car is DISCONNECTED (Mode 1).")
+            # We don't return False here necessarily, as plugging in might happen any second, 
+            # but usually we shouldn't try.
+            return False
+
         logger.info(f"Zaptec: Sending START command to {target_id}")
         if self._send_command(501):
             logger.info(f"Zaptec: START command sent successfully to {target_id}")
@@ -139,13 +174,63 @@ class ZaptecCharger(Charger):
             return False
 
     def stop_charging(self):
+        """
+        Sends Stop command (502).
+        Checks status first to avoid redundant calls which cause "Stopped too many times" errors.
+        """
         target_id = self.charger_id if self.charger_id else self.installation_id
+        
+        # 1. Check current status
+        current_status = self.get_status()
+        
+        # Modes where we are effectively already stopped:
+        # 1: Disconnected
+        # 2: Connected Waiting (Paused)
+        # 5: Charge Done
+        safe_stop_modes = [1, 2, 5]
+        
+        if current_status["mode_code"] in safe_stop_modes and not current_status["is_charging"]:
+            logger.info(f"Zaptec: Already stopped/waiting (Mode {current_status['mode_code']}). Skipping STOP command.")
+            return True
+
         logger.info(f"Zaptec: Sending STOP command to {target_id}")
         if self._send_command(502):
             logger.info(f"Zaptec: STOP command sent successfully to {target_id}")
             return True
         else:
             logger.error(f"Zaptec: Failed to send STOP command to {target_id}")
+            return False
+
+    def set_charging_current(self, current_amps):
+        """
+        Sets the available current for the installation (Load Balancing).
+        Target: /api/installation/{id}/update
+        """
+        if not self.installation_id:
+             logger.error("Zaptec: Cannot set current - No installation_id configured.")
+             return False
+
+        headers = self._get_headers()
+        if not headers:
+             return False
+
+        url = f"{self.api_url}/installation/{self.installation_id}/update"
+        payload = {
+            "AvailableCurrent": int(current_amps)
+        }
+        
+        logger.info(f"Zaptec: Setting installation current to {current_amps}A")
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            response.raise_for_status()
+            logger.info(f"Zaptec: Current set to {current_amps}A successfully.")
+            return True
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Zaptec Set Current Error: {e.response.status_code} - {e.response.text}")
+            return False
+        except Exception as e:
+            logger.error(f"Zaptec Set Current Exception: {e}")
             return False
 
     def _send_command(self, command_id, max_retries=3):
