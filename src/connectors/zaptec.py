@@ -146,13 +146,20 @@ class ZaptecCharger(Charger):
             status["operating_mode"] = "ERROR"
             return status
 
-    def start_charging(self):
+    def start_charging(self, authorize=True):
         """
-        Sends Start command (501). 
-        Checks status first to avoid redundant calls.
+        Starts charging with proper authorization handling.
+
+        Args:
+            authorize (bool): If True, uses command 507 (Resume/Authorize and Start) which
+                            works even after deauthorization. If False, uses command 501
+                            (Simple Start) which may fail if charger requires authorization.
+
+        Note: Command 507 is recommended when using deauthorize mode for stopping,
+              as it automatically handles re-authorization.
         """
         target_id = self.charger_id if self.charger_id else self.installation_id
-        
+
         # 1. Check current status
         current_status = self.get_status()
         if current_status["is_charging"] or current_status["mode_code"] == 3:
@@ -161,16 +168,31 @@ class ZaptecCharger(Charger):
 
         if current_status["mode_code"] == 1:
             logger.warning("Zaptec: Cannot start charging - Car is DISCONNECTED (Mode 1).")
-            # We don't return False here necessarily, as plugging in might happen any second, 
-            # but usually we shouldn't try.
             return False
 
-        logger.info(f"Zaptec: Sending START command to {target_id}")
-        if self._send_command(501):
-            logger.info(f"Zaptec: START command sent successfully to {target_id}")
+        # Choose command based on authorize parameter
+        if authorize:
+            # Command 507: Resume/Authorize and Start (works after deauthorize)
+            command_id = 507
+            command_name = "RESUME_CHARGING"
+            logger.info(f"Zaptec: Sending {command_name} (507) to {target_id} - handles re-authorization")
+        else:
+            # Command 501: Simple Start (may fail if authorization required)
+            command_id = 501
+            command_name = "START"
+            logger.info(f"Zaptec: Sending {command_name} (501) to {target_id}")
+
+        if self._send_command(command_id):
+            logger.info(f"Zaptec: {command_name} command sent successfully to {target_id}")
             return True
         else:
-            logger.error(f"Zaptec: Failed to send START command to {target_id}")
+            logger.error(f"Zaptec: Failed to send {command_name} command to {target_id}")
+            # If command 507 failed, try fallback to 501
+            if authorize and command_id == 507:
+                logger.info(f"Zaptec: Trying fallback to command 501 (START)")
+                if self._send_command(501):
+                    logger.info(f"Zaptec: Fallback START (501) successful")
+                    return True
             return False
 
     def stop_charging(self, deauthorize=True):
