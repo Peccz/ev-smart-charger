@@ -44,7 +44,7 @@ class MercedesEQV(Vehicle):
         self.name = "Mercedes EQV"
         self.capacity_kwh = config.get('capacity_kwh', 90)
         self.max_charge_kw = config.get('max_charge_kw', 11)
-        
+
         self.ha_client = None
         if self.config.get('ha_url') and self.config.get('ha_token'):
             self.ha_client = HomeAssistantClient(self.config['ha_url'], self.config['ha_token'])
@@ -56,6 +56,24 @@ class MercedesEQV(Vehicle):
         self.ha_climate_status_id = config.get('climate_status_id')
         self.ha_lock_id = config.get('lock_entity_id')
         self.ha_odometer_id = config.get('odometer_entity_id')
+
+    def start_charging(self):
+        """
+        Mercedes Me HA integration does not support remote charging control.
+        Use Zaptec charger control instead.
+        """
+        logger.info("MercedesEQV: start_charging() called - Mercedes Me does not support remote start")
+        logger.info("MercedesEQV: Use ZaptecCharger.start_charging() to control charging")
+        return False
+
+    def stop_charging(self):
+        """
+        Mercedes Me HA integration does not support remote charging control.
+        Use Zaptec charger control instead.
+        """
+        logger.info("MercedesEQV: stop_charging() called - Mercedes Me does not support remote stop")
+        logger.info("MercedesEQV: Use ZaptecCharger.stop_charging() to control charging")
+        return False
 
     def validate_config(self):
         required = ['ha_url', 'ha_token', 'ha_merc_soc_entity_id']
@@ -259,14 +277,28 @@ class NissanLeaf(Vehicle):
         return status
 
     def start_charging(self):
-        """Start charging via HomeAssistant button.leaf_start_charge"""
+        """
+        Start charging via HomeAssistant button.leaf_start_charge.
+        Note: This sends a start command to the car itself. For best results,
+              use ZaptecCharger.start_charging() which controls the charger directly.
+        """
         if not self.ha_client:
             logger.error("NissanLeaf: Cannot start charging - HA client not initialized")
             return False
 
         entity_id = "button.leaf_start_charge"
         logger.info(f"NissanLeaf: Starting charging via {entity_id}")
+        logger.info(f"NissanLeaf: This tells the CAR to start. For charger control, use ZaptecCharger.start_charging()")
         return self.ha_client.call_service("button", "press", entity_id)
+
+    def stop_charging(self):
+        """
+        Nissan Leaf HA integration does not have a stop charging button.
+        Use Zaptec charger control instead.
+        """
+        logger.info("NissanLeaf: stop_charging() called - Nissan integration does not support remote stop")
+        logger.info("NissanLeaf: Use ZaptecCharger.stop_charging() to control charging")
+        return False
 
     def start_climate(self):
         if self.ha_client and self.ha_climate_id:
