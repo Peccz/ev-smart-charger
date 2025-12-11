@@ -173,13 +173,18 @@ class ZaptecCharger(Charger):
             logger.error(f"Zaptec: Failed to send START command to {target_id}")
             return False
 
-    def stop_charging(self, aggressive=False):
+    def stop_charging(self, deauthorize=True):
         """
-        Sends Stop command (502).
-        Checks status first to avoid redundant calls which cause "Stopped too many times" errors.
+        Stops charging using Zaptec's proper API commands.
 
         Args:
-            aggressive (bool): If True, sends multiple STOP commands to override persistent car requests
+            deauthorize (bool): If True, uses command 10001 (Deauthorize and Stop) which
+                              prevents the car from automatically restarting charging.
+                              If False, uses command 502 (Stop) which may allow car to restart.
+
+        Note: Command 10001 is recommended when the car has persistent charging requests
+              (e.g., Mercedes EQV with charge timer active). This removes authorization
+              so the car cannot restart charging without manual re-authorization.
         """
         target_id = self.charger_id if self.charger_id else self.installation_id
 
@@ -196,37 +201,25 @@ class ZaptecCharger(Charger):
             logger.info(f"Zaptec: Already stopped/waiting (Mode {current_status['mode_code']}). Skipping STOP command.")
             return True
 
-        if not aggressive:
-            # Normal stop - single command
-            logger.info(f"Zaptec: Sending STOP command to {target_id}")
-            if self._send_command(502):
-                logger.info(f"Zaptec: STOP command sent successfully to {target_id}")
-                return True
-            else:
-                logger.error(f"Zaptec: Failed to send STOP command to {target_id}")
-                return False
+        # Choose command based on deauthorize parameter
+        if deauthorize:
+            # Command 10001: Deauthorize and Stop (Recommended for persistent car requests)
+            # This prevents the car from automatically restarting charging
+            command_id = 10001
+            command_name = "DEAUTHORIZE_AND_STOP"
+            logger.info(f"Zaptec: Sending {command_name} (10001) to {target_id} - this prevents auto-restart")
         else:
-            # Aggressive stop - send command 3 times with 2 second intervals
-            # This helps override persistent charging requests from the car
-            import time
-            logger.info(f"Zaptec: Sending AGGRESSIVE STOP to {target_id} (3x commands)")
-            success_count = 0
+            # Command 502: Simple Stop (May allow car to restart)
+            command_id = 502
+            command_name = "STOP"
+            logger.info(f"Zaptec: Sending {command_name} (502) to {target_id}")
 
-            for attempt in range(3):
-                if self._send_command(502):
-                    success_count += 1
-                    logger.info(f"Zaptec: Aggressive STOP attempt {attempt + 1}/3 successful")
-                    if attempt < 2:  # Don't sleep after last attempt
-                        time.sleep(2)
-                else:
-                    logger.warning(f"Zaptec: Aggressive STOP attempt {attempt + 1}/3 failed")
-
-            if success_count > 0:
-                logger.info(f"Zaptec: Aggressive STOP completed ({success_count}/3 commands successful)")
-                return True
-            else:
-                logger.error(f"Zaptec: All aggressive STOP attempts failed")
-                return False
+        if self._send_command(command_id):
+            logger.info(f"Zaptec: {command_name} command sent successfully to {target_id}")
+            return True
+        else:
+            logger.error(f"Zaptec: Failed to send {command_name} command to {target_id}")
+            return False
 
     def set_charging_current(self, current_amps):
         """

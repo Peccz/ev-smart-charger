@@ -224,8 +224,8 @@ def job():
         else:
             if is_charging:
                 logger.info("Decision: STOP CHARGING (waiting for cheaper prices)")
-                # Use aggressive stop to override persistent car charging requests (e.g., Mercedes EQV)
-                charger.stop_charging(aggressive=True)
+                # Use deauthorize mode to prevent car from auto-restarting (default behavior)
+                charger.stop_charging()
             else:
                 logger.info("Decision: Not charging, no action needed")
     except Exception as e:
