@@ -224,7 +224,8 @@ def job():
         else:
             if is_charging:
                 logger.info("Decision: STOP CHARGING (waiting for cheaper prices)")
-                charger.stop_charging()
+                # Use aggressive stop to override persistent car charging requests (e.g., Mercedes EQV)
+                charger.stop_charging(aggressive=True)
             else:
                 logger.info("Decision: Not charging, no action needed")
     except Exception as e:

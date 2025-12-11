@@ -197,6 +197,7 @@ class ConfigManager:
             'climate_entity_id': HARDCODED_SENSORS['nissan_leaf_climate_entity_id'],
             'odometer_entity_id': HARDCODED_SENSORS.get('nissan_leaf_odometer_entity_id'),
             'update_entity_id': HARDCODED_SENSORS['nissan_leaf_update_entity_id'],
+            'ha_nissan_charging_entity_id': nis_base.get('ha_nissan_charging_entity_id'), # New field passed through
             
             'username': nis_secrets.get('username', get_val('nissan_username')),
             'password': nis_secrets.get('password', get_val('nissan_password'))

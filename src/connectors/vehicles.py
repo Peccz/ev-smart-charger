@@ -166,6 +166,7 @@ class NissanLeaf(Vehicle):
         self.ha_climate_id = config.get('climate_entity_id')
         self.ha_odometer_id = config.get('odometer_entity_id')
         self.ha_update_id = config.get('update_entity_id')
+        self.ha_nissan_charging_entity_id = config.get('ha_nissan_charging_entity_id') # New entity for charging status
         
         # State for automatic wakeup
         self._last_wakeup_time = datetime.min.replace(tzinfo=timezone.utc)
@@ -182,7 +183,8 @@ class NissanLeaf(Vehicle):
             "range_km": 0,
             "plugged_in": False,
             "odometer": 0,
-            "climate_active": False
+            "climate_active": False,
+            "is_charging": False # New field for car's charging status
         }
 
         if not self.ha_client:
@@ -202,6 +204,12 @@ class NissanLeaf(Vehicle):
             state = self.ha_client.get_state(self.ha_nissan_plugged_entity_id)
             if state and state.get('state') == 'on':
                 status['plugged_in'] = True
+
+        # Car's internal charging status
+        if self.ha_nissan_charging_entity_id:
+            state = self.ha_client.get_state(self.ha_nissan_charging_entity_id)
+            if state and state.get('state') == 'on':
+                status['is_charging'] = True
 
         # Range
         if self.ha_nissan_range_entity_id:

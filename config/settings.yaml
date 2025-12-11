@@ -27,11 +27,15 @@ cars:
     max_charge_kw: 6.6 # Max charging power in kW
     target_soc: 80
     # HomeAssistant Integration
-    ha_url: "http://homeassistant.local:8123"  # Or your HA IP address
-    ha_token: "YOUR_HA_LONG_LIVED_ACCESS_TOKEN"  # Same token as above
-    ha_leaf_soc_entity_id: "sensor.nissan_leaf_battery"  # Entity ID from HA
-    ha_leaf_plugged_entity_id: "binary_sensor.nissan_leaf_plug"  # Optional
-    ha_leaf_range_entity_id: "sensor.nissan_leaf_range"  # Optional
+    ha_url: "http://100.100.118.62:8123"  # Updated based on diagnosis
+    ha_token: "YOUR_HA_LONG_LIVED_ACCESS_TOKEN"  # PLEASE REPLACE WITH YOUR REAL TOKEN
+    ha_nissan_soc_entity_id: "sensor.leaf_battery_level"
+    ha_nissan_plugged_entity_id: "binary_sensor.leaf_plugged_in"
+    ha_nissan_range_entity_id: "sensor.leaf_range_ac_on"
+    ha_nissan_last_updated_id: "sensor.leaf_last_updated"
+    ha_odometer_id: "sensor.leaf_odometer"
+    ha_update_id: "button.leaf_update_data"
+    ha_nissan_charging_entity_id: "binary_sensor.leaf_charging"
 
 charger:
   zaptec:

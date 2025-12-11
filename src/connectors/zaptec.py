@@ -173,33 +173,60 @@ class ZaptecCharger(Charger):
             logger.error(f"Zaptec: Failed to send START command to {target_id}")
             return False
 
-    def stop_charging(self):
+    def stop_charging(self, aggressive=False):
         """
         Sends Stop command (502).
         Checks status first to avoid redundant calls which cause "Stopped too many times" errors.
+
+        Args:
+            aggressive (bool): If True, sends multiple STOP commands to override persistent car requests
         """
         target_id = self.charger_id if self.charger_id else self.installation_id
-        
+
         # 1. Check current status
         current_status = self.get_status()
-        
+
         # Modes where we are effectively already stopped:
         # 1: Disconnected
         # 2: Connected Waiting (Paused)
         # 5: Charge Done
         safe_stop_modes = [1, 2, 5]
-        
+
         if current_status["mode_code"] in safe_stop_modes and not current_status["is_charging"]:
             logger.info(f"Zaptec: Already stopped/waiting (Mode {current_status['mode_code']}). Skipping STOP command.")
             return True
 
-        logger.info(f"Zaptec: Sending STOP command to {target_id}")
-        if self._send_command(502):
-            logger.info(f"Zaptec: STOP command sent successfully to {target_id}")
-            return True
+        if not aggressive:
+            # Normal stop - single command
+            logger.info(f"Zaptec: Sending STOP command to {target_id}")
+            if self._send_command(502):
+                logger.info(f"Zaptec: STOP command sent successfully to {target_id}")
+                return True
+            else:
+                logger.error(f"Zaptec: Failed to send STOP command to {target_id}")
+                return False
         else:
-            logger.error(f"Zaptec: Failed to send STOP command to {target_id}")
-            return False
+            # Aggressive stop - send command 3 times with 2 second intervals
+            # This helps override persistent charging requests from the car
+            import time
+            logger.info(f"Zaptec: Sending AGGRESSIVE STOP to {target_id} (3x commands)")
+            success_count = 0
+
+            for attempt in range(3):
+                if self._send_command(502):
+                    success_count += 1
+                    logger.info(f"Zaptec: Aggressive STOP attempt {attempt + 1}/3 successful")
+                    if attempt < 2:  # Don't sleep after last attempt
+                        time.sleep(2)
+                else:
+                    logger.warning(f"Zaptec: Aggressive STOP attempt {attempt + 1}/3 failed")
+
+            if success_count > 0:
+                logger.info(f"Zaptec: Aggressive STOP completed ({success_count}/3 commands successful)")
+                return True
+            else:
+                logger.error(f"Zaptec: All aggressive STOP attempts failed")
+                return False
 
     def set_charging_current(self, current_amps):
         """
