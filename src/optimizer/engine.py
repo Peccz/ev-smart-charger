@@ -262,70 +262,96 @@ class Optimizer:
 
         status = vehicle.get_status()
         current_soc = status['soc']
+        user_settings = self._get_user_settings()
         
-        # 1. Calculate Dynamic Target SoC
+        # Get Constraints
+        min_soc = user_settings.get(f"{vehicle_id}_min_soc", 40)
+        
+        # 1. Calculate Dynamic Target SoC (Opportunistic Target)
         target_soc, mode = self._calculate_dynamic_target(vehicle_id, prices)
         
-        # Also keep the old "buffer" logic as a safety override if extreme weather
+        # Safety Buffer Override
         if self._should_buffer(prices, weather_forecast):
-            target_soc = max(target_soc, 95) # Force high target if storm incoming
+            target_soc = max(target_soc, 95)
             mode = "Storm Buffering"
 
         if current_soc >= target_soc:
             return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
 
-        # 2. Calculate Energy Needs
+        # 2. Charging Logic - Two Tiered Strategy
         capacity_kwh = vehicle.capacity_kwh
         charge_speed_kw = vehicle.max_charge_kw
         
-        soc_needed_percent = target_soc - current_soc
-        kwh_needed = (soc_needed_percent / 100.0) * capacity_kwh
-        hours_needed = math.ceil(kwh_needed / charge_speed_kw)
-        
-        # 3. Basic checks
         if not status['plugged_in']:
             return {"action": "IDLE", "reason": f"Vehicle not plugged in. Target: {target_soc}% ({mode})"}
-
-        if hours_needed <= 0:
-             return {"action": "IDLE", "reason": "Calculation error: 0 hours needed"}
-
-        # 4. Analyze Prices (Planning Horizon)
+        
         if not prices:
-            logger.warning("Optimizer: No price data. Failsafe charging enabled.")
-            return {"action": "CHARGE", "reason": "No price data, failsafe charging"}
+             logger.warning("Optimizer: No price data. Failsafe charging enabled.")
+             return {"action": "CHARGE", "reason": "No price data, failsafe charging"}
 
         df = pd.DataFrame(prices)
         df['time_start_dt'] = pd.to_datetime(df['time_start'])
-        
-        # Deadline Logic
-        deadline = self.get_deadline()
-        df_valid = df[df['time_start_dt'] < deadline]
-        
-        valid_hours = len(df_valid)
-        
-        if valid_hours < hours_needed:
-             logger.warning(f"Optimizer: Not enough time before deadline ({deadline})! Need {hours_needed}h, have {valid_hours}h.")
-             # Fallback: Charge NOW to maximize time, or use all prices if it's way too late
-             # Logic: If we are short on time, every hour counts.
-             return {"action": "CHARGE", "reason": f"Panic Mode: Need {hours_needed}h before {deadline.strftime('%H:%M')}"}
-
-        # Select cheapest hours BEFORE deadline
-        df_sorted = df_valid.sort_values(by='price_sek', ascending=True)
-        cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
-        
         current_time_start = df.iloc[0]['time_start']
+        current_price = df.iloc[0]['price_sek']
         
-        if current_time_start in cheapest_hours:
-            current_price = df.iloc[0]['price_sek']
+        deadline = self.get_deadline()
+
+        # --- TIER 1: CRITICAL CHARGING (Reach min_soc by Deadline) ---
+        if current_soc < min_soc:
+            soc_needed_critical = min_soc - current_soc
+            kwh_needed_critical = (soc_needed_critical / 100.0) * capacity_kwh
+            hours_needed_critical = math.ceil(kwh_needed_critical / charge_speed_kw)
+            
+            df_critical = df[df['time_start_dt'] < deadline]
+            valid_hours_critical = len(df_critical)
+            
+            if valid_hours_critical < hours_needed_critical:
+                 # Panic mode: Not enough time to reach min_soc
+                 return {"action": "CHARGE", "reason": f"CRITICAL: Need {hours_needed_critical}h for min_soc before {deadline.strftime('%H:%M')}"}
+            
+            # Find cheapest hours BEFORE deadline for critical charge
+            df_critical_sorted = df_critical.sort_values(by='price_sek', ascending=True)
+            cheapest_critical_hours = df_critical_sorted.head(hours_needed_critical)['time_start'].tolist()
+            
+            if current_time_start in cheapest_critical_hours:
+                return {
+                    "action": "CHARGE", 
+                    "reason": f"CRITICAL: Charging to {min_soc}% by {deadline.strftime('%H:%M')}. Price: {current_price:.2f}"
+                }
+            else:
+                # If we are not in a critical hour, check if we should charge opportunistically anyway?
+                # No, strict priority: if current hour is not critical, verify if it's a "super cheap" opportunistic hour below.
+                # However, to be safe, usually we wait for the planned critical slots.
+                pass
+
+        # --- TIER 2: OPPORTUNISTIC CHARGING (Reach target_soc anytime) ---
+        # If we are here, either:
+        # a) We are >= min_soc (Critical needs met)
+        # b) We are < min_soc, but the current hour is NOT one of the cheapest pre-deadline hours.
+        #    In case (b), we might still want to charge if the price is GLOBALLY super cheap, 
+        #    even if it wasn't strictly necessary for the deadline.
+        
+        # Calculate TOTAL need (including what we might have planned for critical)
+        soc_needed_total = target_soc - current_soc
+        kwh_needed_total = (soc_needed_total / 100.0) * capacity_kwh
+        hours_needed_total = math.ceil(kwh_needed_total / charge_speed_kw)
+        
+        # Use ENTIRE horizon (not just pre-deadline)
+        df_global_sorted = df.sort_values(by='price_sek', ascending=True)
+        cheapest_global_hours = df_global_sorted.head(hours_needed_total)['time_start'].tolist()
+        
+        if current_time_start in cheapest_global_hours:
+            reason_tag = "OPPORTUNISTIC" if current_soc >= min_soc else "CRITICAL+OPPORTUNISTIC"
             return {
                 "action": "CHARGE", 
-                "reason": f"{mode}: Charging to {target_soc}% by {deadline.strftime('%H:%M')}. Price: {current_price:.2f} SEK."
+                "reason": f"{reason_tag}: {mode}. Charging to {target_soc}% (Best price: {current_price:.2f})"
             }
 
-        next_best_price = df_sorted.head(hours_needed)['price_sek'].max()
+        # If we are not charging, provide info
+        next_best_price = df_global_sorted.head(hours_needed_total)['price_sek'].max()
         return {
             "action": "IDLE", 
-            "reason": f"{mode}: Waiting for < {next_best_price:.2f} SEK before {deadline.strftime('%H:%M')}."
+            "reason": f"{mode}: Waiting for < {next_best_price:.2f} SEK. (Current: {current_price:.2f})"
         }
 
     def _should_buffer(self, prices, weather):
