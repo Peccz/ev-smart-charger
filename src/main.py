@@ -89,8 +89,12 @@ def job():
     official_prices = spot_service.get_prices_upcoming()
     logger.info(f"Fetched {len(official_prices)} official spot prices")
     weather_forecast = weather_service.get_forecast()
-    prices = optimizer._generate_price_forecast(official_prices, weather_forecast)
-    logger.info(f"Generated price forecast with {len(prices)} entries")
+    
+    # Generate forecast using configured horizon
+    horizon_days = config['optimization'].get('planning_horizon_days', 5)
+    prices = optimizer._generate_price_forecast(official_prices, weather_forecast, forecast_horizon_days=horizon_days)
+    
+    logger.info(f"Generated price forecast with {len(prices)} entries (Horizon: {horizon_days} days)")
     _save_forecast_history(prices)
 
     # --- 1. Get Hardware Status ---

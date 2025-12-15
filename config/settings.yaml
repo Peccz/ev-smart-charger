@@ -45,4 +45,4 @@ charger:
     
 optimization:
   price_buffer_threshold: 0.10
-  planning_horizon_days: 3
+  planning_horizon_days: 5
