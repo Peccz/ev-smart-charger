@@ -241,6 +241,28 @@ def api_status():
     cars_data['mercedes'] = build_car("Mercedes EQV", "mercedes_eqv")
     cars_data['nissan'] = build_car("Nissan Leaf", "nissan_leaf")
     
+    # --- POST-PROCESSING FOR SWAP LOGIC ---
+    # Now that we have all cars built, let's refine the swap messages
+    # to ensure they make sense globally.
+    
+    all_cars = list(cars_data.values())
+    priority_car = next((c for c in all_cars if c['is_priority']), None)
+    
+    if priority_car and priority_car['needs_plugging']:
+        # Find if another car is hogging the charger
+        hogging_car = next((c for c in all_cars if c['id'] != priority_car['id'] and c['plugged_in']), None)
+        
+        if hogging_car:
+            # Only suggest swapping if the hogging car is NOT critically charging
+            # If hogging car is charging (ACTION=CHARGE), we might want to wait?
+            # But priority car has HIGHER urgency, so yes, we should swap.
+            
+            # Update the message on the PRIORITY car (which is displayed in the status bar)
+            priority_car['swap_msg'] = f"Koppla ur {hogging_car['name']} och anslut {priority_car['name']}!"
+            
+            # Also update the hogging car to tell user to unplug it?
+            # Ideally the frontend handles the "System Status" bar based on the urgent car.
+    
     return jsonify({
         "cars": cars_data,
         "system": {
