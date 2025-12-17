@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,55 +7,121 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background-color: #f8f9fa; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .soc-circle {
-            width: 100px; height: 100px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; font-weight: bold; color: white;
-            margin: 0 auto 15px auto;
-            border: 5px solid rgba(255,255,255,0.3);
-            cursor: pointer; /* Indicating clickable */
+        /* Nibe-inspired Dark Theme */
+        body { 
+            background-color: #121212; 
+            color: #e0e0e0; 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
+        
+        /* Cards */
+        .card { 
+            background-color: #1e1e1e; 
+            border-radius: 12px; 
+            border: 1px solid #333; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+            margin-bottom: 20px; 
+            color: #fff;
+        }
+        .card h5 { font-weight: 600; letter-spacing: 0.5px; }
+        
+        /* Accents */
+        .text-primary { color: #4dabf7 !important; }
+        .text-success { color: #69db7c !important; }
+        .text-warning { color: #ffd43b !important; }
+        .text-danger { color: #ff8787 !important; }
+        .text-muted { color: #adb5bd !important; }
+
+        /* SoC Circle */
+        .soc-circle {
+            width: 110px; height: 110px; border-radius: 50%; 
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700; color: white;
+            margin: 0 auto 15px auto;
+            border: 6px solid rgba(255,255,255,0.1);
+            background: #2c2c2c; /* Fallback */
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .soc-circle:active { transform: scale(0.95); }
+        .soc-circle.charging {
+            border-color: #69db7c;
+            box-shadow: 0 0 20px rgba(105, 219, 124, 0.4);
+        }
+        
+        /* Bottom Nav */
         .nav-bottom {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            display: flex; justify-content: space-around; padding: 10px;
+            background: #1e1e1e; 
+            border-top: 1px solid #333;
+            display: flex; justify-content: space-around; padding: 12px 10px;
             z-index: 1000;
         }
-        .nav-item { text-align: center; color: #6c757d; text-decoration: none; font-size: 12px; }
-        .nav-item.active { color: #0d6efd; font-weight: bold; }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
-        .content { padding-bottom: 80px; max_width: 600px; margin: 0 auto; }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .nav-item.active { color: #4dabf7; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         
+        .content { padding-bottom: 90px; max_width: 600px; margin: 0 auto; }
+        
+        /* Status Bar */
         .status-bar {
-            border-radius: 15px;
+            background-color: #252525;
+            border: 1px solid #333;
+            border-radius: 12px;
             padding: 15px;
             margin-bottom: 25px;
             text-align: center;
-            color: white;
-            box_shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 80px;
         }
-        .status-icon { font-size: 32px; display: block; margin-bottom: 5px; }
-        
-        /* Manual SoC Slider hidden by default */
+        .status-icon { font-size: 36px; margin-right: 15px; }
+        .status-text { text-align: left; }
+        .status-title { font-weight: 700; font-size: 1.1rem; line-height: 1.2; }
+        .status-subtitle { font-size: 0.85rem; opacity: 0.7; margin-top: 2px; }
+
+        /* Status colors */
+        .status-ok { border-left: 5px solid #69db7c; }
+        .status-warn { border-left: 5px solid #ffd43b; }
+        .status-alert { border-left: 5px solid #ff8787; }
+        .status-info { border-left: 5px solid #4dabf7; }
+
+        /* Manual Slider */
         .manual-soc-container {
             display: none;
-            background: #f1f3f5;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 10px;
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #333;
         }
+        
+        /* Buttons */
+        .btn-primary { background-color: #1c7ed6; border: none; }
+        .btn-primary:hover { background-color: #1971c2; }
+        .btn-outline-danger { color: #ff8787; border-color: #ff8787; }
+        .btn-outline-danger:hover { background-color: #ff8787; color: white; }
+        
+        /* Badge */
+        .badge { font-weight: 500; padding: 6px 10px; border-radius: 6px; }
+        .bg-success { background-color: rgba(105, 219, 124, 0.2) !important; color: #69db7c; border: 1px solid #69db7c; }
+        .bg-secondary { background-color: rgba(173, 181, 189, 0.2) !important; color: #adb5bd; border: 1px solid #6c757d; }
+        
+        /* Range Input */
+        input[type=range] { accent-color: #4dabf7; }
     </style>
 </head>
 <body>
 
 <div class="container mt-4 content">
-    <h4 class="mb-4 fw-bold text-center">⚡ Smart Laddning</h4>
+    <h5 class="mb-4 text-center text-uppercase fw-bold" style="color: #888; letter-spacing: 1px;">Smart Laddning</h5>
 
-    <!-- Top Status Bar -->
-    <div id="system-status" class="status-bar bg-secondary">
-        <div class="spinner-border spinner-border-sm"></div> Laddar status...
+    <!-- System Status -->
+    <div id="system-status" class="status-bar status-info">
+        <div class="spinner-border spinner-border-sm text-secondary"></div> 
+        <span class="ms-3 text-muted">Laddar status...</span>
     </div>
 
     <div id="car-container"></div>
@@ -91,11 +157,8 @@
             });
     }
 
-    // Refresh immediately when switching back to this tab
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === 'visible') {
-            getStatus();
-        }
+        if (document.visibilityState === 'visible') getStatus();
     });
     window.addEventListener("focus", getStatus);
 
@@ -103,107 +166,132 @@
         const bar = document.getElementById('system-status');
         const cars = Object.values(data.cars);
         
-        // Find issues
-        const urgentCar = cars.find(c => c.needs_plugging);
-        const priorityCar = cars.find(c => c.is_priority);
-        const chargingCar = cars.find(c => c.action === 'CHARGE' && c.plugged_in);
+        // --- LOGIC FIX: Determine truly urgent car ---
+        // Priority is determined by urgency_score in backend.
+        // We need to check if the HIGHEST priority car is unplugged.
         
-        let bg = 'success';
+        // Sort cars by urgency score descending (Backend usually does this, but let's be safe)
+        const sortedCars = cars.sort((a, b) => (b.urgency_score || 0) - (a.urgency_score || 0));
+        const priorityCar = sortedCars[0];
+        
+        let statusType = 'ok'; // ok, warn, alert, info
         let icon = 'bi-check-circle-fill';
-        let text = 'Systemet är i fas.';
-        let subtext = 'Alla bilar redo / fulladdade.';
+        let text = 'Systemet i fas';
+        let subtext = 'Inga åtgärder krävs just nu.';
+        let iconColor = '#69db7c';
 
-        if (urgentCar) {
-            bg = 'danger';
-            icon = 'bi-exclamation-triangle-fill';
-            text = `Koppla in ${urgentCar.name}!`;
-            subtext = urgentCar.swap_msg ? urgentCar.swap_msg : "Bilen behöver laddas för att nå målet.";
-        } else if (chargingCar) {
-            bg = 'primary';
+        // 1. Alert: Priority car needs plugging!
+        if (priorityCar && priorityCar.urgency_score > 0 && !priorityCar.plugged_in) {
+            statusType = 'alert';
+            icon = 'bi-plug-fill';
+            iconColor = '#ff8787';
+            text = `Anslut ${priorityCar.name}!`;
+            
+            // Check if swapping is needed
+            if (priorityCar.swap_msg) {
+                subtext = priorityCar.swap_msg;
+            } else {
+                subtext = "Bilen behöver laddas för att nå målet.";
+            }
+        
+        // 2. Info: Charging active
+        } else if (cars.some(c => c.action === 'CHARGE' && c.plugged_in)) {
+            const chargingCar = cars.find(c => c.action === 'CHARGE' && c.plugged_in);
+            statusType = 'info';
             icon = 'bi-lightning-charge-fill';
-            text = `Laddar ${chargingCar.name}...`;
-            subtext = `Smart laddning pågår.`;
-        } else if (priorityCar && priorityCar.plugged_in) {
-            bg = 'info'; // Light blue
+            iconColor = '#4dabf7';
+            text = `Laddar ${chargingCar.name}`;
+            subtext = `${chargingCar.soc}% ➔ ${chargingCar.target}% (Smart)`;
+            
+        // 3. Waiting: Plugged in but idle (Planned)
+        } else if (priorityCar && priorityCar.plugged_in && priorityCar.start_time_text) {
+            statusType = 'warn'; // Yellow for waiting
             icon = 'bi-clock-history';
-            text = `${priorityCar.name} väntar.`;
-            subtext = priorityCar.start_time_text || "Laddningen startar senare ikväll.";
-        } else {
-            // Idle / Done
-            bg = 'success';
-            icon = 'bi-check-circle-fill';
-            text = "Alla bilar redo / fulladdade.";
-            subtext = "";
+            iconColor = '#ffd43b';
+            text = `${priorityCar.name} väntar`;
+            subtext = priorityCar.start_time_text;
         }
 
-        bar.className = `status-bar bg-${bg}`;
+        // Apply styles
+        bar.className = `status-bar status-${statusType}`;
         bar.innerHTML = `
-            <i class="bi ${icon} status-icon"></i>
-            <div class="fw-bold fs-5">${text}</div>
-            <div class="small opacity-75">${subtext}</div>
+            <i class="bi ${icon} status-icon" style="color: ${iconColor};"></i>
+            <div class="status-text">
+                <div class="status-title">${text}</div>
+                <div class="status-subtitle">${subtext}</div>
+            </div>
         `;
     }
 
     function renderCars(carsMap) {
         const container = document.getElementById('car-container');
-        // Avoid redrawing if user is interacting with a slider
         if (document.activeElement.type === 'range') return;
 
         let html = '';
 
         Object.values(carsMap).forEach(car => {
-            let color = 'success';
-            if (car.soc < car.target) color = 'warning';
-            if (car.soc < 20) color = 'danger';
+            let socColor = '#69db7c'; // Success green
+            if (car.soc < car.target) socColor = '#ffd43b'; // Warning yellow
+            if (car.soc < 20) socColor = '#ff8787'; // Danger red
             
             let statusText = car.reason;
-            let badge = car.plugged_in ? '<span class="badge bg-success">Inkopplad</span>' : '<span class="badge bg-secondary">Ej ansluten</span>';
+            let badgeClass = car.plugged_in ? 'bg-success' : 'bg-secondary';
+            let badgeText = car.plugged_in ? 'INKOPPLAD' : 'EJ ANSLUTEN';
             
             if (car.override && car.override.action === 'CHARGE') {
-                statusText = "🔥 TVÅNGSLADDAR";
-                color = 'danger'; 
+                statusText = "🔥 MANUELL START";
+                socColor = '#ff8787'; 
             }
-            if (statusText.includes("Waiting")) statusText = "Väntar på billigare el...";
-            if (statusText.includes("Current hour")) statusText = "Laddar smart (Billigt!)";
-            if (statusText.includes("Vehicle not plugged")) statusText = "Redo att laddas.";
-            if (car.start_time_text) statusText = `<span class="fw-bold text-dark">${car.start_time_text}</span>`;
+            // Simplify texts
+            if (statusText.includes("Waiting")) statusText = "Väntar på lägre pris";
+            if (statusText.includes("Current hour")) statusText = "Laddar (Lågt pris)";
+            if (statusText.includes("Vehicle not plugged")) statusText = "Redo att anslutas";
+            if (car.start_time_text) statusText = car.start_time_text;
 
-            let borderStyle = car.is_priority ? 'border: 2px solid #0d6efd;' : '';
+            let borderStyle = car.is_priority ? 'border-color: #4dabf7;' : '';
+            let chargingClass = (car.action === 'CHARGE' && car.plugged_in) ? 'charging' : '';
 
             html += `
                 <div class="card p-4" style="${borderStyle}">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0 fw-bold">${car.name}</h5>
-                        ${badge}
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0">${car.name}</h5>
+                        <span class="badge ${badgeClass}" style="font-size: 10px;">${badgeText}</span>
                     </div>
                     
-                    <div class="d-flex align-items-center">
-                        <div class="soc-circle bg-${color} me-4" onclick="toggleManual('${car.id}')" title="Klicka för att ändra %">
-                            ${car.soc}%
-                        </div>
-                        <div>
-                            <div class="text-muted small mb-1">
-                                Mål: <strong>${car.target}%</strong>
-                                <span class="ms-1" style="font-size: 0.85em; opacity: 0.7;">(${car.min_soc || 40}-${car.max_soc || 80}%)</span>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="text-center" style="flex: 1;">
+                            <div class="soc-circle ${chargingClass}" onclick="toggleManual('${car.id}')" style="color: ${socColor};">
+                                ${car.soc}<small style="font-size: 14px;">%</small>
                             </div>
-                            <div class="small text-primary">${statusText}</div>
-                            <div class="small text-muted mt-1" style="font-size: 10px;">(Klicka på cirkeln för att ändra %)</div>
+                        </div>
+                        
+                        <div style="flex: 1.2; padding-left: 10px;">
+                            <div class="mb-2">
+                                <span class="d-block text-muted" style="font-size: 11px; text-transform: uppercase;">MÅLNIVÅ</span>
+                                <span class="fs-5 fw-bold">${car.target}%</span>
+                                <span class="text-muted small">(${car.min_soc}-${car.max_soc}%)</span>
+                            </div>
+                            <div>
+                                <span class="d-block text-muted" style="font-size: 11px; text-transform: uppercase;">STATUS</span>
+                                <span class="text-info small fw-bold">${statusText}</span>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Manual SoC Slider -->
                     <div id="manual-${car.id}" class="manual-soc-container">
-                        <label class="form-label small fw-bold">Justera batterinivå manuellt:</label>
+                        <label class="form-label small text-muted text-uppercase mb-2">Manuell Batterinivå</label>
                         <div class="d-flex align-items-center">
-                            <input type="range" class="form-range me-2" min="0" max="100" step="1" value="${car.manual_soc || car.soc}" oninput="document.getElementById('manual-soc-val-${car.id}').innerText = this.value + '%'; setManualSoc('${car.id}', this.value);">
-                            <span class="fw-bold" id="manual-soc-val-${car.id}">${car.manual_soc || car.soc}%</span>
+                            <input type="range" class="form-range me-3" min="0" max="100" step="1" value="${car.manual_soc || car.soc}" 
+                                oninput="document.getElementById('manual-soc-val-${car.id}').innerText = this.value + '%'; setManualSoc('${car.id}', this.value);">
+                            <span class="fw-bold fs-5" id="manual-soc-val-${car.id}" style="min-width: 45px;">${car.manual_soc || car.soc}%</span>
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2 mt-3">
+                    <div class="d-grid gap-2 mt-4">
                         ${car.override && car.override.action === 'CHARGE' ? 
-                            `<button class="btn btn-sm btn-outline-danger" onclick="setOverride('${car.id}', 'AUTO')">Avbryt (Återgå till Auto)</button>` :
-                            `<button class="btn btn-sm btn-primary" onclick="setOverride('${car.id}', 'CHARGE')">⚡ Ladda Nu</button>`
+                            `<button class="btn btn-sm btn-outline-danger" onclick="setOverride('${car.id}', 'AUTO')">AVBRYT (AUTO)</button>` :
+                            `<button class="btn btn-sm btn-primary" onclick="setOverride('${car.id}', 'CHARGE')">⚡ LADDA NU</button>`
                         }
                     </div>
                 </div>
@@ -218,7 +306,6 @@
             el.style.display = 'none';
         } else {
             el.style.display = 'block';
-            // Ensure the value display is updated if opened
             const rangeInput = document.querySelector(`#manual-${id} input[type="range"]`);
             if (rangeInput) {
                 document.getElementById(`manual-soc-val-${id}`).innerText = rangeInput.value + '%';
@@ -231,11 +318,7 @@
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ vehicle_id: id, soc: val })
-        }).then(() => {
-            // GetStatus will re-render and close the slider unless we prevent it
-            // For now, let's keep it simple and just re-render fully.
-            getStatus();
-        });
+        }).then(() => getStatus());
     }
 
     function setOverride(id, action) {
