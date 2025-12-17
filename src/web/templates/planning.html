@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8,37 +8,65 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #f8f9fa; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        /* Dark Theme */
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        
+        /* Cards */
+        .card { 
+            background-color: #1e1e1e; 
+            border-radius: 12px; 
+            border: 1px solid #333; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+            margin-bottom: 20px; 
+            color: #fff;
+        }
+        
+        /* List Group */
+        .list-group-item {
+            background-color: #1e1e1e;
+            border-color: #333;
+            color: #e0e0e0;
+        }
+        
+        /* Navigation */
         .nav-bottom {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            display: flex; justify-content: space-around; padding: 10px;
+            background: #1e1e1e; 
+            border-top: 1px solid #333;
+            display: flex; justify-content: space-around; padding: 12px 10px;
             z-index: 1000;
         }
-        .nav-item { text-align: center; color: #6c757d; text-decoration: none; font-size: 12px; }
-        .nav-item.active { color: #0d6efd; font-weight: bold; }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
-        .content { padding-bottom: 80px; max-width: 600px; margin: 0 auto; }
+        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .nav-item.active { color: #4dabf7; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        
+        .content { padding-bottom: 90px; max_width: 600px; margin: 0 auto; }
+        
+        /* Chart Override */
+        canvas { filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
+        
+        /* Text Colors */
+        .text-primary { color: #4dabf7 !important; }
+        .text-muted { color: #adb5bd !important; }
     </style>
 </head>
 <body>
 
 <div class="container mt-4 content">
-    <h4 class="mb-4 fw-bold text-center">📅 Planering</h4>
+    <h5 class="mb-4 text-center text-uppercase fw-bold" style="color: #888; letter-spacing: 1px;">📅 Planering</h5>
 
     <!-- Analysis Card -->
-    <div class="card p-3 bg-white">
-        <h6 class="fw-bold mb-3">🤖 Systemets Analys</h6>
+    <div class="card p-3">
+        <h6 class="fw-bold mb-3 border-bottom border-secondary pb-2">🤖 Systemets Analys</h6>
         <ul class="list-group list-group-flush" id="analysis-list">
-            <li class="list-group-item">Laddar data...</li>
+            <li class="list-group-item text-muted fst-italic">Laddar data...</li>
         </ul>
     </div>
 
     <!-- Graph Card -->
     <div class="card p-3">
-        <h6 class="fw-bold mb-3">Elpris & Laddschema</h6>
-        <div style="height: 300px">
+        <h6 class="fw-bold mb-3 border-bottom border-secondary pb-2">Elpris & Laddschema</h6>
+        <div style="height: 350px">
             <canvas id="priceChart"></canvas>
         </div>
     </div>
@@ -76,13 +104,9 @@
             });
     }
 
-    // Reload when tab becomes visible
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === 'visible') {
-            loadPlan();
-        }
+        if (document.visibilityState === 'visible') loadPlan();
     });
-    // Also reload on window focus (for some mobile behaviors)
     window.addEventListener("focus", loadPlan);
 
     function renderAnalysis(items) {
@@ -91,7 +115,7 @@
             list.innerHTML = '<li class="list-group-item text-muted">Ingen data tillgänglig.</li>';
             return;
         }
-        list.innerHTML = items.map(item => `<li class="list-group-item py-2"><i class="bi bi-caret-right-fill text-primary me-2"></i> ${item}</li>`).join('');
+        list.innerHTML = items.map(item => `<li class="list-group-item py-2 ps-0" style="border-bottom: 1px solid #333;"><i class="bi bi-caret-right-fill text-primary me-2"></i> ${item}</li>`).join('');
     }
 
     function renderChart(prices, plan) {
@@ -103,13 +127,16 @@
         });
         
         const priceData = prices.map(p => p.price_sek);
-        // Max price for scaling the charging bars
         const maxPrice = Math.max(...priceData) * 1.1;
         const planData = plan.map(isActive => isActive ? maxPrice : 0);
 
         if (chartInstance) {
             chartInstance.destroy();
         }
+        
+        // Chart.js dark theme defaults
+        Chart.defaults.color = '#adb5bd';
+        Chart.defaults.borderColor = '#333';
 
         chartInstance = new Chart(ctx, {
             type: 'bar',
@@ -119,8 +146,8 @@
                     {
                         label: 'Laddning',
                         data: planData,
-                        backgroundColor: 'rgba(25, 135, 84, 0.3)', // Green transparent overlay
-                        borderColor: 'rgba(25, 135, 84, 1)',
+                        backgroundColor: 'rgba(105, 219, 124, 0.25)', // Green transparent
+                        borderColor: '#69db7c',
                         borderWidth: 1,
                         barPercentage: 1.0,
                         categoryPercentage: 1.0,
@@ -129,9 +156,10 @@
                     {
                         label: 'Pris (SEK)',
                         data: priceData,
-                        backgroundColor: 'rgba(108, 117, 125, 0.5)', // Grey
-                        borderColor: 'rgba(108, 117, 125, 1)',
+                        backgroundColor: 'rgba(77, 171, 247, 0.3)', // Blue transparent
+                        borderColor: '#4dabf7',
                         borderWidth: 1,
+                        borderRadius: 4,
                         order: 1
                     }
                 ]
@@ -142,14 +170,22 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: { display: true, text: 'SEK / kWh' }
+                        title: { display: true, text: 'SEK / kWh' },
+                        grid: { color: '#333' }
                     },
                     x: {
                         grid: { display: false }
                     }
                 },
                 plugins: {
-                    legend: { position: 'bottom' }
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: '#252525',
+                        titleColor: '#fff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: '#4dabf7',
+                        borderWidth: 1
+                    }
                 }
             }
         });
