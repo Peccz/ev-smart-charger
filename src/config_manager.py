@@ -22,10 +22,10 @@ SECRET_KEY_PATH = os.path.join(PROJECT_ROOT, "data", ".flask_secret")
 DATABASE_PATH = os.path.join(PROJECT_ROOT, "data", "ev_charger.db")
 
 DEFAULT_SETTINGS = {
-    "mercedes_eqv_min_soc": 40,
-    "mercedes_eqv_max_soc": 80,
-    "nissan_leaf_min_soc": 40,
-    "nissan_leaf_max_soc": 80,
+    "mercedes_eqv_min_soc": 60,
+    "mercedes_eqv_max_soc": 90,
+    "nissan_leaf_min_soc": 60,
+    "nissan_leaf_max_soc": 90,
     "departure_time": "07:00",
     "smart_buffering": True,
     "daily_charging_enabled": True  # Charge daily during cheapest hours
