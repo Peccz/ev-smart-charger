@@ -192,45 +192,53 @@ class Optimizer:
 
     def _calculate_dynamic_target(self, vehicle_id, prices):
         """
-        Calculates the dynamic target SoC based on current price vs long-term average.
-        Returns (target_soc, mode_string)
+        Calculates the dynamic target SoC based on current price vs 
+        Short-Term (5-day forecast) and simulated Long-Term trends.
         """
         user_settings = self._get_user_settings()
-        
-        # Get constraints
-        min_soc = user_settings.get(f"{vehicle_id}_min_soc", 40)
-        max_soc = user_settings.get(f"{vehicle_id}_max_soc", 80) # Default max same as old target default
+        min_soc = user_settings.get(f"{vehicle_id}_min_soc", 60)
+        max_soc = user_settings.get(f"{vehicle_id}_max_soc", 90)
         
         if not prices:
             return max_soc, "Fallback (No Data)"
 
-        # Calculate price stats
         df = pd.DataFrame(prices)
+        current_price = df.iloc[0]['price_sek']
         
-        # Long term average (entire forecast horizon)
-        long_term_avg = df['price_sek'].mean()
+        # --- Advanced Price Analysis ---
         
-        # Short term average (next 12 hours, representing "immediate future")
-        short_term_df = df.head(12)
-        short_term_avg = short_term_df['price_sek'].mean()
+        # 1. Short Term (Forecast Window - 5 Days)
+        # Represents the "7-day" logic from simulation (immediate future)
+        forecast_avg = df['price_sek'].mean()
+        forecast_min = df['price_sek'].min()
         
-        # Determine strategy
-        # If short term is significantly cheaper (>10%) than long term -> Charge to MAX
-        # If short term is significantly more expensive (>10%) -> Charge to MIN
-        # Otherwise -> Linear interpolation
+        # 2. Long Term Trend (Simulated 30-day Reference)
+        # Since we don't have 30 days history yet, we use a heuristic:
+        # If forecast_avg is consistently low, we assume we are in a low-price season.
+        # We also look at the absolute price level.
+        is_long_term_cheap = False
+        if current_price < 0.40: # Absolute low (Summer/Night/Windy)
+             is_long_term_cheap = True
         
-        ratio = short_term_avg / long_term_avg if long_term_avg > 0 else 1.0
+        # Strategy:
+        # A. SUPER CHEAP: Price is near the 5-day minimum OR absolute low
+        #    -> Charge to MAX (90-100%)
+        # B. CHEAP: Price is below average
+        #    -> Charge to Standard Target (e.g. 80%)
+        # C. EXPENSIVE: Price is above average
+        #    -> Charge only to MIN (60%)
         
-        if ratio < 0.90:
-            return max_soc, "Aggressive (Cheap)"
-        elif ratio > 1.10:
-            return min_soc, "Conservative (Expensive)"
+        # Define thresholds
+        threshold_super_cheap = min(forecast_min * 1.2, forecast_avg * 0.7) # Within 20% of min OR 30% below avg
+        threshold_cheap = forecast_avg * 0.95
+        
+        if current_price < threshold_super_cheap or is_long_term_cheap:
+            return max_soc, "Aggressive (Super Cheap)"
+        elif current_price < threshold_cheap:
+            # Linear scale between min and max
+            return int((min_soc + max_soc) / 2), "Balanced (Below Avg)"
         else:
-            # Linear interpolation between 0.90 (Max) and 1.10 (Min)
-            # Map ratio 0.90..1.10 to Max..Min
-            factor = (ratio - 0.90) / (1.10 - 0.90) # 0.0 at 0.90, 1.0 at 1.10
-            dynamic_soc = max_soc - (factor * (max_soc - min_soc))
-            return int(dynamic_soc), "Balanced"
+            return min_soc, "Conservative (Expensive)"
 
     def get_deadline(self):
         user_settings = self._get_user_settings()
