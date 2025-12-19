@@ -17,6 +17,7 @@ class Optimizer:
         # Use absolute paths from ConfigManager
         self.settings_path = SETTINGS_PATH
         self.overrides_path = OVERRIDES_PATH
+        self.long_term_history_avg = None # Will be injected by main.py
 
     def _get_user_settings(self):
         if os.path.exists(self.settings_path):
@@ -213,11 +214,13 @@ class Optimizer:
         forecast_avg_5day = df['price_sek'].mean()
         forecast_min_5day = df['price_sek'].min()
         
-        # Calculate a "Long-Term" average based on the full forecast horizon (5 days)
-        # In a real scenario, this would be a historical 30-day moving average.
-        # For now, we simulate this by making it slightly less reactive than the 5-day average.
-        # This part of the logic needs real historical data to be truly 30-day accurate.
-        long_term_ref_avg = forecast_avg_5day * 1.05 # Assume long term is slightly higher or use a stable reference if available.
+        # Calculate a "Long-Term" average
+        # Use real history if available, otherwise simulate based on forecast
+        if self.long_term_history_avg:
+            long_term_ref_avg = self.long_term_history_avg
+        else:
+            # Fallback simulation
+            long_term_ref_avg = forecast_avg_5day * 1.05 
         
         # Strategy:
         # A. SUPER CHEAP: Price is significantly lower than both short-term average AND long-term reference.

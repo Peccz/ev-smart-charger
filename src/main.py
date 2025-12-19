@@ -88,6 +88,12 @@ def job():
     # Fetch Data
     official_prices = spot_service.get_prices_upcoming()
     logger.info(f"Fetched {len(official_prices)} official spot prices")
+    
+    # NEW: Fetch Historical Data for Long Term Trend
+    historical_avg = spot_service.get_historical_average(days=30)
+    logger.info(f"Historical 30-day average price: {historical_avg:.2f} SEK/kWh")
+    optimizer.long_term_history_avg = historical_avg # Inject into optimizer
+    
     weather_forecast = weather_service.get_forecast()
     
     # Generate forecast using configured horizon
