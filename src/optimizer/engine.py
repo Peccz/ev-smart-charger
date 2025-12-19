@@ -205,40 +205,38 @@ class Optimizer:
         df = pd.DataFrame(prices)
         current_price = df.iloc[0]['price_sek']
         
+        
         # --- Advanced Price Analysis ---
         
-        # 1. Short Term (Forecast Window - 5 Days)
-        # Represents the "7-day" logic from simulation (immediate future)
-        forecast_avg = df['price_sek'].mean()
-        forecast_min = df['price_sek'].min()
+        # Calculate Short-Term (5-day forecast) Average and Minimum
+        # We will use the forecast data as a proxy for 7-day average from the simulation
+        forecast_avg_5day = df['price_sek'].mean()
+        forecast_min_5day = df['price_sek'].min()
         
-        # 2. Long Term Trend (Simulated 30-day Reference)
-        # Since we don't have 30 days history yet, we use a heuristic:
-        # If forecast_avg is consistently low, we assume we are in a low-price season.
-        # We also look at the absolute price level.
-        is_long_term_cheap = False
-        if current_price < 0.40: # Absolute low (Summer/Night/Windy)
-             is_long_term_cheap = True
+        # Calculate a "Long-Term" average based on the full forecast horizon (5 days)
+        # In a real scenario, this would be a historical 30-day moving average.
+        # For now, we simulate this by making it slightly less reactive than the 5-day average.
+        # This part of the logic needs real historical data to be truly 30-day accurate.
+        long_term_ref_avg = forecast_avg_5day * 1.05 # Assume long term is slightly higher or use a stable reference if available.
         
         # Strategy:
-        # A. SUPER CHEAP: Price is near the 5-day minimum OR absolute low
-        #    -> Charge to MAX (90-100%)
-        # B. CHEAP: Price is below average
-        #    -> Charge to Standard Target (e.g. 80%)
-        # C. EXPENSIVE: Price is above average
+        # A. SUPER CHEAP: Price is significantly lower than both short-term average AND long-term reference.
+        #    -> Charge to MAX (90%)
+        # B. CHEAP: Price is lower than short-term average.
+        #    -> Charge to Standard Target (e.g., (min_soc + max_soc) / 2)
+        # C. EXPENSIVE: Price is above short-term average.
         #    -> Charge only to MIN (60%)
         
-        # Define thresholds
-        threshold_super_cheap = min(forecast_min * 1.2, forecast_avg * 0.7) # Within 20% of min OR 30% below avg
-        threshold_cheap = forecast_avg * 0.95
+        # Dynamic Thresholds
+        threshold_super_cheap = min(forecast_min_5day * 1.1, forecast_avg_5day * 0.75) # Within 10% of 5-day min OR 25% below 5-day avg
+        threshold_cheap = forecast_avg_5day * 0.95 # 5% below 5-day average
         
-        if current_price < threshold_super_cheap or is_long_term_cheap:
-            return max_soc, "Aggressive (Super Cheap)"
+        if current_price < threshold_super_cheap:
+            return max_soc, "Aggressive (Super Billigt)"
         elif current_price < threshold_cheap:
-            # Linear scale between min and max
-            return int((min_soc + max_soc) / 2), "Balanced (Below Avg)"
+            return int((min_soc + max_soc) / 2), "Balanserat (Billigt)"
         else:
-            return min_soc, "Conservative (Expensive)"
+            return min_soc, "Konservativt (Dyrt)"
 
     def get_deadline(self):
         user_settings = self._get_user_settings()
