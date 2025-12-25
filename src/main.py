@@ -90,8 +90,9 @@ def job():
     logger.info(f"Fetched {len(official_prices)} official spot prices")
     
     # NEW: Fetch Historical Data for Long Term Trend
-    historical_avg = spot_service.get_historical_average(days=30)
-    logger.info(f"Historical 30-day average price: {historical_avg:.2f} SEK/kWh")
+    # Using 7-day rolling average as requested for better responsiveness
+    historical_avg = spot_service.get_historical_average(days=7)
+    logger.info(f"Historical 7-day average price: {historical_avg:.2f} SEK/kWh")
     optimizer.long_term_history_avg = historical_avg # Inject into optimizer
     
     weather_forecast = weather_service.get_forecast()

@@ -194,7 +194,7 @@ class Optimizer:
     def _calculate_dynamic_target(self, vehicle_id, prices):
         """
         Calculates the dynamic target SoC based on current price vs 
-        Short-Term (5-day forecast) and simulated Long-Term trends.
+        7-day rolling average (Reference Price).
         """
         user_settings = self._get_user_settings()
         min_soc = user_settings.get(f"{vehicle_id}_min_soc", 60)
@@ -206,38 +206,33 @@ class Optimizer:
         df = pd.DataFrame(prices)
         current_price = df.iloc[0]['price_sek']
         
+        # Use the injected history average as our reference
+        # (This is fetched as 7-day average in main.py)
+        reference_price = self.long_term_history_avg
         
-        # --- Advanced Price Analysis ---
+        # Fallback if no history available
+        if reference_price is None:
+            reference_price = df['price_sek'].mean() # Use forecast avg as proxy
+            logger.warning("Optimizer: Missing historical data, using forecast average as reference.")
+
+        # --- LOGIC: 7-Day Rolling Average Strategy ---
+        # Super Cheap: < 80% of average
+        # Cheap:       < 100% of average
+        # Expensive:   > 100% of average
         
-        # Calculate Short-Term (5-day forecast) Average and Minimum
-        # We will use the forecast data as a proxy for 7-day average from the simulation
-        forecast_avg_5day = df['price_sek'].mean()
-        forecast_min_5day = df['price_sek'].min()
+        threshold_super = reference_price * 0.80
+        threshold_cheap = reference_price * 1.00
         
-        # Calculate a "Long-Term" average
-        # Use real history if available, otherwise simulate based on forecast
-        if self.long_term_history_avg:
-            long_term_ref_avg = self.long_term_history_avg
-        else:
-            # Fallback simulation
-            long_term_ref_avg = forecast_avg_5day * 1.05 
-        
-        # Strategy:
-        # A. SUPER CHEAP: Price is significantly lower than both short-term average AND long-term reference.
-        #    -> Charge to MAX (90%)
-        # B. CHEAP: Price is lower than short-term average.
-        #    -> Charge to Standard Target (e.g., (min_soc + max_soc) / 2)
-        # C. EXPENSIVE: Price is above short-term average.
-        #    -> Charge only to MIN (60%)
-        
-        # Dynamic Thresholds
-        threshold_super_cheap = min(forecast_min_5day * 1.1, forecast_avg_5day * 0.75) # Within 10% of 5-day min OR 25% below 5-day avg
-        threshold_cheap = forecast_avg_5day * 0.95 # 5% below 5-day average
-        
-        if current_price < threshold_super_cheap:
+        # Debug Log
+        logger.info(f"Price Logic: Current={current_price:.2f} vs Ref(7d)={reference_price:.2f}. "
+                    f"SuperLimit={threshold_super:.2f}, CheapLimit={threshold_cheap:.2f}")
+
+        if current_price < threshold_super:
             return max_soc, "Aggressive (Super Billigt)"
         elif current_price < threshold_cheap:
-            return int((min_soc + max_soc) / 2), "Balanserat (Billigt)"
+            # Target halfway between min and max (e.g. 75%)
+            mid_target = int((min_soc + max_soc) / 2)
+            return mid_target, "Balanserat (Billigt)"
         else:
             return min_soc, "Konservativt (Dyrt)"
 
