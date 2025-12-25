@@ -14,11 +14,32 @@ class SpotPriceService:
         self.region = region
         self.api_url = "https://www.elprisetjustnu.se/api/v1/prices"
 
+    def calculate_total_price(self, spot_price_incl_vat_sek):
+        """
+        Calculates total electricity price (SEK/kWh) including fees and taxes.
+        """
+        # 1. FASTA AVGIFTER (Exklusive moms)
+        GRID_FEE = 0.25      # Elöverföring (E.ON Upplands Väsby)
+        RETAILER_FEE = 0.05  # Elhandlarpåslag + elcertifikat
+        
+        # 2. SKATTER (Inklusive moms)
+        ENERGY_TAX = 0.5488  # Energiskatt 2025
+        
+        # 3. MOMS
+        VAT_RATE = 0.25      # 25%
+        
+        # BERÄKNING
+        # Spotpriset has VAT, we add VAT to the fees
+        fees_vat = (GRID_FEE + RETAILER_FEE) * VAT_RATE
+        
+        # Total = Spot(incl moms) + Avgifter + Moms på avgifter + Energiskatt
+        total_price = spot_price_incl_vat_sek + GRID_FEE + RETAILER_FEE + fees_vat + ENERGY_TAX
+        
+        return total_price
+
     def get_prices(self, date=None):
         """
-        Fetches spot prices for a specific date. 
-        Defaults to today.
-        Returns a list of dicts with 'time_start', 'price_sek'
+        Fetches spot prices for a specific date and converts to TOTAL price.
         """
         if date is None:
             date = datetime.now()
@@ -33,9 +54,12 @@ class SpotPriceService:
             
             prices = []
             for entry in data:
+                # Convert raw spot price to total price
+                total_price = self.calculate_total_price(entry["SEK_per_kWh"])
                 prices.append({
                     "time_start": entry["time_start"],
-                    "price_sek": entry["SEK_per_kWh"],
+                    "price_sek": total_price, # Now returning TOTAL price
+                    "spot_raw_sek": entry["SEK_per_kWh"], # Keep raw for debugging/UI if needed
                     "price_eur": entry["EUR_per_kWh"]
                 })
             return prices
@@ -92,19 +116,22 @@ class SpotPriceService:
             
             if day_prices is None:
                 logger.info(f"Fetching historical prices for {day_key}...")
-                fetched = self.get_prices(day)
+                fetched = self.get_prices(day) # This now returns TOTAL prices
                 if fetched:
-                    # Extract just the float values to save space
-                    day_prices = [p['price_sek'] for p in fetched]
-                    cache[day_key] = day_prices
+                    # Store RAW spot prices in cache to allow for fee changes later
+                    day_prices_raw = [p['spot_raw_sek'] for p in fetched]
+                    cache[day_key] = day_prices_raw
                     cache_updated = True
+                    # Use the raw prices for current calculation (we'll convert below)
+                    day_prices = day_prices_raw
                     time.sleep(0.1) # Be nice to API
                 else:
                     logger.warning(f"Could not fetch history for {day_key}")
                     continue
             
             if day_prices:
-                total_sum += sum(day_prices)
+                # Convert each hour to TOTAL price before adding to sum
+                total_sum += sum([self.calculate_total_price(p) for p in day_prices])
                 total_count += len(day_prices)
 
         if cache_updated:
