@@ -292,11 +292,23 @@ def api_plan():
         for k, v in state.items():
             v['name'] = k
             cars_in_state.append(v)
-        cars_in_state.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
         
-        priority_car_from_state = cars_in_state[0] if cars_in_state else None
+        # Determine which car to plan for:
+        # 1. Any car that is currently plugged in
+        # 2. Otherwise, the car with highest urgency
+        plugged_in_cars = [c for c in cars_in_state if c.get('plugged_in')]
         
-        if priority_car_from_state and priority_car_from_state.get('urgency_score', 0) > 0:
+        if plugged_in_cars:
+            # If multiple are plugged in (rare), take the most urgent one
+            priority_car_from_state = sorted(plugged_in_cars, key=lambda x: x.get('urgency_score', 0), reverse=True)[0]
+        else:
+            # Fallback to general priority
+            cars_in_state.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
+            priority_car_from_state = cars_in_state[0] if cars_in_state else None
+        
+        if priority_car_from_state:
+            # The urgency check here should be more permissive if plugged in
+            # We want to show the plan even if urgency is low but it's connected.
             if priority_car_from_state['id'] == 'mercedes_eqv':
                 car_obj = MercedesEQV(full_merged_config['cars']['mercedes_eqv'])
             else: # nissan_leaf
