@@ -128,10 +128,12 @@
     
     <!-- Departure -->
     <div class="card p-4 text-center">
-        <h5 class="mb-3">🕒 Avresa (24h)</h5>
-        <p class="text-muted small">Ange tidpunkt då bilarna ska vara klara (format HH:MM, t.ex. 17:00).</p>
+        <h5 class="mb-3">🕒 Avresa</h5>
+        <p class="text-muted small">När ska bilarna vara klara?</p>
         <div class="d-flex justify-content-center">
-            <input type="time" class="form-control form-control-lg text-center" id="departure_time" style="max-width: 180px; font-weight: bold; letter-spacing: 1px;">
+            <select class="form-select form-select-lg text-center fw-bold" id="departure_time" style="max-width: 180px; background-color: #2c2c2c; color: #fff; border-color: #444;">
+                <!-- Options populated by JS -->
+            </select>
         </div>
     </div>
 
@@ -213,7 +215,21 @@
             document.getElementById('nissan_max_soc').value = leafMax;
             updateDualVal('nissan', 'max', leafMax);
             
-            document.getElementById('departure_time').value = data.departure_time || "07:00";
+            // Populate Time Dropdown
+            const timeSelect = document.getElementById('departure_time');
+            timeSelect.innerHTML = '';
+            for (let h = 0; h < 24; h++) {
+                for (let m = 0; m < 60; m += 30) {
+                    const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                    const option = document.createElement('option');
+                    option.value = timeStr;
+                    option.text = timeStr;
+                    timeSelect.appendChild(option);
+                }
+            }
+            
+            // Set current value
+            timeSelect.value = data.departure_time || "07:00";
         });
 
     function saveSettings() {
