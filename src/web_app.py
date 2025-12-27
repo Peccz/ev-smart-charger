@@ -116,7 +116,12 @@ def api_status():
     # Initialize Optimizer and fetch prices for dynamic target calculation
     full_merged_config = ConfigManager.load_full_config()
     optimizer = Optimizer(full_merged_config)
+    
+    # Fetch Data including History for consistent display
     official_prices = spot_service.get_prices_upcoming()
+    historical_avg = spot_service.get_historical_average(days=7)
+    optimizer.long_term_history_avg = historical_avg # INJECT HISTORY
+    
     weather_forecast = weather_service.get_forecast()
     prices_with_forecast = optimizer._generate_price_forecast(official_prices, weather_forecast)
     
@@ -278,6 +283,9 @@ def api_plan():
         optimizer = Optimizer(full_merged_config)
 
         official_prices = spot_service.get_prices_upcoming()
+        historical_avg = spot_service.get_historical_average(days=7)
+        optimizer.long_term_history_avg = historical_avg # INJECT HISTORY
+        
         weather_forecast = weather_service.get_forecast()
         
         # Generate full price forecast (official + estimated)
