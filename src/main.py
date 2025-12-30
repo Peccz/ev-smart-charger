@@ -115,9 +115,20 @@ def job():
     cars = [eqv, leaf]
     vehicle_statuses = {}
     
+    # --- ZAPTEC MASTER SWITCH LOGIC ---
+    # If Zaptec says DISCONNECTED (Mode 1), no car can possibly be plugged in.
+    # We override false positives from vehicle APIs (ghost connections).
+    zaptec_is_disconnected = (charger_status.get('mode_code') == 1)
+    
     for car in cars:
         try:
             s = car.get_status()
+            
+            if zaptec_is_disconnected:
+                if s.get('plugged_in'):
+                    logger.warning(f"Zaptec Override: {car.name} reports plugged_in, but charger is DISCONNECTED. Forcing False.")
+                s['plugged_in'] = False
+                
             vehicle_statuses[car.name] = s
             # Legacy log
             db.log_vehicle_status(car.name, s.get('soc', 0), s.get('range_km', 0), s.get('plugged_in', False))
