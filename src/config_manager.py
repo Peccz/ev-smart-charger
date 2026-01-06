@@ -54,7 +54,7 @@ HARDCODED_SENSORS = {
     "ha_nissan_plugged_entity_id": "binary_sensor.leaf_plugged_in",
     "ha_nissan_range_entity_id": "sensor.leaf_range_ac_on",
     "ha_nissan_last_updated_id": "sensor.leaf_last_updated",
-    "nissan_leaf_climate_entity_id": "switch.leaf_climate_control",
+    "nissan_leaf_climate_entity_id": "climate.leaf_climate",
     "nissan_leaf_update_entity_id": "button.leaf_update_data",
     "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer" 
 }
