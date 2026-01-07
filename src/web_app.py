@@ -471,10 +471,6 @@ def api_control():
             success = car_obj.start_climate()
         elif action == 'climate_stop':
             success = car_obj.stop_climate()
-        elif action == 'lock':
-            success = car_obj.lock()
-        elif action == 'unlock':
-            success = car_obj.unlock()
         else:
             return jsonify({"status": "error", "message": "Unknown action"}), 400
             

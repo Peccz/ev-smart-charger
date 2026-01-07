@@ -26,10 +26,13 @@ class HomeAssistantClient:
             logger.error(f"HA: Error fetching state for {entity_id} from HA: {e}")
             return None
 
-    def call_service(self, domain, service, entity_id):
+    def call_service(self, domain, service, entity_id, **kwargs):
         url = f"{self.base_url}/api/services/{domain}/{service}"
         payload = {"entity_id": entity_id}
-        logger.info(f"HA: Calling service {domain}.{service} for {entity_id}")
+        if kwargs:
+            payload.update(kwargs)
+            
+        logger.info(f"HA: Calling service {domain}.{service} for {entity_id} with data {kwargs}")
         try:
             response = requests.post(url, json=payload, headers=self.headers, timeout=10)
             response.raise_for_status()
@@ -54,7 +57,6 @@ class MercedesEQV(Vehicle):
         self.ha_merc_plugged_entity_id = config.get('ha_merc_plugged_entity_id')
         self.ha_climate_id = config.get('climate_entity_id')
         self.ha_climate_status_id = config.get('climate_status_id')
-        self.ha_lock_id = config.get('lock_entity_id')
         self.ha_odometer_id = config.get('odometer_entity_id')
 
     def start_charging(self):
@@ -302,11 +304,18 @@ class NissanLeaf(Vehicle):
 
     def start_climate(self):
         if self.ha_client and self.ha_climate_id:
+            # Check if it's a switch or climate entity
+            domain = self.ha_climate_id.split('.')[0]
+            if domain == "climate":
+                return self.ha_client.call_service("climate", "set_hvac_mode", self.ha_climate_id, hvac_mode="heat_cool")
             return self.ha_client.call_service("switch", "turn_on", self.ha_climate_id)
         return False
 
     def stop_climate(self):
         if self.ha_client and self.ha_climate_id:
+            domain = self.ha_climate_id.split('.')[0]
+            if domain == "climate":
+                return self.ha_client.call_service("climate", "set_hvac_mode", self.ha_climate_id, hvac_mode="off")
             return self.ha_client.call_service("switch", "turn_off", self.ha_climate_id)
         return False
 

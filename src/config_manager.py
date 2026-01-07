@@ -48,7 +48,7 @@ HARDCODED_SENSORS = {
     "mercedes_eqv_odometer_entity_id": "sensor.urg48t_odometer",
     "mercedes_eqv_climate_entity_id": "button.urg48t_preclimate_start",
     "mercedes_eqv_climate_status_id": "binary_sensor.urg48t_preclimate_status", # If available
-    "mercedes_eqv_lock_entity_id": "lock.urg48t_lock",
+}
 
     # Nissan Leaf
     "ha_nissan_soc_entity_id": "sensor.leaf_battery_level",
@@ -172,7 +172,6 @@ class ConfigManager:
             'ha_merc_plugged_entity_id': HARDCODED_SENSORS['ha_merc_plugged_entity_id'],
             'climate_entity_id': HARDCODED_SENSORS['mercedes_eqv_climate_entity_id'],
             'climate_status_id': HARDCODED_SENSORS.get('mercedes_eqv_climate_status_id'),
-            'lock_entity_id': HARDCODED_SENSORS['mercedes_eqv_lock_entity_id'],
             'odometer_entity_id': HARDCODED_SENSORS['mercedes_eqv_odometer_entity_id']
         }
 
