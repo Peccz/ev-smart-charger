@@ -18,6 +18,7 @@ MANUAL_STATUS_PATH = os.path.join(PROJECT_ROOT, "data", "manual_status.json")
 YAML_CONFIG_PATH = os.path.join(PROJECT_ROOT, "config", "settings.yaml")
 SECRETS_PATH = os.path.join(PROJECT_ROOT, "data", "secrets.json")
 FORECAST_HISTORY_FILE = os.path.join(PROJECT_ROOT, "data", "forecast_history.json")
+PRICE_HISTORY_CACHE_FILE = os.path.join(PROJECT_ROOT, "data", "price_history_cache.json")
 SECRET_KEY_PATH = os.path.join(PROJECT_ROOT, "data", ".flask_secret")
 DATABASE_PATH = os.path.join(PROJECT_ROOT, "data", "ev_charger.db")
 

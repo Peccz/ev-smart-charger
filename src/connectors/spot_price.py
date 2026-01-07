@@ -4,10 +4,9 @@ import json
 import logging
 import os
 import time
+from config_manager import PRICE_HISTORY_CACHE_FILE
 
 logger = logging.getLogger(__name__)
-
-CACHE_FILE = "data/price_history_cache.json"
 
 class SpotPriceService:
     def __init__(self, region="SE3"):
@@ -88,9 +87,9 @@ class SpotPriceService:
         Uses local cache to avoid spamming the API.
         """
         cache = {}
-        if os.path.exists(CACHE_FILE):
+        if os.path.exists(PRICE_HISTORY_CACHE_FILE):
             try:
-                with open(CACHE_FILE, 'r') as f:
+                with open(PRICE_HISTORY_CACHE_FILE, 'r') as f:
                     cache = json.load(f)
             except Exception as e:
                 logger.warning(f"Failed to load price cache: {e}")
@@ -136,8 +135,8 @@ class SpotPriceService:
 
         if cache_updated:
             try:
-                os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
-                with open(CACHE_FILE, 'w') as f:
+                os.makedirs(os.path.dirname(PRICE_HISTORY_CACHE_FILE), exist_ok=True)
+                with open(PRICE_HISTORY_CACHE_FILE, 'w') as f:
                     json.dump(cache, f)
             except Exception as e:
                 logger.error(f"Failed to save price cache: {e}")
