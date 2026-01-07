@@ -48,7 +48,6 @@ HARDCODED_SENSORS = {
     "mercedes_eqv_odometer_entity_id": "sensor.urg48t_odometer",
     "mercedes_eqv_climate_entity_id": "button.urg48t_preclimate_start",
     "mercedes_eqv_climate_status_id": "binary_sensor.urg48t_preclimate_status", # If available
-}
 
     # Nissan Leaf
     "ha_nissan_soc_entity_id": "sensor.leaf_battery_level",
