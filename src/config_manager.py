@@ -59,8 +59,8 @@ HARDCODED_SENSORS = {
     "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer",
 
     # Home Sensors (Timmerflotte)
-    "ha_temp_sensor_id": "sensor.timmerflotte_temp_hmd_sensor_temperature_2", # Nedervåningen
-    "ha_humidity_sensor_id": "sensor.timmerflotte_temp_hmd_sensor_humidity_2"
+    "ha_temp_sensor_id": "sensor.timmerflotte_temp_hmd_sensor_temperature", # Uppe (fd Dexter)
+    "ha_humidity_sensor_id": "sensor.timmerflotte_temp_hmd_sensor_humidity"
 }
 
 class ConfigManager:
