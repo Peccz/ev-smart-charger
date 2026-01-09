@@ -133,6 +133,12 @@
         <span class="ms-3 text-muted">Laddar status...</span>
     </div>
 
+    <!-- Home Climate -->
+    <div id="home-climate" class="d-flex justify-content-center mb-4 text-muted small gap-4" style="display: none!important;">
+        <span><i class="bi bi-thermometer-half"></i> <span id="home-temp">--</span>°C</span>
+        <span><i class="bi bi-droplet"></i> <span id="home-hum">--</span>%</span>
+    </div>
+
     <div id="car-container"></div>
 
 </div>
@@ -230,6 +236,16 @@
                 <div class="status-subtitle">${subtext}</div>
             </div>
         `;
+        
+        // Render Home Climate
+        if (data.sensors && data.sensors.temp_c != null) {
+            const climEl = document.getElementById('home-climate');
+            if (climEl) {
+                climEl.style.setProperty('display', 'flex', 'important');
+                document.getElementById('home-temp').innerText = data.sensors.temp_c;
+                document.getElementById('home-hum').innerText = data.sensors.humidity != null ? data.sensors.humidity : '--';
+            }
+        }
     }
 
     function renderCars(carsMap) {

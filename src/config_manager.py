@@ -56,7 +56,11 @@ HARDCODED_SENSORS = {
     "ha_nissan_last_updated_id": "sensor.leaf_last_updated",
     "nissan_leaf_climate_entity_id": "climate.leaf_climate",
     "nissan_leaf_update_entity_id": "button.leaf_update_data",
-    "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer" 
+    "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer",
+
+    # Home Sensors (Timmerflotte)
+    "ha_temp_sensor_id": "sensor.timmerflotte_temp_hmd_sensor_temperature_2", # Nedervåningen
+    "ha_humidity_sensor_id": "sensor.timmerflotte_temp_hmd_sensor_humidity_2"
 }
 
 class ConfigManager:

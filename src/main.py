@@ -11,6 +11,7 @@ from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
 from connectors.vehicles import MercedesEQV, NissanLeaf
 from connectors.zaptec import ZaptecCharger
+from connectors.home_assistant import HomeAssistantClient
 from database.db_manager import DatabaseManager
 from optimizer.engine import Optimizer
 from config_manager import ConfigManager, DATABASE_PATH
@@ -161,8 +162,39 @@ def job():
         if merc_plugged: active_car_id = "mercedes_eqv"
         elif leaf_plugged: active_car_id = "nissan_leaf"
 
+    # --- Fetch Home Sensors (Timmerflotte) ---
+    ha_temp = None
+    ha_humidity = None
+    
+    # Reuse HA credentials from car config
+    ha_url = config['cars']['mercedes_eqv'].get('ha_url')
+    ha_token = config['cars']['mercedes_eqv'].get('ha_token')
+    
+    if ha_url and ha_token:
+        ha_client = HomeAssistantClient(ha_url, ha_token)
+        
+        # Temp
+        temp_id = user_settings.get('ha_temp_sensor_id') 
+        if temp_id:
+            s = ha_client.get_state(temp_id)
+            if s and s.get('state') not in ['unknown', 'unavailable']:
+                try:
+                    ha_temp = float(s['state'])
+                    logger.info(f"Home Sensor Temp: {ha_temp}°C")
+                except ValueError: pass
+        
+        # Humidity
+        hum_id = user_settings.get('ha_humidity_sensor_id')
+        if hum_id:
+            s = ha_client.get_state(hum_id)
+            if s and s.get('state') not in ['unknown', 'unavailable']:
+                try:
+                    ha_humidity = float(s['state'])
+                except ValueError: pass
+
     # --- 3. Log System Metrics ---
-    current_temp = weather_forecast[0]['temp_c'] if weather_forecast else 0.0
+    # Use real sensor data if available, else forecast
+    current_temp = ha_temp if ha_temp is not None else (weather_forecast[0]['temp_c'] if weather_forecast else 0.0)
     current_price = prices[0]['price_sek'] if prices else 0.0
     
     metrics = {
@@ -224,6 +256,12 @@ def job():
         
         if status.get('plugged_in') and decision['action'] == "CHARGE":
             any_charging_needed = True
+
+    # Add sensors to state
+    state_data['sensors'] = {
+        "temp_c": ha_temp,
+        "humidity": ha_humidity
+    }
 
     # Save state
     save_state(state_data)
