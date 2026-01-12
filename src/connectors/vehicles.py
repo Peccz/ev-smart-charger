@@ -82,7 +82,7 @@ class MercedesEQV(Vehicle):
                     status['plugged_in'] = True
                 elif 'chargingstatus' in attrs:
                     val = str(attrs['chargingstatus']).lower()
-                    if val not in ['3', 'disconnected', 'null', 'off', 'unavailable', 'unknown']:
+                    if val not in ['2', '3', 'disconnected', 'null', 'off', 'unavailable', 'unknown']:
                         status['plugged_in'] = True
         
         # Range
