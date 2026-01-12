@@ -77,7 +77,8 @@ class ZaptecCharger(Charger):
             "mode_code": -1,
             "power_kw": 0.0, 
             "energy_kwh": 0.0,
-            "is_charging": False
+            "is_charging": False,
+            "active_phases": 0
         }
 
         if not target_id:
@@ -128,6 +129,13 @@ class ZaptecCharger(Charger):
                     except ValueError:
                         logger.warning(f"Zaptec: Invalid Power value: {val_str}")
                 
+                elif state_id in [511, 512, 513]: # Phase 1, 2, 3 Power (W)
+                    try:
+                        if float(val_str) > 100: # If phase uses more than 100W
+                            status["active_phases"] += 1
+                    except ValueError:
+                        pass
+
                 elif state_id == 507: # Session Energy (kWh)
                     try:
                          status["energy_kwh"] = float(val_str)

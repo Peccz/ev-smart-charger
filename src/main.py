@@ -149,18 +149,32 @@ def job():
     is_charging = charger_status.get('is_charging', False) or (charger_status.get('power_kw', 0) > 0.1)
 
     if is_charging:
-        if merc_plugged and not leaf_plugged:
+        # Phase detection logic (Zaptec Master Override)
+        # Nissan = 1 phase, Mercedes = 3 phases
+        active_phases = charger_status.get('active_phases', 0)
+        
+        if active_phases >= 2:
+            logger.info(f"Phase Detection: {active_phases} phases active. Identified as Mercedes EQV (3-phase).")
             active_car_id = "mercedes_eqv"
-        elif leaf_plugged and not merc_plugged:
+        elif active_phases == 1:
+            logger.info(f"Phase Detection: 1 phase active. Identified as Nissan Leaf (1-phase).")
             active_car_id = "nissan_leaf"
-        elif merc_plugged and leaf_plugged:
-            active_car_id = "UNKNOWN_BOTH"
-        else:
-            active_car_id = "UNKNOWN_NONE"
+        
+        # Fallback to plugged_in logic if phase detection is inconclusive
+        if active_car_id is None:
+            if merc_plugged and not leaf_plugged:
+                active_car_id = "mercedes_eqv"
+            elif leaf_plugged and not merc_plugged:
+                active_car_id = "nissan_leaf"
+            elif merc_plugged and leaf_plugged:
+                active_car_id = "UNKNOWN_BOTH"
+            else:
+                active_car_id = "UNKNOWN_NONE"
     else:
         # Not charging, but who is connected?
-        if merc_plugged: active_car_id = "mercedes_eqv"
-        elif leaf_plugged: active_car_id = "nissan_leaf"
+        if merc_plugged and not leaf_plugged: active_car_id = "mercedes_eqv"
+        elif leaf_plugged and not merc_plugged: active_car_id = "nissan_leaf"
+        elif merc_plugged and leaf_plugged: active_car_id = "UNKNOWN_BOTH"
 
     # --- Fetch Home Sensors (Timmerflotte) ---
     ha_temp = None
