@@ -120,6 +120,7 @@
                             <h5 class="mb-0 fw-bold">${car.name}</h5>
                             <span class="text-muted small">
                                 ${car.plugged_in ? '<span class="text-success">Inkopplad</span>' : 'Ej ansluten'} • ${car.soc}%
+                                ${car.is_home === false ? '<span class="badge bg-secondary ms-2" style="background-color: #343a40!important; border-color: #495057;"><i class="bi bi-geo-alt"></i> Borta</span>' : ''}
                                 ${car.climate_active ? '<span class="badge bg-danger ms-2" style="background-color: rgba(255, 135, 135, 0.2)!important; color: #ff8787; border: 1px solid #ff8787;"><i class="bi bi-thermometer-high"></i> Värme PÅ</span>' : ''}
                             </span>
                         </div>

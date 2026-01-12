@@ -57,6 +57,7 @@ HARDCODED_SENSORS = {
     "nissan_leaf_climate_entity_id": "climate.leaf_climate",
     "nissan_leaf_update_entity_id": "button.leaf_update_data",
     "nissan_leaf_odometer_entity_id": "sensor.leaf_odometer",
+    "nissan_leaf_location_id": "device_tracker.leaf_location",
 
     # Home Sensors (Timmerflotte)
     "ha_temp_sensor_id": "sensor.timmerflotte_temp_hmd_sensor_temperature", # Uppe
@@ -199,6 +200,7 @@ class ConfigManager:
             'ha_nissan_last_updated_id': HARDCODED_SENSORS.get('ha_nissan_last_updated_id'),
             'climate_entity_id': HARDCODED_SENSORS['nissan_leaf_climate_entity_id'],
             'odometer_entity_id': HARDCODED_SENSORS.get('nissan_leaf_odometer_entity_id'),
+            'location_id': HARDCODED_SENSORS.get('nissan_leaf_location_id'),
             'update_entity_id': HARDCODED_SENSORS['nissan_leaf_update_entity_id'],
             'ha_nissan_charging_entity_id': nis_base.get('ha_nissan_charging_entity_id'), # New field passed through
             

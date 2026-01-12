@@ -54,7 +54,8 @@ class MercedesEQV(Vehicle):
             "range_km": 0,
             "plugged_in": False,
             "odometer": 0,
-            "climate_active": False
+            "climate_active": False,
+            "is_home": True # Default assumption
         }
         
         # Debug log to verify IDs
@@ -149,6 +150,7 @@ class NissanLeaf(Vehicle):
         self.ha_nissan_last_updated_id = config.get('ha_nissan_last_updated_id')
         self.ha_climate_id = config.get('climate_entity_id')
         self.ha_odometer_id = config.get('odometer_entity_id')
+        self.ha_location_id = config.get('location_id')
         self.ha_update_id = config.get('update_entity_id')
         self.ha_nissan_charging_entity_id = config.get('ha_nissan_charging_entity_id') # New entity for charging status
         
@@ -168,7 +170,8 @@ class NissanLeaf(Vehicle):
             "plugged_in": False,
             "odometer": 0,
             "climate_active": False,
-            "is_charging": False # New field for car's charging status
+            "is_charging": False, # New field for car's charging status
+            "is_home": True 
         }
 
         if not self.ha_client:
@@ -219,6 +222,16 @@ class NissanLeaf(Vehicle):
             if state and str(state.get('state')).lower() in ['on', 'true', '1', 'active']:
                 status['climate_active'] = True
         
+        # Location Check (Geofence)
+        if self.ha_location_id:
+            loc = self.ha_client.get_state(self.ha_location_id)
+            if loc and loc.get('state') != 'home':
+                # logger.info(f"NissanLeaf: Location is '{loc.get('state')}' (Not Home). Forcing plugged_in=False.")
+                status['plugged_in'] = False
+                status['is_home'] = False
+            else:
+                status['is_home'] = True
+
         # Check staleness and wake up if needed
         if self.ha_nissan_last_updated_id:
             lu_state = self.ha_client.get_state(self.ha_nissan_last_updated_id)
