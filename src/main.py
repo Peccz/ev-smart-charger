@@ -150,15 +150,19 @@ def job():
 
     if is_charging:
         # Phase detection logic (Zaptec Master Override)
-        # Nissan = 1 phase, Mercedes = 3 phases
+        # Nissan = 1 phase (always L2), Mercedes = 3 phases
         active_phases = charger_status.get('active_phases', 0)
+        phase_map = charger_status.get('phase_map', [False, False, False])
         
         if active_phases >= 2:
             logger.info(f"Phase Detection: {active_phases} phases active. Identified as Mercedes EQV (3-phase).")
             active_car_id = "mercedes_eqv"
         elif active_phases == 1:
-            logger.info(f"Phase Detection: 1 phase active. Identified as Nissan Leaf (1-phase).")
-            active_car_id = "nissan_leaf"
+            if phase_map[1]: # Phase 2 active
+                logger.info("Phase Detection: 1 phase active (L2). Identified as Nissan Leaf.")
+                active_car_id = "nissan_leaf"
+            else:
+                logger.info(f"Phase Detection: 1 phase active (Not L2). Identity unclear.")
         
         # Fallback to plugged_in logic if phase detection is inconclusive
         if active_car_id is None:

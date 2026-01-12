@@ -78,7 +78,8 @@ class ZaptecCharger(Charger):
             "power_kw": 0.0, 
             "energy_kwh": 0.0,
             "is_charging": False,
-            "active_phases": 0
+            "active_phases": 0,
+            "phase_map": [False, False, False] # [L1, L2, L3]
         }
 
         if not target_id:
@@ -131,8 +132,11 @@ class ZaptecCharger(Charger):
                 
                 elif state_id in [511, 512, 513]: # Phase 1, 2, 3 Power (W)
                     try:
-                        if float(val_str) > 100: # If phase uses more than 100W
+                        val = float(val_str)
+                        if val > 100: # If phase uses more than 100W
                             status["active_phases"] += 1
+                            # Map 511->idx 0, 512->idx 1, 513->idx 2
+                            status["phase_map"][state_id - 511] = True
                     except ValueError:
                         pass
 
