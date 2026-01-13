@@ -388,23 +388,27 @@ def api_plan():
                 cheapest_hours = []
 
                 # Logic must match Tier 1 / Tier 2 in engine.py
-                avg_price = 0
+                cheapest_hours = []
+                
                 if current_car_status['soc'] < min_soc:
-                    # TIER 1: Critical
+                    # TIER 1: Critical - Fill hours before deadline first
                     if 0 < valid_hours_before <= hours_needed:
-                        # Final stretch: charge everything before deadline
                         cheapest_hours = df_valid_before_deadline['time_start'].tolist()
-                        avg_price = df_valid_before_deadline['price_sek'].mean() if not df_valid_before_deadline.empty else 0
                     elif valid_hours_before > hours_needed:
-                        # Have time: pick cheapest before deadline
                         df_temp_sorted = df_valid_before_deadline.sort_values(by='price_sek', ascending=True)
                         cheapest_hours = df_temp_sorted.head(hours_needed)['time_start'].tolist()
-                        avg_price = df_temp_sorted.head(hours_needed)['price_sek'].mean()
-                else:
-                    # TIER 2: Opportunistic (Globally cheapest)
-                    df_global_sorted = df_prices_with_forecast.sort_values(by='price_sek', ascending=True)
-                    cheapest_hours = df_global_sorted.head(hours_needed)['time_start'].tolist()
-                    avg_price = df_global_sorted.head(hours_needed)['price_sek'].mean()
+                
+                # TIER 2 / Completion: If we still need more hours to reach target_soc, 
+                # pick the cheapest from the ENTIRE horizon that aren't already included.
+                remaining_needed = hours_needed - len(cheapest_hours)
+                if remaining_needed > 0:
+                    df_remaining = df_prices_with_forecast[~df_prices_with_forecast['time_start'].isin(cheapest_hours)]
+                    df_extra_sorted = df_remaining.sort_values(by='price_sek', ascending=True)
+                    cheapest_hours.extend(df_extra_sorted.head(remaining_needed)['time_start'].tolist())
+                
+                # Calculate average price of the selected plan for analysis display
+                df_plan = df_prices_with_forecast[df_prices_with_forecast['time_start'].isin(cheapest_hours)]
+                avg_price = df_plan['price_sek'].mean() if not df_plan.empty else 0
                 
                 for p in prices_with_forecast:
                     is_charging_val = 1 if p['time_start'] in cheapest_hours else 0
