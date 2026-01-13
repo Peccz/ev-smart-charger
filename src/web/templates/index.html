@@ -135,8 +135,14 @@
 
     <!-- Departure Time Display -->
     <div class="card p-3 mb-4 text-center border-0" style="background: linear-gradient(145deg, #1e1e1e, #252525); border: 1px solid #333!important;">
-        <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 1px; font-size: 10px;">Planerad Avresa</div>
-        <div class="fs-2 fw-bold text-primary" id="display-departure" style="text-shadow: 0 0 10px rgba(77, 171, 247, 0.3);">--:--</div>
+        <div class="text-muted small text-uppercase fw-bold mb-2" style="letter-spacing: 1px; font-size: 10px;">Planerad Avresa</div>
+        <div class="d-flex justify-content-center">
+            <select class="form-select form-select-lg text-center fw-bold text-primary" id="departure_time" 
+                style="max-width: 150px; background: transparent; border: none; font-size: 2rem; padding: 0; cursor: pointer; text-shadow: 0 0 10px rgba(77, 171, 247, 0.3);"
+                onchange="saveDeparture(this.value)">
+                <!-- Options populated by JS -->
+            </select>
+        </div>
     </div>
 
     <div id="car-container"></div>
@@ -173,10 +179,40 @@
             .then(data => {
                 renderSystemStatus(data);
                 renderCars(data.cars);
-                if (data.departure_time) {
-                    document.getElementById('display-departure').innerText = data.departure_time;
+                
+                const timeSelect = document.getElementById('departure_time');
+                if (timeSelect.options.length === 0) {
+                    populateDepartureOptions(data.departure_time || "07:00");
+                } else if (data.departure_time && timeSelect.value !== data.departure_time) {
+                    timeSelect.value = data.departure_time;
                 }
             });
+    }
+
+    function populateDepartureOptions(currentValue) {
+        const timeSelect = document.getElementById('departure_time');
+        timeSelect.innerHTML = '';
+        for (let h = 0; h < 24; h++) {
+            for (let m = 0; m < 60; m += 30) {
+                const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                const option = document.createElement('option');
+                option.value = timeStr;
+                option.text = timeStr;
+                timeSelect.appendChild(option);
+            }
+        }
+        timeSelect.value = currentValue;
+    }
+
+    function saveDeparture(newTime) {
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ departure_time: newTime })
+        }).then(() => {
+            // Refresh data to trigger re-optimization in backend faster if possible
+            getStatus();
+        });
     }
 
     document.addEventListener("visibilitychange", () => {
