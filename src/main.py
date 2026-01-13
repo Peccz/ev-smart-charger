@@ -149,18 +149,36 @@ def job():
     is_charging = charger_status.get('is_charging', False) or (charger_status.get('power_kw', 0) > 0.1)
 
     if is_charging:
-        if merc_plugged and not leaf_plugged:
+        # Phase detection logic (Zaptec Master Override)
+        # Nissan = 1 phase (always L2), Mercedes = 3 phases
+        active_phases = charger_status.get('active_phases', 0)
+        phase_map = charger_status.get('phase_map', [False, False, False])
+        
+        if active_phases >= 2:
+            logger.info(f"Phase Detection: {active_phases} phases active. Identified as Mercedes EQV (3-phase).")
             active_car_id = "mercedes_eqv"
-        elif leaf_plugged and not merc_plugged:
-            active_car_id = "nissan_leaf"
-        elif merc_plugged and leaf_plugged:
-            active_car_id = "UNKNOWN_BOTH"
-        else:
-            active_car_id = "UNKNOWN_NONE"
+        elif active_phases == 1:
+            if phase_map[1]: # Phase 2 active
+                logger.info("Phase Detection: 1 phase active (L2). Identified as Nissan Leaf.")
+                active_car_id = "nissan_leaf"
+            else:
+                logger.info(f"Phase Detection: 1 phase active (Not L2). Identity unclear.")
+        
+        # Fallback if phase detection is inconclusive
+        if active_car_id is None:
+            if merc_plugged and not leaf_plugged:
+                active_car_id = "mercedes_eqv"
+            elif leaf_plugged and not merc_plugged:
+                active_car_id = "nissan_leaf"
+            elif merc_plugged and leaf_plugged:
+                active_car_id = "UNKNOWN_BOTH"
+            else:
+                active_car_id = "UNKNOWN_NONE"
     else:
         # Not charging, but who is connected?
-        if merc_plugged: active_car_id = "mercedes_eqv"
-        elif leaf_plugged: active_car_id = "nissan_leaf"
+        if merc_plugged and not leaf_plugged: active_car_id = "mercedes_eqv"
+        elif leaf_plugged and not merc_plugged: active_car_id = "nissan_leaf"
+        elif merc_plugged and leaf_plugged: active_car_id = "UNKNOWN_BOTH"
 
     # --- 3. Log System Metrics ---
     current_temp = weather_forecast[0]['temp_c'] if weather_forecast else 0.0
