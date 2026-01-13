@@ -20,6 +20,7 @@ def main():
     token = settings.get("ha_token")
 
     if not token:
+        # Use hardcoded fallback for debug if needed, or rely on file
         print("Error: HA Token missing in settings.")
         return
 
@@ -36,30 +37,16 @@ def main():
         response.raise_for_status()
         all_states = response.json()
         
-        print(f"Found {len(all_states)} entities. Filtering for Mercedes charging/connection indicators...")
+        print(f"Found {len(all_states)} entities. Dumping ALL:")
+        print("-" * 60)
         
-        keywords = ["urg48t"]
-        secondary_keywords = ["charg", "plug", "cable", "conn", "status", "range"]
-        
-        candidates = []
-        for entity in all_states:
-            entity_id = entity['entity_id'].lower()
-            
-            # Must contain 'urg48t'
-            if not any(k in entity_id for k in keywords):
-                continue
-                
-            # And ideally one of the secondary keywords
-            if any(k in entity_id for k in secondary_keywords):
-                candidates.append(entity)
-
-        print(f"Found {len(candidates)} candidates:\n")
-        
-        for c in candidates:
-            print(f"ID: {c['entity_id']}")
-            print(f"State: {c['state']}")
-            print(f"Attributes: {json.dumps(c.get('attributes', {}), indent=2, ensure_ascii=False)}")
-            print("-" * 40)
+        for c in all_states:
+            eid = c['entity_id']
+            # attributes = c.get('attributes', {})
+            # if 'lat' in str(attributes) or 'lon' in str(attributes):
+            if 'tracker' in eid or 'location' in eid:
+                name = c.get('attributes', {}).get('friendly_name', 'No Name')
+                print(f"{eid:<50} | {name} | {c['state']}")
 
     except Exception as e:
         print(f"Error: {e}")

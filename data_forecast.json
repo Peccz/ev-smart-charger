@@ -1,0 +1,3963 @@
+{
+  "2025-12-31": [
+    {
+      "time_start": "2025-12-31T23:00:00",
+      "price_sek": 1.2945075,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T00:00:00",
+      "price_sek": 1.33057,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T01:00:00",
+      "price_sek": 1.2645975,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T02:00:00",
+      "price_sek": 1.1140725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T03:00:00",
+      "price_sek": 0.9942274999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T04:00:00",
+      "price_sek": 0.9696799999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T05:00:00",
+      "price_sek": 0.9584999999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T06:00:00",
+      "price_sek": 0.9610375,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T07:00:00",
+      "price_sek": 0.9630099999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T08:00:00",
+      "price_sek": 0.9699224999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T09:00:00",
+      "price_sek": 0.9786199999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T10:00:00",
+      "price_sek": 0.985505,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T11:00:00",
+      "price_sek": 0.99393,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T12:00:00",
+      "price_sek": 0.9982224999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T13:00:00",
+      "price_sek": 1.0101624999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T14:00:00",
+      "price_sek": 1.0383825,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T15:00:00",
+      "price_sek": 1.0878249999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T16:00:00",
+      "price_sek": 1.164355,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T17:00:00",
+      "price_sek": 1.2279525,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T18:00:00",
+      "price_sek": 1.18145,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T19:00:00",
+      "price_sek": 1.16298,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T20:00:00",
+      "price_sek": 1.147615,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T21:00:00",
+      "price_sek": 1.11224,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T22:00:00",
+      "price_sek": 1.048995,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-01T23:00:00",
+      "price_sek": 1.008,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T00:00:00",
+      "price_sek": 0.9395840692854687,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T01:00:00",
+      "price_sek": 0.7974688324759205,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T02:00:00",
+      "price_sek": 0.7761792101426953,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T03:00:00",
+      "price_sek": 0.872932212001598,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T04:00:00",
+      "price_sek": 0.9284820187155534,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T05:00:00",
+      "price_sek": 1.07761201896065,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T06:00:00",
+      "price_sek": 1.5587998161331695,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T07:00:00",
+      "price_sek": 2.0371698090830113,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T08:00:00",
+      "price_sek": 2.264175974580883,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T09:00:00",
+      "price_sek": 2.029507964039715,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T10:00:00",
+      "price_sek": 1.964830040723203,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T11:00:00",
+      "price_sek": 1.8883086770482576,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T12:00:00",
+      "price_sek": 1.8363813178393595,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T13:00:00",
+      "price_sek": 1.7598200734085938,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T14:00:00",
+      "price_sek": 1.8207853271822916,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T15:00:00",
+      "price_sek": 2.020842889163542,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T16:00:00",
+      "price_sek": 2.20847857638125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T17:00:00",
+      "price_sek": 2.7409847340078124,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T18:00:00",
+      "price_sek": 2.9237170496083333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T19:00:00",
+      "price_sek": 2.7409847340078124,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T20:00:00",
+      "price_sek": 2.3457177370089464,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T21:00:00",
+      "price_sek": 1.7653536917243107,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T22:00:00",
+      "price_sek": 1.3830391142979654,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-02T23:00:00",
+      "price_sek": 1.1117144782210273,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T00:00:00",
+      "price_sek": 0.9635411257784439,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T01:00:00",
+      "price_sek": 0.9056625444377654,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T02:00:00",
+      "price_sek": 0.8539966983817845,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T03:00:00",
+      "price_sek": 0.8569740256277407,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T04:00:00",
+      "price_sek": 0.920304992761011,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T05:00:00",
+      "price_sek": 0.9900011900362733,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T06:00:00",
+      "price_sek": 1.0641895294957606,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T07:00:00",
+      "price_sek": 1.2025342369774124,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T08:00:00",
+      "price_sek": 1.3366228178953456,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T09:00:00",
+      "price_sek": 1.4693770279505205,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T10:00:00",
+      "price_sek": 1.5375257211433981,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T11:00:00",
+      "price_sek": 1.5398597260331794,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T12:00:00",
+      "price_sek": 1.4725217236143435,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T13:00:00",
+      "price_sek": 1.4067152075972758,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T14:00:00",
+      "price_sek": 1.314157530494039,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T15:00:00",
+      "price_sek": 1.380691379967656,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T16:00:00",
+      "price_sek": 1.5260273147010934,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T17:00:00",
+      "price_sek": 1.767263391523484,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T18:00:00",
+      "price_sek": 1.9740189591338124,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T19:00:00",
+      "price_sek": 2.0026105190336323,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T20:00:00",
+      "price_sek": 1.8853905988760082,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T21:00:00",
+      "price_sek": 1.6911186885115987,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T22:00:00",
+      "price_sek": 1.571214989622167,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T23:00:00",
+      "price_sek": 1.3462043329267708,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T00:00:00",
+      "price_sek": 1.057972299453748,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T01:00:00",
+      "price_sek": 1.0392009670602498,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T02:00:00",
+      "price_sek": 0.9862558313493444,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T03:00:00",
+      "price_sek": 1.0202173186757275,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T04:00:00",
+      "price_sek": 1.134041000205567,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T05:00:00",
+      "price_sek": 1.2496616857102452,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T06:00:00",
+      "price_sek": 1.368367572636458,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T07:00:00",
+      "price_sek": 1.5638486544416663,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T08:00:00",
+      "price_sek": 1.7593297362468747,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T09:00:00",
+      "price_sek": 1.954810818052083,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T10:00:00",
+      "price_sek": 2.052551358954687,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T11:00:00",
+      "price_sek": 2.052551358954687,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T12:00:00",
+      "price_sek": 1.9515419036406245,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T13:00:00",
+      "price_sek": 1.8539648084585931,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T14:00:00",
+      "price_sek": 1.7593297362468747,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T15:00:00",
+      "price_sek": 1.8632812145312496,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T16:00:00",
+      "price_sek": 2.0662807994828123,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T17:00:00",
+      "price_sek": 2.382716944775037,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T18:00:00",
+      "price_sek": 2.5540028296723953,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T19:00:00",
+      "price_sek": 2.4557719516080727,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T20:00:00",
+      "price_sek": 2.2593101954794266,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T21:00:00",
+      "price_sek": 2.062848439350781,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T22:00:00",
+      "price_sek": 1.866386683222135,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T23:00:00",
+      "price_sek": 1.5743091805583331,
+      "source": "Forecasted"
+    }
+  ],
+  "2026-01-01": [
+    {
+      "time_start": "2026-01-01T23:00:00",
+      "price_sek": 1.008,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T00:00:00",
+      "price_sek": 1.079205,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T01:00:00",
+      "price_sek": 1.0458599999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T02:00:00",
+      "price_sek": 1.0299749999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T03:00:00",
+      "price_sek": 1.00564,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T04:00:00",
+      "price_sek": 1.0073225,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T05:00:00",
+      "price_sek": 1.0859975,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T06:00:00",
+      "price_sek": 1.1649699999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T07:00:00",
+      "price_sek": 1.38365,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T08:00:00",
+      "price_sek": 1.5696124999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T09:00:00",
+      "price_sek": 1.638355,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T10:00:00",
+      "price_sek": 1.54612,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T11:00:00",
+      "price_sek": 1.5249,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T12:00:00",
+      "price_sek": 1.5207324999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T13:00:00",
+      "price_sek": 1.61971,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T14:00:00",
+      "price_sek": 1.6175175,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T15:00:00",
+      "price_sek": 1.6822825,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T16:00:00",
+      "price_sek": 1.6849875,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T17:00:00",
+      "price_sek": 1.6773274999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T18:00:00",
+      "price_sek": 1.6563275,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T19:00:00",
+      "price_sek": 1.62699,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T20:00:00",
+      "price_sek": 1.5829575,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T21:00:00",
+      "price_sek": 1.6091825,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T22:00:00",
+      "price_sek": 1.4735049999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-02T23:00:00",
+      "price_sek": 1.3469,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T00:00:00",
+      "price_sek": 0.8525218992099334,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T01:00:00",
+      "price_sek": 0.7884042011543501,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T02:00:00",
+      "price_sek": 0.7040485749389582,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T03:00:00",
+      "price_sek": 0.6959205088324041,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T04:00:00",
+      "price_sek": 0.7518814617555999,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T05:00:00",
+      "price_sek": 0.7937810883127124,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T06:00:00",
+      "price_sek": 0.8282393680368499,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T07:00:00",
+      "price_sek": 0.9465592777564,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T08:00:00",
+      "price_sek": 1.0201188280919622,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T09:00:00",
+      "price_sek": 1.12020274905,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T10:00:00",
+      "price_sek": 1.1698891613062499,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T11:00:00",
+      "price_sek": 1.2106350306540874,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T12:00:00",
+      "price_sek": 1.2529006015808333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T13:00:00",
+      "price_sek": 1.267141171858375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T14:00:00",
+      "price_sek": 1.1918363594057249,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T15:00:00",
+      "price_sek": 1.2603367144915936,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T16:00:00",
+      "price_sek": 1.4030554488339813,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T17:00:00",
+      "price_sek": 1.6467634292824,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T18:00:00",
+      "price_sek": 1.7714406186584253,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T19:00:00",
+      "price_sek": 1.7214585256458332,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T20:00:00",
+      "price_sek": 1.6143233643037183,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T21:00:00",
+      "price_sek": 1.4864970027985,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T22:00:00",
+      "price_sek": 1.36520709316365,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-03T23:00:00",
+      "price_sek": 1.1658918786856,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T00:00:00",
+      "price_sek": 0.9664728461340333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T01:00:00",
+      "price_sek": 0.9294860800972997,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T02:00:00",
+      "price_sek": 0.8685705386711372,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T03:00:00",
+      "price_sek": 0.8865672726596353,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T04:00:00",
+      "price_sek": 0.9735069508001748,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T05:00:00",
+      "price_sek": 1.0610861712167978,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T06:00:00",
+      "price_sek": 1.1663759806416663,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T07:00:00",
+      "price_sek": 1.3401651413864997,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T08:00:00",
+      "price_sek": 1.513433921207587,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T09:00:00",
+      "price_sek": 1.6675032403942915,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T10:00:00",
+      "price_sek": 1.7323664497264124,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T11:00:00",
+      "price_sek": 1.6574363287462748,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T12:00:00",
+      "price_sek": 1.5426476674775829,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T13:00:00",
+      "price_sek": 1.4997895878771206,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T14:00:00",
+      "price_sek": 1.4628273424074747,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T15:00:00",
+      "price_sek": 1.5688068107060704,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T16:00:00",
+      "price_sek": 1.7368246759897685,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T17:00:00",
+      "price_sek": 2.0630658739569996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T18:00:00",
+      "price_sek": 2.251877108433333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T19:00:00",
+      "price_sek": 2.165266450416666,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T20:00:00",
+      "price_sek": 1.995343222354166,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T21:00:00",
+      "price_sek": 1.8278577114874996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T22:00:00",
+      "price_sek": 1.6517585269093558,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T23:00:00",
+      "price_sek": 1.4018307827333332,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T00:00:00",
+      "price_sek": 1.0530938285999998,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T01:00:00",
+      "price_sek": 0.9669133559708333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T02:00:00",
+      "price_sek": 0.8804460930833331,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T03:00:00",
+      "price_sek": 0.9716453952333332,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T04:00:00",
+      "price_sek": 1.1483081943666664,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T05:00:00",
+      "price_sek": 1.415596715133333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T06:00:00",
+      "price_sek": 1.9496001761499997,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T07:00:00",
+      "price_sek": 2.489339442333333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T08:00:00",
+      "price_sek": 2.6714512563749997,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T09:00:00",
+      "price_sek": 2.3189860288833333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T10:00:00",
+      "price_sek": 2.1406024881999994,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T11:00:00",
+      "price_sek": 1.9527548689916665,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T12:00:00",
+      "price_sek": 1.8489367954749996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T13:00:00",
+      "price_sek": 1.7522884784166664,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T14:00:00",
+      "price_sek": 1.7379489654999996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T15:00:00",
+      "price_sek": 1.899125090683333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T16:00:00",
+      "price_sek": 2.0580068937999996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T17:00:00",
+      "price_sek": 2.5639049094999993,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T18:00:00",
+      "price_sek": 2.7256546152,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T19:00:00",
+      "price_sek": 2.5466974939999996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T20:00:00",
+      "price_sek": 2.195953008058333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T21:00:00",
+      "price_sek": 1.8454953123749995,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T22:00:00",
+      "price_sek": 1.5022073731499996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T23:00:00",
+      "price_sek": 1.2518394776249997,
+      "source": "Forecasted"
+    }
+  ],
+  "2026-01-02": [
+    {
+      "time_start": "2026-01-02T23:00:00",
+      "price_sek": 1.3469,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T00:00:00",
+      "price_sek": 1.433945,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T01:00:00",
+      "price_sek": 1.4410625000000001,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T02:00:00",
+      "price_sek": 1.412515,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T03:00:00",
+      "price_sek": 1.3855374999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T04:00:00",
+      "price_sek": 1.3627025,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T05:00:00",
+      "price_sek": 1.4090775,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T06:00:00",
+      "price_sek": 1.4895225,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T07:00:00",
+      "price_sek": 1.5564925,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T08:00:00",
+      "price_sek": 1.6563299999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T09:00:00",
+      "price_sek": 1.8482275,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T10:00:00",
+      "price_sek": 1.9082675,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T11:00:00",
+      "price_sek": 1.8253599999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T12:00:00",
+      "price_sek": 1.840325,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T13:00:00",
+      "price_sek": 1.8374025,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T14:00:00",
+      "price_sek": 1.8524999999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T15:00:00",
+      "price_sek": 1.9219825,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T16:00:00",
+      "price_sek": 1.9797525,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T17:00:00",
+      "price_sek": 2.086955,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T18:00:00",
+      "price_sek": 2.0953425,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T19:00:00",
+      "price_sek": 1.9752325,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T20:00:00",
+      "price_sek": 1.8501474999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T21:00:00",
+      "price_sek": 1.8249525,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T22:00:00",
+      "price_sek": 1.8221150000000002,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-03T23:00:00",
+      "price_sek": 1.810725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T00:00:00",
+      "price_sek": 1.2401402646966666,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T01:00:00",
+      "price_sek": 1.1390281967968747,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T02:00:00",
+      "price_sek": 1.0493494547433333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T03:00:00",
+      "price_sek": 1.0377381415522917,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T04:00:00",
+      "price_sek": 1.1155665588374999,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T05:00:00",
+      "price_sek": 1.1763067380647916,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T06:00:00",
+      "price_sek": 1.2777482641721873,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T07:00:00",
+      "price_sek": 1.4654475429183333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T08:00:00",
+      "price_sek": 1.5948688612467183,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T09:00:00",
+      "price_sek": 1.7658669336000001,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T10:00:00",
+      "price_sek": 1.8705834268515624,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T11:00:00",
+      "price_sek": 1.8441751902371877,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T12:00:00",
+      "price_sek": 1.7877957009572913,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T13:00:00",
+      "price_sek": 1.7163085368796351,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T14:00:00",
+      "price_sek": 1.657182230658281,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T15:00:00",
+      "price_sek": 1.7763416704607289,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T16:00:00",
+      "price_sek": 1.9768037315468747,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T17:00:00",
+      "price_sek": 2.3051467939499997,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T18:00:00",
+      "price_sek": 2.5475328660031247,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T19:00:00",
+      "price_sek": 2.4697628394641926,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T20:00:00",
+      "price_sek": 2.2763360914204163,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T21:00:00",
+      "price_sek": 2.0651591921778123,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T22:00:00",
+      "price_sek": 1.9060632062186456,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-04T23:00:00",
+      "price_sek": 1.59702160002,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T00:00:00",
+      "price_sek": 1.2175903578299998,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T01:00:00",
+      "price_sek": 1.1531590298252865,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T02:00:00",
+      "price_sek": 1.0687231956041667,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T03:00:00",
+      "price_sek": 1.2056986237610416,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T04:00:00",
+      "price_sek": 1.4650556983301823,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T05:00:00",
+      "price_sek": 1.8365388066666666,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T06:00:00",
+      "price_sek": 2.475555147008854,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T07:00:00",
+      "price_sek": 3.045185482040624,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T08:00:00",
+      "price_sek": 3.2626442448359367,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T09:00:00",
+      "price_sek": 2.822085973373333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T10:00:00",
+      "price_sek": 2.6433038606012498,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T11:00:00",
+      "price_sek": 2.4191807430816663,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T12:00:00",
+      "price_sek": 2.3404890871742188,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T13:00:00",
+      "price_sek": 2.2344640236989584,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T14:00:00",
+      "price_sek": 2.230290402083333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T15:00:00",
+      "price_sek": 2.3831920652042706,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T16:00:00",
+      "price_sek": 2.5633991664531246,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T17:00:00",
+      "price_sek": 3.2136695739585934,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T18:00:00",
+      "price_sek": 3.3849066578891662,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T19:00:00",
+      "price_sek": 3.147793370115625,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T20:00:00",
+      "price_sek": 2.803934170120417,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T21:00:00",
+      "price_sek": 2.3413657656571876,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T22:00:00",
+      "price_sek": 1.8608195496515623,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T23:00:00",
+      "price_sek": 1.4783501724578123,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T00:00:00",
+      "price_sek": 1.1273093647199997,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T01:00:00",
+      "price_sek": 1.0433320295314583,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T02:00:00",
+      "price_sek": 0.9574357001744791,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T03:00:00",
+      "price_sek": 1.0616240432233333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T04:00:00",
+      "price_sek": 1.27661386727875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T05:00:00",
+      "price_sek": 1.6473230030950003,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T06:00:00",
+      "price_sek": 2.370955435249844,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T07:00:00",
+      "price_sek": 2.982010145345,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T08:00:00",
+      "price_sek": 3.08296602026875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T09:00:00",
+      "price_sek": 2.5082189123136978,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T10:00:00",
+      "price_sek": 2.2380833418693746,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T11:00:00",
+      "price_sek": 2.1311594423029163,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T12:00:00",
+      "price_sek": 2.182558373464219,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T13:00:00",
+      "price_sek": 2.1913257031531246,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T14:00:00",
+      "price_sek": 2.2121284281249998,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T15:00:00",
+      "price_sek": 2.449323808020833,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T16:00:00",
+      "price_sek": 2.6937839775,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T17:00:00",
+      "price_sek": 3.399921525,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T18:00:00",
+      "price_sek": 3.6614539500000003,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T19:00:00",
+      "price_sek": 4.003658230928124,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T20:00:00",
+      "price_sek": 3.7573429974288537,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T21:00:00",
+      "price_sek": 2.738252117779062,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T22:00:00",
+      "price_sek": 2.033414604375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T23:00:00",
+      "price_sek": 1.68089068984375,
+      "source": "Forecasted"
+    }
+  ],
+  "2026-01-03": [
+    {
+      "time_start": "2026-01-03T23:00:00",
+      "price_sek": 1.810725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T00:00:00",
+      "price_sek": 1.8322399999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T01:00:00",
+      "price_sek": 1.8178824999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T02:00:00",
+      "price_sek": 1.814695,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T03:00:00",
+      "price_sek": 1.8014725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T04:00:00",
+      "price_sek": 1.79044,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T05:00:00",
+      "price_sek": 1.7983075,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T06:00:00",
+      "price_sek": 1.8020675,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T07:00:00",
+      "price_sek": 1.831215,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T08:00:00",
+      "price_sek": 1.8498225,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T09:00:00",
+      "price_sek": 1.914205,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T10:00:00",
+      "price_sek": 1.9426525000000001,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T11:00:00",
+      "price_sek": 1.9067675,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T12:00:00",
+      "price_sek": 1.8923299999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T13:00:00",
+      "price_sek": 1.8624225,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T14:00:00",
+      "price_sek": 1.9252375,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T15:00:00",
+      "price_sek": 1.9309975,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T16:00:00",
+      "price_sek": 2.0135275,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T17:00:00",
+      "price_sek": 2.204625,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T18:00:00",
+      "price_sek": 2.2348325,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T19:00:00",
+      "price_sek": 2.2186875,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T20:00:00",
+      "price_sek": 2.1401075,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T21:00:00",
+      "price_sek": 2.0018724999999997,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T22:00:00",
+      "price_sek": 1.9423525,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-04T23:00:00",
+      "price_sek": 1.8729125,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T00:00:00",
+      "price_sek": 1.4761809057843371,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T01:00:00",
+      "price_sek": 1.3554922716020383,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T02:00:00",
+      "price_sek": 1.2660279213241405,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T03:00:00",
+      "price_sek": 1.4279295627138264,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T04:00:00",
+      "price_sek": 1.732189242200676,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T05:00:00",
+      "price_sek": 2.1323433630859627,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T06:00:00",
+      "price_sek": 2.820282076911819,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T07:00:00",
+      "price_sek": 3.4805138306409624,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T08:00:00",
+      "price_sek": 3.716486024622913,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T09:00:00",
+      "price_sek": 3.2685428561774628,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T10:00:00",
+      "price_sek": 3.076555018759312,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T11:00:00",
+      "price_sek": 2.847114395400172,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T12:00:00",
+      "price_sek": 2.752369928573265,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T13:00:00",
+      "price_sek": 2.593459477181362,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T14:00:00",
+      "price_sek": 2.5965264132499994,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T15:00:00",
+      "price_sek": 2.8747256718124996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T16:00:00",
+      "price_sek": 3.1562970425999994,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T17:00:00",
+      "price_sek": 3.9453713032499995,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T18:00:00",
+      "price_sek": 4.221884505699999,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T19:00:00",
+      "price_sek": 3.9453713032499995,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T20:00:00",
+      "price_sek": 3.4193217961499998,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T21:00:00",
+      "price_sek": 2.8979089433593748,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T22:00:00",
+      "price_sek": 2.3596355294437497,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-05T23:00:00",
+      "price_sek": 1.9442334547265623,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T00:00:00",
+      "price_sek": 1.5326250062624998,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T01:00:00",
+      "price_sek": 1.323690618857612,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T02:00:00",
+      "price_sek": 1.1968363936074218,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T03:00:00",
+      "price_sek": 1.2992600873015154,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T04:00:00",
+      "price_sek": 1.5709715073216222,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T05:00:00",
+      "price_sek": 1.8651557369941996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T06:00:00",
+      "price_sek": 2.4387874336450626,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T07:00:00",
+      "price_sek": 2.985763426185356,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T08:00:00",
+      "price_sek": 3.1818913743877504,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T09:00:00",
+      "price_sek": 2.7755824110422886,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T10:00:00",
+      "price_sek": 2.660242473741375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T11:00:00",
+      "price_sek": 2.557425507459041,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T12:00:00",
+      "price_sek": 2.485628180020453,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T13:00:00",
+      "price_sek": 2.3750334368911563,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T14:00:00",
+      "price_sek": 2.377339118625,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T15:00:00",
+      "price_sek": 2.6197096847968746,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T16:00:00",
+      "price_sek": 2.805310741660875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T17:00:00",
+      "price_sek": 3.513150818810624,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T18:00:00",
+      "price_sek": 3.757827909744399,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T19:00:00",
+      "price_sek": 3.4961111142236714,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T20:00:00",
+      "price_sek": 3.1156268400823306,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T21:00:00",
+      "price_sek": 2.613529024602478,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T22:00:00",
+      "price_sek": 2.0932470939493117,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T23:00:00",
+      "price_sek": 1.762202621680781,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T00:00:00",
+      "price_sek": 1.432721123428537,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T01:00:00",
+      "price_sek": 1.3113791425026444,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T02:00:00",
+      "price_sek": 1.2015995021252344,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T03:00:00",
+      "price_sek": 1.3340535412390653,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T04:00:00",
+      "price_sek": 1.5890681583340986,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T05:00:00",
+      "price_sek": 1.9681265558967995,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T06:00:00",
+      "price_sek": 2.7106993889640494,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T07:00:00",
+      "price_sek": 3.473019311220899,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T08:00:00",
+      "price_sek": 3.7325299023184213,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T09:00:00",
+      "price_sek": 3.2294946396400186,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T10:00:00",
+      "price_sek": 3.0130446571136615,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T11:00:00",
+      "price_sek": 2.79126589424375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T12:00:00",
+      "price_sek": 2.6688160690734373,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T13:00:00",
+      "price_sek": 2.5459447298749995,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T14:00:00",
+      "price_sek": 2.5585901507187496,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T15:00:00",
+      "price_sek": 2.832995783028125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T16:00:00",
+      "price_sek": 3.100657190887499,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T17:00:00",
+      "price_sek": 3.875821488609374,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T18:00:00",
+      "price_sek": 4.1274653634,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T19:00:00",
+      "price_sek": 3.875821488609374,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T20:00:00",
+      "price_sek": 3.381364036403315,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T21:00:00",
+      "price_sek": 2.8807765056862342,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T22:00:00",
+      "price_sek": 2.40515904448125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T23:00:00",
+      "price_sek": 2.0422354662656246,
+      "source": "Forecasted"
+    }
+  ],
+  "2026-01-04": [
+    {
+      "time_start": "2026-01-04T23:00:00",
+      "price_sek": 1.8729125,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T00:00:00",
+      "price_sek": 1.9004699999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T01:00:00",
+      "price_sek": 1.8610149999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T02:00:00",
+      "price_sek": 1.8358675,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T03:00:00",
+      "price_sek": 1.834245,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T04:00:00",
+      "price_sek": 1.85677,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T05:00:00",
+      "price_sek": 1.9029025,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T06:00:00",
+      "price_sek": 2.1010874999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T07:00:00",
+      "price_sek": 2.3223075,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T08:00:00",
+      "price_sek": 2.5588625,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T09:00:00",
+      "price_sek": 2.5694375,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T10:00:00",
+      "price_sek": 2.5027825,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T11:00:00",
+      "price_sek": 2.4377750000000002,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T12:00:00",
+      "price_sek": 2.4130575,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T13:00:00",
+      "price_sek": 2.4681699999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T14:00:00",
+      "price_sek": 2.6448525000000003,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T15:00:00",
+      "price_sek": 3.092975,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T16:00:00",
+      "price_sek": 3.3345075,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T17:00:00",
+      "price_sek": 3.3938375,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T18:00:00",
+      "price_sek": 3.2917275,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T19:00:00",
+      "price_sek": 2.900635,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T20:00:00",
+      "price_sek": 2.5141099999999996,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T21:00:00",
+      "price_sek": 2.3201725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T22:00:00",
+      "price_sek": 2.26328,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-05T23:00:00",
+      "price_sek": 2.1274775,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T00:00:00",
+      "price_sek": 1.7431222710764156,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T01:00:00",
+      "price_sek": 1.5989971212273437,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T02:00:00",
+      "price_sek": 1.4285278096692706,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T03:00:00",
+      "price_sek": 1.5575723253406255,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T04:00:00",
+      "price_sek": 1.8375035217872393,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T05:00:00",
+      "price_sek": 2.2535088962375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T06:00:00",
+      "price_sek": 3.098574732326562,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T07:00:00",
+      "price_sek": 3.9576998930802074,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T08:00:00",
+      "price_sek": 4.293115210078125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T09:00:00",
+      "price_sek": 3.714172305140104,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T10:00:00",
+      "price_sek": 3.36821249464375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T11:00:00",
+      "price_sek": 3.059911589498959,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T12:00:00",
+      "price_sek": 2.9102802055687502,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T13:00:00",
+      "price_sek": 2.7616530591145834,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T14:00:00",
+      "price_sek": 2.776716621255208,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T15:00:00",
+      "price_sek": 3.098574732326562,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T16:00:00",
+      "price_sek": 3.3092778141247683,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T17:00:00",
+      "price_sek": 4.285583429007811,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T18:00:00",
+      "price_sek": 4.6275262896,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T19:00:00",
+      "price_sek": 4.345837677570312,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T20:00:00",
+      "price_sek": 3.733754935922917,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T21:00:00",
+      "price_sek": 3.1482844873906255,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T22:00:00",
+      "price_sek": 2.5577928514781254,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-06T23:00:00",
+      "price_sek": 2.1164304807578125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T00:00:00",
+      "price_sek": 1.7021825218906248,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T01:00:00",
+      "price_sek": 1.5603339783997396,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T02:00:00",
+      "price_sek": 1.418485434908854,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T03:00:00",
+      "price_sek": 1.5603339783997396,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T04:00:00",
+      "price_sek": 1.8407672935843755,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T05:00:00",
+      "price_sek": 2.2575258461416667,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T06:00:00",
+      "price_sek": 3.2200874669276045,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T07:00:00",
+      "price_sek": 4.238886386371874,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T08:00:00",
+      "price_sek": 4.7148949500156245,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T09:00:00",
+      "price_sek": 4.255958423464583,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T10:00:00",
+      "price_sek": 3.9526787057000004,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T11:00:00",
+      "price_sek": 3.623288813558334,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T12:00:00",
+      "price_sek": 3.6652764845503736,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T13:00:00",
+      "price_sek": 3.2788353592760417,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T14:00:00",
+      "price_sek": 3.2738141718958333,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T15:00:00",
+      "price_sek": 3.601195589085417,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T16:00:00",
+      "price_sek": 3.90447530685,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T17:00:00",
+      "price_sek": 4.85046700928125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T18:00:00",
+      "price_sek": 5.1336619775250005,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T19:00:00",
+      "price_sek": 4.805276322859375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T20:00:00",
+      "price_sek": 4.125407551579166,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T21:00:00",
+      "price_sek": 3.307399890044571,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T22:00:00",
+      "price_sek": 2.6252535081686994,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T23:00:00",
+      "price_sek": 2.134996321096133,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T00:00:00",
+      "price_sek": 1.7670944238670063,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T01:00:00",
+      "price_sek": 1.6403846347977644,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T02:00:00",
+      "price_sek": 1.3929376335183539,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T03:00:00",
+      "price_sek": 1.3673275694043399,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T04:00:00",
+      "price_sek": 1.4880384203807622,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T05:00:00",
+      "price_sek": 1.8268686469159583,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T06:00:00",
+      "price_sek": 2.570764838015524,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T07:00:00",
+      "price_sek": 3.296349260858208,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T08:00:00",
+      "price_sek": 3.4717179960025195,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T09:00:00",
+      "price_sek": 2.898268521117816,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T10:00:00",
+      "price_sek": 2.5864015686956,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T11:00:00",
+      "price_sek": 2.312055941090729,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T12:00:00",
+      "price_sek": 2.1589850438050777,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T13:00:00",
+      "price_sek": 2.0210279205338537,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T14:00:00",
+      "price_sek": 2.021366850682018,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T15:00:00",
+      "price_sek": 2.2734066065284204,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T16:00:00",
+      "price_sek": 2.502467400448038,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T17:00:00",
+      "price_sek": 3.1042988859400005,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T18:00:00",
+      "price_sek": 3.264920644808008,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T19:00:00",
+      "price_sek": 3.0292861123702224,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T20:00:00",
+      "price_sek": 2.6355610016227917,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T21:00:00",
+      "price_sek": 2.252663830401411,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T22:00:00",
+      "price_sek": 1.8763737885942775,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T23:00:00",
+      "price_sek": 1.6049886530687771,
+      "source": "Forecasted"
+    }
+  ],
+  "2026-01-05": [
+    {
+      "time_start": "2026-01-05T23:00:00",
+      "price_sek": 2.1274775,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T00:00:00",
+      "price_sek": 2.0469749999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T01:00:00",
+      "price_sek": 2.0525225,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T02:00:00",
+      "price_sek": 2.0177424999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T03:00:00",
+      "price_sek": 2.0027625,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T04:00:00",
+      "price_sek": 2.0287875,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T05:00:00",
+      "price_sek": 2.076475,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T06:00:00",
+      "price_sek": 2.2231199999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T07:00:00",
+      "price_sek": 2.4159699999999997,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T08:00:00",
+      "price_sek": 2.7004725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T09:00:00",
+      "price_sek": 2.7427725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T10:00:00",
+      "price_sek": 2.5923,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T11:00:00",
+      "price_sek": 2.51075,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T12:00:00",
+      "price_sek": 2.3897525,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T13:00:00",
+      "price_sek": 2.326925,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T14:00:00",
+      "price_sek": 2.3319099999999997,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T15:00:00",
+      "price_sek": 2.4140025,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T16:00:00",
+      "price_sek": 2.51355,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T17:00:00",
+      "price_sek": 2.5861075,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T18:00:00",
+      "price_sek": 2.5263225,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T19:00:00",
+      "price_sek": 2.385255,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T20:00:00",
+      "price_sek": 2.159025,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T21:00:00",
+      "price_sek": 2.0760975,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T22:00:00",
+      "price_sek": 1.9591725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-06T23:00:00",
+      "price_sek": 1.7833775,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T00:00:00",
+      "price_sek": 1.886194452853125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T01:00:00",
+      "price_sek": 1.7409563940914061,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T02:00:00",
+      "price_sek": 1.607120201625,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T03:00:00",
+      "price_sek": 1.7857494402515626,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T04:00:00",
+      "price_sek": 2.103372858478125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T05:00:00",
+      "price_sek": 2.614828003725,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T06:00:00",
+      "price_sek": 3.619278129740626,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T07:00:00",
+      "price_sek": 4.63675896009375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T08:00:00",
+      "price_sek": 4.976100218882812,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T09:00:00",
+      "price_sek": 4.298503593332812,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T10:00:00",
+      "price_sek": 4.00694158378125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T11:00:00",
+      "price_sek": 3.6551125666687505,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T12:00:00",
+      "price_sek": 3.466167353775,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T13:00:00",
+      "price_sek": 3.2468171640937498,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T14:00:00",
+      "price_sek": 3.319181008848,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T15:00:00",
+      "price_sek": 3.6013609112765628,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T16:00:00",
+      "price_sek": 3.9969861256674006,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T17:00:00",
+      "price_sek": 4.967956028671875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T18:00:00",
+      "price_sek": 5.405092723513874,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T19:00:00",
+      "price_sek": 4.976100218882812,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T20:00:00",
+      "price_sek": 4.26321210241875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T21:00:00",
+      "price_sek": 3.547609255884375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T22:00:00",
+      "price_sek": 2.8683837922921875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-07T23:00:00",
+      "price_sek": 2.3658872562773436,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T00:00:00",
+      "price_sek": 1.8764214245999997,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T01:00:00",
+      "price_sek": 1.7081081602406254,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T02:00:00",
+      "price_sek": 1.5446814100078123,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T03:00:00",
+      "price_sek": 1.6901909417765628,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T04:00:00",
+      "price_sek": 1.9869109384617187,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T05:00:00",
+      "price_sek": 2.4280545748875006,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T06:00:00",
+      "price_sek": 3.326630228160938,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T07:00:00",
+      "price_sek": 4.149082135532742,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T08:00:00",
+      "price_sek": 4.411544953460625,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T09:00:00",
+      "price_sek": 3.740199265370528,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T10:00:00",
+      "price_sek": 3.4749956559636566,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T11:00:00",
+      "price_sek": 3.2699371627375675,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T12:00:00",
+      "price_sek": 3.1583169638015627,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T13:00:00",
+      "price_sek": 2.995270275778594,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T14:00:00",
+      "price_sek": 2.9372727825564375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T15:00:00",
+      "price_sek": 3.0815704588218007,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T16:00:00",
+      "price_sek": 3.2476033499221133,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T17:00:00",
+      "price_sek": 4.339957521506485,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T18:00:00",
+      "price_sek": 4.746846693905063,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T19:00:00",
+      "price_sek": 4.302412804634062,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T20:00:00",
+      "price_sek": 3.9092243319543374,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T21:00:00",
+      "price_sek": 3.3523772710937956,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T22:00:00",
+      "price_sek": 2.6821953877848395,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T23:00:00",
+      "price_sek": 2.2301337856987793,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T00:00:00",
+      "price_sek": 1.7264315023232064,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T01:00:00",
+      "price_sek": 1.6107459951069096,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T02:00:00",
+      "price_sek": 1.4738744629488865,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T03:00:00",
+      "price_sek": 1.6509432747310335,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T04:00:00",
+      "price_sek": 1.956560256275625,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T05:00:00",
+      "price_sek": 2.346630047050575,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T06:00:00",
+      "price_sek": 3.149751447483713,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T07:00:00",
+      "price_sek": 4.003575318494062,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T08:00:00",
+      "price_sek": 4.452489869746113,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T09:00:00",
+      "price_sek": 4.087672226612203,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T10:00:00",
+      "price_sek": 3.7919349622124994,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T11:00:00",
+      "price_sek": 3.4699679758734376,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T12:00:00",
+      "price_sek": 3.3065412256406246,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T13:00:00",
+      "price_sek": 3.1504659644382187,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T14:00:00",
+      "price_sek": 3.21424040325,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T15:00:00",
+      "price_sek": 3.619278129740626,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T16:00:00",
+      "price_sek": 3.9939108794437495,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T17:00:00",
+      "price_sek": 4.95166764825,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T18:00:00",
+      "price_sek": 5.19490746255,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T19:00:00",
+      "price_sek": 4.738501613668922,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T20:00:00",
+      "price_sek": 4.036199587114043,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T21:00:00",
+      "price_sek": 3.3989441218818945,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T22:00:00",
+      "price_sek": 2.7676458603160383,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T23:00:00",
+      "price_sek": 2.2594223297448632,
+      "source": "Forecasted"
+    }
+  ],
+  "2026-01-06": [
+    {
+      "time_start": "2026-01-06T23:00:00",
+      "price_sek": 1.7833775,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T00:00:00",
+      "price_sek": 1.7190475,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T01:00:00",
+      "price_sek": 1.6635375,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T02:00:00",
+      "price_sek": 1.59788,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T03:00:00",
+      "price_sek": 1.5721825,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T04:00:00",
+      "price_sek": 1.58004,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T05:00:00",
+      "price_sek": 1.6753475,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T06:00:00",
+      "price_sek": 1.8727225,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T07:00:00",
+      "price_sek": 1.973385,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T08:00:00",
+      "price_sek": 2.0703875,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T09:00:00",
+      "price_sek": 2.098615,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T10:00:00",
+      "price_sek": 2.08726,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T11:00:00",
+      "price_sek": 2.02548,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T12:00:00",
+      "price_sek": 1.9877525,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T13:00:00",
+      "price_sek": 1.9517224999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T14:00:00",
+      "price_sek": 1.95977,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T15:00:00",
+      "price_sek": 1.9992725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T16:00:00",
+      "price_sek": 2.0439375,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T17:00:00",
+      "price_sek": 2.238,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T18:00:00",
+      "price_sek": 2.2268325,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T19:00:00",
+      "price_sek": 2.06315,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T20:00:00",
+      "price_sek": 1.7518500000000001,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T21:00:00",
+      "price_sek": 1.693755,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T22:00:00",
+      "price_sek": 1.6493,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T23:00:00",
+      "price_sek": 1.4911349999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-08T00:00:00",
+      "price_sek": 1.5933035251875003,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T01:00:00",
+      "price_sek": 1.4605282314218755,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T02:00:00",
+      "price_sek": 1.3229682423854168,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T03:00:00",
+      "price_sek": 1.457896649022917,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T04:00:00",
+      "price_sek": 1.7198587151010418,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T05:00:00",
+      "price_sek": 2.109093675383334,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T06:00:00",
+      "price_sek": 2.910530133247917,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T07:00:00",
+      "price_sek": 3.6976125053,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T08:00:00",
+      "price_sek": 3.7486305147990784,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T09:00:00",
+      "price_sek": 3.316714876527136,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T10:00:00",
+      "price_sek": 3.0915830022962503,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T11:00:00",
+      "price_sek": 2.725006205703754,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T12:00:00",
+      "price_sek": 2.660869279476341,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T13:00:00",
+      "price_sek": 2.593304836791667,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T14:00:00",
+      "price_sek": 2.5271755634534796,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T15:00:00",
+      "price_sek": 2.5676402098284443,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T16:00:00",
+      "price_sek": 2.8413510951441006,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T17:00:00",
+      "price_sek": 3.8767084339825626,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T18:00:00",
+      "price_sek": 4.139182462454667,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T19:00:00",
+      "price_sek": 3.7569845927419525,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T20:00:00",
+      "price_sek": 3.344332137630386,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T21:00:00",
+      "price_sek": 2.7992247241015757,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T22:00:00",
+      "price_sek": 2.421972076186031,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T23:00:00",
+      "price_sek": 1.960608432782836,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T00:00:00",
+      "price_sek": 1.6347767853255561,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T01:00:00",
+      "price_sek": 1.5171598846474583,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T02:00:00",
+      "price_sek": 1.3620352792717707,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T03:00:00",
+      "price_sek": 1.513159879401042,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T04:00:00",
+      "price_sek": 1.7758396497697917,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T05:00:00",
+      "price_sek": 2.17033777485,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T06:00:00",
+      "price_sek": 2.9947407700145834,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T07:00:00",
+      "price_sek": 3.8851725599166667,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T08:00:00",
+      "price_sek": 4.18421601434375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T09:00:00",
+      "price_sek": 3.651200961172917,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T10:00:00",
+      "price_sek": 3.3588560801250003,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T11:00:00",
+      "price_sek": 3.0789514067812505,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T12:00:00",
+      "price_sek": 2.938411270295353,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T13:00:00",
+      "price_sek": 2.7942620381666665,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T14:00:00",
+      "price_sek": 2.8038314287083335,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T15:00:00",
+      "price_sek": 2.993477610463083,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T16:00:00",
+      "price_sek": 3.3201919145804495,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T17:00:00",
+      "price_sek": 4.164586801995156,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T18:00:00",
+      "price_sek": 4.3485760385312,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T19:00:00",
+      "price_sek": 3.9796487603869055,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T20:00:00",
+      "price_sek": 3.373659927292958,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T21:00:00",
+      "price_sek": 2.8002615675667646,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T22:00:00",
+      "price_sek": 2.3727712939508154,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T23:00:00",
+      "price_sek": 2.044524212703438,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T00:00:00",
+      "price_sek": 1.7605241990599996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T01:00:00",
+      "price_sek": 1.6274777326899001,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T02:00:00",
+      "price_sek": 1.4718019304190126,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T03:00:00",
+      "price_sek": 1.456633489471417,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T04:00:00",
+      "price_sek": 1.58846906908585,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T05:00:00",
+      "price_sek": 1.7436008515044439,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T06:00:00",
+      "price_sek": 1.9186840954981221,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T07:00:00",
+      "price_sek": 2.2256105746186665,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T08:00:00",
+      "price_sek": 2.504419074275869,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T09:00:00",
+      "price_sek": 2.774453399745417,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T10:00:00",
+      "price_sek": 2.899671745800288,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T11:00:00",
+      "price_sek": 2.904479646843185,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T12:00:00",
+      "price_sek": 2.7609518341898407,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T13:00:00",
+      "price_sek": 2.5951724947436836,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T14:00:00",
+      "price_sek": 2.4287113194749996,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T15:00:00",
+      "price_sek": 2.5395487854238543,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T16:00:00",
+      "price_sek": 2.8071309545671004,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T17:00:00",
+      "price_sek": 3.292388050361637,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T18:00:00",
+      "price_sek": 3.675658409519308,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T19:00:00",
+      "price_sek": 3.6293079898743104,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T20:00:00",
+      "price_sek": 3.390658394564266,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T21:00:00",
+      "price_sek": 3.12488448138125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T22:00:00",
+      "price_sek": 2.83636735655,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T23:00:00",
+      "price_sek": 2.403830904066667,
+      "source": "Forecasted"
+    }
+  ],
+  "2026-01-07": [
+    {
+      "time_start": "2026-01-07T10:00:00",
+      "price_sek": 2.08726,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T11:00:00",
+      "price_sek": 2.02548,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T12:00:00",
+      "price_sek": 1.9877525,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T13:00:00",
+      "price_sek": 1.9517224999999998,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T14:00:00",
+      "price_sek": 1.95977,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T15:00:00",
+      "price_sek": 1.9992725,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T16:00:00",
+      "price_sek": 2.0439375,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T17:00:00",
+      "price_sek": 2.238,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T18:00:00",
+      "price_sek": 2.2268325,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T19:00:00",
+      "price_sek": 2.06315,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T20:00:00",
+      "price_sek": 1.7518500000000001,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T21:00:00",
+      "price_sek": 1.693755,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T22:00:00",
+      "price_sek": 1.6493,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-07T23:00:00",
+      "price_sek": 1.4911349999999999,
+      "source": "Official"
+    },
+    {
+      "time_start": "2026-01-08T00:00:00",
+      "price_sek": 1.4177093423749998,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T01:00:00",
+      "price_sek": 1.2900810074166666,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T02:00:00",
+      "price_sek": 1.1728009158333332,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T03:00:00",
+      "price_sek": 1.2829665900963543,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T04:00:00",
+      "price_sek": 1.5190358920885418,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T05:00:00",
+      "price_sek": 1.8140315412724375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T06:00:00",
+      "price_sek": 2.4679249671880834,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T07:00:00",
+      "price_sek": 3.0572574273943327,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T08:00:00",
+      "price_sek": 3.211664644734726,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T09:00:00",
+      "price_sek": 2.7008458161334272,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T10:00:00",
+      "price_sek": 2.4639736629260622,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T11:00:00",
+      "price_sek": 2.2426255994884268,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T12:00:00",
+      "price_sek": 2.1217931499840192,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T13:00:00",
+      "price_sek": 2.006811122989349,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T14:00:00",
+      "price_sek": 2.0314895275546876,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T15:00:00",
+      "price_sek": 2.3561408707788933,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T16:00:00",
+      "price_sek": 2.695065459854875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T17:00:00",
+      "price_sek": 3.415751407046055,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T18:00:00",
+      "price_sek": 3.577253207573625,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T19:00:00",
+      "price_sek": 3.3238040308331245,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T20:00:00",
+      "price_sek": 2.9842272868361146,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T21:00:00",
+      "price_sek": 2.605432425155084,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T22:00:00",
+      "price_sek": 2.1576087436875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-08T23:00:00",
+      "price_sek": 1.817410242734375,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T00:00:00",
+      "price_sek": 1.46945055925,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T01:00:00",
+      "price_sek": 1.3188422251702498,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T02:00:00",
+      "price_sek": 1.2234199950673565,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T03:00:00",
+      "price_sek": 1.3564822357395834,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T04:00:00",
+      "price_sek": 1.5862994740260414,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T05:00:00",
+      "price_sek": 1.9592674123333336,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T06:00:00",
+      "price_sek": 2.7034785817187497,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T07:00:00",
+      "price_sek": 3.403992568745999,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T08:00:00",
+      "price_sek": 3.7835764839843744,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T09:00:00",
+      "price_sek": 3.3631790968749993,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T10:00:00",
+      "price_sek": 3.125169499249999,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T11:00:00",
+      "price_sek": 2.803080424203125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T12:00:00",
+      "price_sek": 2.4382309525677313,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T13:00:00",
+      "price_sek": 2.2962482348032034,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T14:00:00",
+      "price_sek": 2.3374849282694004,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T15:00:00",
+      "price_sek": 2.6652789036535527,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T16:00:00",
+      "price_sek": 3.026861187187499,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T17:00:00",
+      "price_sek": 3.420463091607733,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T18:00:00",
+      "price_sek": 3.7784058117113326,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T19:00:00",
+      "price_sek": 3.518903990538476,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T20:00:00",
+      "price_sek": 3.1291578847174475,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T21:00:00",
+      "price_sek": 2.695546006406601,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T22:00:00",
+      "price_sek": 2.1667669390743747,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-09T23:00:00",
+      "price_sek": 1.7307129831212302,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T00:00:00",
+      "price_sek": 1.517525264144195,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T01:00:00",
+      "price_sek": 1.437875481652031,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T02:00:00",
+      "price_sek": 1.3411340661072289,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T03:00:00",
+      "price_sek": 1.3380724951870548,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T04:00:00",
+      "price_sek": 1.4416551775447497,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T05:00:00",
+      "price_sek": 1.5642258085535519,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T06:00:00",
+      "price_sek": 1.6725926131765516,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T07:00:00",
+      "price_sek": 1.9022761866527498,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T08:00:00",
+      "price_sek": 2.1523777066614374,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T09:00:00",
+      "price_sek": 2.4296640620162493,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T10:00:00",
+      "price_sek": 2.54394650464109,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T11:00:00",
+      "price_sek": 2.5499022420860076,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T12:00:00",
+      "price_sek": 2.4143437593409507,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T13:00:00",
+      "price_sek": 2.2987119866256625,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T14:00:00",
+      "price_sek": 2.1576708331477494,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T15:00:00",
+      "price_sek": 2.2586068444680865,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T16:00:00",
+      "price_sek": 2.4873387029363903,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T17:00:00",
+      "price_sek": 2.841762157938875,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T18:00:00",
+      "price_sek": 3.087507714251898,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T19:00:00",
+      "price_sek": 2.9982418266035156,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T20:00:00",
+      "price_sek": 2.8050001311433888,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T21:00:00",
+      "price_sek": 2.578227647881621,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T22:00:00",
+      "price_sek": 2.3404362257211107,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-10T23:00:00",
+      "price_sek": 1.9613922516396665,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T00:00:00",
+      "price_sek": 1.588457513946536,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T01:00:00",
+      "price_sek": 1.4589574404677499,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T02:00:00",
+      "price_sek": 1.3325434071929518,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T03:00:00",
+      "price_sek": 1.3338844748578307,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T04:00:00",
+      "price_sek": 1.4543343627399685,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T05:00:00",
+      "price_sek": 1.5937320998301354,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T06:00:00",
+      "price_sek": 1.7362804458511822,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T07:00:00",
+      "price_sek": 2.0110603704252084,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T08:00:00",
+      "price_sek": 2.3000458460922655,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T09:00:00",
+      "price_sek": 2.5976764167455206,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T10:00:00",
+      "price_sek": 2.741099297125957,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T11:00:00",
+      "price_sek": 2.7365606222582026,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T12:00:00",
+      "price_sek": 2.584118062040234,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T13:00:00",
+      "price_sek": 2.4332699936556295,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T14:00:00",
+      "price_sek": 2.3140140343528826,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T15:00:00",
+      "price_sek": 2.445419262554687,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T16:00:00",
+      "price_sek": 2.6983044600312494,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T17:00:00",
+      "price_sek": 3.0786024040624995,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T18:00:00",
+      "price_sek": 3.3157022186241143,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T19:00:00",
+      "price_sek": 3.2230466345052076,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T20:00:00",
+      "price_sek": 2.9899955701640613,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T21:00:00",
+      "price_sek": 2.761687450703125,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T22:00:00",
+      "price_sek": 2.523246676270833,
+      "source": "Forecasted"
+    },
+    {
+      "time_start": "2026-01-11T23:00:00",
+      "price_sek": 2.1351875497083332,
+      "source": "Forecasted"
+    }
+  ]
+}
