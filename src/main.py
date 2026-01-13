@@ -245,8 +245,60 @@ def job():
     state_data = {'session_id': current_session_id}
     any_charging_needed = False
 
-    # (Loop through cars and optimization logic...)
-    # [Lines 210-280 in current file]
+    for car in cars:
+        status = vehicle_statuses.get(car.name, {})
+        if not status:
+            continue # Skip if failed to get status
+
+        # Determine target
+        vid = "mercedes_eqv" if "Mercedes" in car.name else "nissan_leaf"
+        target_soc = user_settings.get(f"{vid}_target", 80)
+        
+        # Only run optimizer if we identified this car as the active one
+        # OR if we are not charging (just planning)
+        # But if active_car_id is set to the OTHER car, we should force IDLE.
+        
+        # Logic: Always calculate plan, but only allow CHARGE if active_car_id matches (or is None/Guest)
+        decision = optimizer.suggest_action(car, prices, weather_forecast)
+        
+        # Override decision if another car is definitely active
+        if active_car_id and active_car_id not in ["UNKNOWN_GUEST", "UNKNOWN_NONE"]:
+            if active_car_id != vid:
+                decision = {"action": "IDLE", "reason": f"Other car ({active_car_id}) is active"}
+
+        urgency_score = optimizer.calculate_urgency(car, target_soc)
+        
+        state_data[car.name] = {
+            "id": vid,
+            "last_updated": datetime.now().isoformat(),
+            "soc": status.get('soc', 0),
+            "range_km": status.get('range_km', 0),
+            "odometer": status.get('odometer', 0),
+            "climate_active": status.get('climate_active', False),
+            "plugged_in": status.get('plugged_in', False),
+            "action": decision['action'],
+            "reason": decision['reason'],
+            "urgency_score": urgency_score
+        }
+
+        logger.info(f"Car: {car.name} | SoC: {status.get('soc')}% | Action: {decision['action']} | Urgency: {urgency_score:.1f}")
+        
+        # If this car is the identified active car, respect its decision
+        if active_car_id == vid and decision['action'] == "CHARGE":
+            any_charging_needed = True
+
+    # Guest / Identification Force Charge
+    if active_car_id == "UNKNOWN_GUEST":
+        logger.info("Unknown/Guest car connected. Force charging to identify.")
+        any_charging_needed = True
+        state_data["Guest"] = {
+            "id": "guest",
+            "name": "Identifierar...",
+            "soc": 50,
+            "plugged_in": True,
+            "action": "CHARGE",
+            "reason": "Analyserar faser..."
+        }
     
     # --- 6. Session Management ---
     if is_charging and active_car_id and active_car_id != "UNKNOWN_NONE":
