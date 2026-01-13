@@ -5,3 +5,4 @@ schedule
 python-dateutil
 flask
 gunicorn
+pytest

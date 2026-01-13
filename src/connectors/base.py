@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import logging
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,12 @@ class BaseConnector(ABC):
         pass
 
 class Vehicle(BaseConnector):
+    def __init__(self, config):
+        super().__init__(config)
+        self._last_status = None
+        self._last_status_time = None
+        self._cache_ttl_minutes = 30
+
     @abstractmethod
     def get_status(self):
         """
@@ -25,6 +32,28 @@ class Vehicle(BaseConnector):
         - climate_active (bool): True if pre-conditioning
         """
         pass
+
+    def _get_cached_status(self, current_status):
+        """Helper to cache successful status and return cache on failure."""
+        now = datetime.now()
+        
+        # If current fetch was successful (e.g. SoC > 0 or similar indicator)
+        # We assume success if we got a dict with some real data
+        is_success = current_status and current_status.get('soc', 0) > 0
+        
+        if is_success:
+            self._last_status = current_status
+            self._last_status_time = now
+            return current_status
+        
+        # If fetch failed, check cache
+        if self._last_status and self._last_status_time:
+            age = now - self._last_status_time
+            if age < timedelta(minutes=self._cache_ttl_minutes):
+                logger.warning(f"{self.__class__.__name__}: API failure, using cached status from {age.total_seconds()/60:.1f}m ago")
+                return self._last_status
+        
+        return current_status
 
     def wake_up(self):
         """

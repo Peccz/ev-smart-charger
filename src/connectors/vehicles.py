@@ -110,14 +110,17 @@ class MercedesEQV(Vehicle):
                 except ValueError:
                     pass
 
-        # Climate
+        status['climate_active'] = self._get_climate_active()
+
+        logger.info(f"MercedesEQV Status: {status}")
+        return self._get_cached_status(status)
+
+    def _get_climate_active(self):
         if self.ha_climate_status_id:
             state = self.ha_client.get_state(self.ha_climate_status_id)
             if state and str(state.get('state')).lower() in ['on', 'true', '1', 'active']:
-                status['climate_active'] = True
-
-        logger.info(f"MercedesEQV Status: {status}")
-        return status
+                return True
+        return False
 
     def start_climate(self):
         cid = self.ha_climate_id

@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import time
-from config_manager import PRICE_HISTORY_CACHE_FILE
+from config_manager import PRICE_HISTORY_CACHE_FILE, ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -13,26 +13,20 @@ class SpotPriceService:
         self.region = region
         self.api_url = "https://www.elprisetjustnu.se/api/v1/prices"
 
-    def calculate_total_price(self, spot_price_incl_vat_sek):
+    def calculate_total_price(self, spot_price_excl_vat_sek):
         """
-        Calculates total electricity price (SEK/kWh) including fees and taxes.
+        Calculates total electricity price (SEK/kWh) including fees, taxes, and VAT.
+        Formula: (Spot + Grid + Retail + EnergyTax) * (1 + VAT)
         """
-        # 1. FASTA AVGIFTER (Exklusive moms)
-        GRID_FEE = 0.25      # Elöverföring (E.ON Upplands Väsby)
-        RETAILER_FEE = 0.05  # Elhandlarpåslag + elcertifikat
+        settings = ConfigManager.get_settings()
         
-        # 2. SKATTER (Inklusive moms)
-        ENERGY_TAX = 0.5488  # Energiskatt 2025
+        grid_fee = float(settings.get('grid_fee_sek_per_kwh', 0.25))
+        retail_fee = float(settings.get('retailer_fee_sek_per_kwh', 0.05))
+        energy_tax = float(settings.get('energy_tax_sek_per_kwh', 0.36)) # 2026 default
+        vat_rate = float(settings.get('vat_rate', 0.25))
         
-        # 3. MOMS
-        VAT_RATE = 0.25      # 25%
-        
-        # BERÄKNING
-        # Spotpriset has VAT, we add VAT to the fees
-        fees_vat = (GRID_FEE + RETAILER_FEE) * VAT_RATE
-        
-        # Total = Spot(incl moms) + Avgifter + Moms på avgifter + Energiskatt
-        total_price = spot_price_incl_vat_sek + GRID_FEE + RETAILER_FEE + fees_vat + ENERGY_TAX
+        base_cost = spot_price_excl_vat_sek + grid_fee + retail_fee + energy_tax
+        total_price = base_cost * (1 + vat_rate)
         
         return total_price
 

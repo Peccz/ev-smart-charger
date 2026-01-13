@@ -23,28 +23,74 @@ class Optimizer:
     def _calculate_bias_factor(self):
         """
         Calculates a bias correction factor based on recent forecast accuracy.
-        If we systematically over-forecast, this returns < 1.0.
+        Compares the last 3 days of forecasts against actuals.
+        Returns a factor to multiply future forecasts by (e.g. 0.95 if we over-forecast).
         """
         if not FORECAST_HISTORY_FILE.exists() or not PRICE_HISTORY_CACHE_FILE.exists():
             return 1.0
 
         try:
             with open(FORECAST_HISTORY_FILE, 'r') as f:
-                forecasts = json.load(f)
+                forecast_history = json.load(f)
             with open(PRICE_HISTORY_CACHE_FILE, 'r') as f:
-                actuals_raw = json.load(f)
+                actual_history = json.load(f)
+
+            ratios = []
             
-            # Use SpotPriceService's logic to get total prices from raw cache
-            # (Simplification: just compare raw vs forecast if forecast was raw, 
-            # but here forecast is TOTAL. We need to normalize).
-            # To keep it simple and robust, we look at the last 2 days of 'Official' vs 'Forecasted' 
-            # but that's hard. Let's just use a fixed 0.95 factor if we know we over-forecast,
-            # or a simple MAE based adjustment.
+            # Helper to calculate total price from raw spot
+            grid_fee = float(self.config.get('grid_fee_sek_per_kwh', 0.25))
+            retail_fee = float(self.config.get('retailer_fee_sek_per_kwh', 0.05))
+            energy_tax = float(self.config.get('energy_tax_sek_per_kwh', 0.36))
+            vat_rate = float(self.config.get('vat_rate', 0.25))
             
-            # Implementation: For the last 48h, find hours where we had a forecast and an actual.
-            # Due to complexity of matching, we'll return 0.92 as a 'calibrated' starting point 
-            # based on the analysis showing ~0.6 SEK overestimation on ~2.0 SEK prices.
-            return 0.92 
+            def to_total(raw):
+                return (raw + grid_fee + retail_fee + energy_tax) * (1 + vat_rate)
+
+            # Analyze last 3 days
+            today = datetime.now().date()
+            for i in range(1, 4):
+                day = today - timedelta(days=i)
+                date_str = day.strftime("%Y-%m-%d")
+                
+                # We need both a forecast generated ON that day (or before) and actuals FOR that day
+                # Simplification: Use the forecast generated ON that day (which covers that day)
+                if date_str not in forecast_history or date_str not in actual_history:
+                    continue
+                    
+                forecasts = forecast_history[date_str] # List of dicts
+                actuals_raw = actual_history[date_str] # List of floats (00-23)
+                
+                # Map forecasts by hour for O(1) lookup
+                # forecast['time_start'] is isoformat
+                f_map = {}
+                for f_entry in forecasts:
+                    try:
+                        dt = datetime.fromisoformat(f_entry['time_start'])
+                        # Only care if it matches our date
+                        if dt.date() == day:
+                            f_map[dt.hour] = f_entry['price_sek']
+                    except ValueError: pass
+                
+                # Compare
+                for hour, raw_price in enumerate(actuals_raw):
+                    if hour in f_map and f_map[hour] > 0.1: # Avoid div by zero
+                        actual_total = to_total(raw_price)
+                        ratio = actual_total / f_map[hour]
+                        ratios.append(ratio)
+
+            if not ratios:
+                return 1.0
+            
+            avg_bias = sum(ratios) / len(ratios)
+            
+            # Dampen and Clamp
+            # If avg_bias is 0.9 (we over-forecasted), we want to return 0.9
+            # But let's be conservative and only go halfway
+            final_bias = (1.0 + avg_bias) / 2.0
+            
+            # Hard clamps to prevent runaway feedback
+            return max(0.85, min(final_bias, 1.15))
+
         except Exception as e:
             logger.warning(f"Bias calculation failed: {e}")
             return 1.0
@@ -90,7 +136,7 @@ class Optimizer:
         if not official_prices_df.empty:
             official_prices_df['time_start'] = pd.to_datetime(official_prices_df['time_start'], utc=True).dt.tz_convert('Europe/Berlin').dt.tz_localize(None)
             official_prices_df = official_prices_df.set_index('time_start')
-            official_prices_df = official_prices_df.resample('1h').mean()
+            official_prices_df = official_prices_df.resample('1h').mean(numeric_only=True)
         
         # Calculate a realistic base price
         # Weighted blend of today's avg and 7-day historical avg for stability
@@ -148,34 +194,38 @@ class Optimizer:
                 continue
             
             # --- FORECAST GENERATION (Fundamental Model) ---
+            opt_config = self.config.get('optimization', {})
             
             # 1. Wind Factor (High wind = Low price)
             wind_speed = hour_data.get('wind_kmh_80m', 10)
+            wind_penalty = float(opt_config.get('forecast_wind_penalty', 0.03))
             wind_factor = 1.0
             if wind_speed < 10:
-                wind_factor = 1.0 + (10 - wind_speed) * 0.03 # +3% per km/h below 10
+                wind_factor = 1.0 + (10 - wind_speed) * wind_penalty
             elif wind_speed > 25:
-                wind_factor = max(0.7, 1.0 - (wind_speed - 25) * 0.015) # -1.5% per km/h above 25, max -30%
+                # Keep hardcoded safety clamp for high wind for now, or move to config later
+                wind_factor = max(0.7, 1.0 - (wind_speed - 25) * (wind_penalty / 2)) 
 
             # 2. Solar Factor (High sun = Low price)
             solar_rad = hour_data.get('solar_w_m2', 0)
+            solar_discount = float(opt_config.get('forecast_solar_discount', 0.0002))
             solar_factor = 1.0
             if solar_rad > 100:
-                # Reduce price up to 15% at full sun (e.g. 800 W/m2)
-                reduction = min(0.15, (solar_rad - 100) * 0.0002)
+                reduction = min(0.15, (solar_rad - 100) * solar_discount)
                 solar_factor = 1.0 - reduction
 
             # 3. Temperature/Demand Factor (Low temp = High price)
             temp = hour_data.get('temp_c', 10)
+            temp_penalty = float(opt_config.get('forecast_temp_penalty', 0.01))
             temp_factor = 1.0
-            if temp < 0: # Threshold lowered from 5 to 0
-                # Increase price as it gets colder (1% per degree instead of 2%)
-                temp_factor = 1.0 + (0 - temp) * 0.01 
+            if temp < 0: 
+                temp_factor = 1.0 + (0 - temp) * temp_penalty
             
             # 4. Seasonal Factor (Month based approximation of hydro/demand)
             month = hour_time.month
             seasonal_factor = 1.0
-            if month in [12, 1, 2]:   seasonal_factor = 1.10 # Winter (slightly reduced from 1.15)
+            winter_bias = float(opt_config.get('forecast_winter_bias', 1.10))
+            if month in [12, 1, 2]:   seasonal_factor = winter_bias 
             elif month in [5, 6]:     seasonal_factor = 0.85 # Spring flood (High hydro)
             elif month in [7, 8]:     seasonal_factor = 0.90 # Summer (Low demand)
             elif month in [10, 11]:   seasonal_factor = 1.05 # Late Autumn (Increasing demand)

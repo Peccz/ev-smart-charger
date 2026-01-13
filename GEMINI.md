@@ -101,7 +101,30 @@ PYTHONPATH=src python src/web_app.py
 
 *   **Modular Design:** The project is split into logical modules (connectors, optimizer, database, web).
 *   **Configuration Management:** Uses `config/settings.yaml` for base configuration and `data/user_settings.json` for user-specific, dynamic preferences. `data/manual_overrides.json`, `data/manual_status.json` and `data/optimizer_state.json` are used for operational state.
-*   **Logging:** Centralized logging is configured in `src/main.py`, outputting to `ev_charger.log` and stdout.
+*   **Logging:** Centralized logging is configured in `src/main.py` and `src/web_app.py`, using `RotatingFileHandler` to prevent disk saturation.
 *   **API Integration:** Connectors handle interaction with external APIs.
 *   **Web Framework:** Flask is used for the web dashboard.
 *   **Deployment:** `systemd` services and `deploy.sh` script facilitate deployment to a Raspberry Pi.
+
+## Lessons Learned & Error Handling
+
+### 1. Refactoring Path Objects
+*   **Mistake:** Refactored `STATE_FILE` (string) to `STATE_PATH` (pathlib.Path) in `config_manager.py` but missed updating the reference in `main.py`.
+*   **Rule:** Always search for all occurrences of a variable name before and after renaming. Use `Path.exists()` instead of `os.path.exists()`.
+
+### 2. Deployment Synchronization
+*   **Mistake:** Assumed `scp` successfully updated `config_manager.py` on the Raspberry Pi, leading to a version mismatch where `web_app.py` expected Path objects but received strings.
+*   **Rule:** After deploying critical infrastructure files, verify the content on the remote machine (e.g., using `head` or `grep`).
+
+### 3. API Resilience & JSON Parsing
+*   **Mistake:** The web app crashed when `optimizer_state.json` contained non-dictionary objects (like `session_id`).
+*   **Rule:** Always validate data types when iterating over shared state files. Use `isinstance(v, dict)` before assignment.
+*   **Strategy:** Implement "Guest Mode" for charging when vehicle APIs are slow or unresponsive to ensure charging starts immediately.
+
+### 4. Import Management
+*   **Mistake:** Removed `import os` and `timedelta` during cleanup while they were still used in the logic.
+*   **Rule:** Run a quick `grep` for module usage before removing any imports.
+
+### 5. Internal Delimiters & Stability
+*   **Mistake:** Included internal control strings like `ctrl46` in the output, which caused the agent to crash or produce corrupt code.
+*   **Permanent Fix:** NEVER manually include or reference internal system delimiters in natural language or code blocks. Always use standard tool call syntax.
