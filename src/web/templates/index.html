@@ -134,7 +134,8 @@
     </div>
 
     <!-- Departure Time Display -->
-    <div class="card p-3 mb-4 text-center border-0" style="background: linear-gradient(145deg, #1e1e1e, #252525); border: 1px solid #333!important;">
+    <div class="card p-3 mb-4 text-center border-0" style="background: linear-gradient(145deg, #1e1e1e, #252525); border: 1px solid #333!important; position: relative;">
+        <div id="save-indicator" class="position-absolute top-0 end-0 p-2 small text-success fw-bold" style="display: none; font-size: 9px;"><i class="bi bi-cloud-check"></i> SPARAT</div>
         <div class="text-muted small text-uppercase fw-bold mb-2" style="letter-spacing: 1px; font-size: 10px;">Planerad Avresa</div>
         <div class="d-flex justify-content-center">
             <select class="form-select form-select-lg text-center fw-bold text-primary" id="departure_time" 
@@ -173,7 +174,10 @@
 </nav>
 
 <script>
+    let isSaving = false;
+
     function getStatus() {
+        if (isSaving) return;
         fetch('/api/status?t=' + new Date().getTime())
             .then(response => response.json())
             .then(data => {
@@ -182,9 +186,9 @@
                 
                 const timeSelect = document.getElementById('departure_time');
                 if (timeSelect.options.length === 0) {
-                    populateDepartureOptions(data.departure_time || "07:00");
-                } else if (data.departure_time && timeSelect.value !== data.departure_time) {
-                    timeSelect.value = data.departure_time;
+                    populateDepartureOptions(data.system.departure || "07:00");
+                } else if (data.system.departure && timeSelect.value !== data.system.departure) {
+                    timeSelect.value = data.system.departure;
                 }
             });
     }
@@ -205,13 +209,27 @@
     }
 
     function saveDeparture(newTime) {
+        isSaving = true;
+        const indicator = document.getElementById('save-indicator');
+        const select = document.getElementById('departure_time');
+        
+        select.style.opacity = '0.5';
+        
         fetch('/api/settings', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ departure_time: newTime })
         }).then(() => {
-            // Refresh data to trigger re-optimization in backend faster if possible
-            getStatus();
+            select.style.opacity = '1';
+            indicator.style.display = 'block';
+            setTimeout(() => { 
+                indicator.style.display = 'none';
+                isSaving = false;
+            }, 2000);
+        }).catch(err => {
+            isSaving = false;
+            select.style.opacity = '1';
+            alert("Kunde inte spara: " + err);
         });
     }
 
@@ -224,35 +242,21 @@
         const bar = document.getElementById('system-status');
         const cars = Object.values(data.cars);
         
-        // --- LOGIC FIX: Determine truly urgent car ---
-        // Priority is determined by urgency_score in backend.
-        // We need to check if the HIGHEST priority car is unplugged.
-        
-        // Sort cars by urgency score descending (Backend usually does this, but let's be safe)
         const sortedCars = cars.sort((a, b) => (b.urgency_score || 0) - (a.urgency_score || 0));
         const priorityCar = sortedCars[0];
         
-        let statusType = 'ok'; // ok, warn, alert, info
+        let statusType = 'ok';
         let icon = 'bi-check-circle-fill';
         let text = 'Systemet i fas';
         let subtext = 'Inga åtgärder krävs just nu.';
         let iconColor = '#69db7c';
 
-        // 1. Alert: Priority car needs plugging!
         if (priorityCar && priorityCar.urgency_score > 0 && !priorityCar.plugged_in) {
             statusType = 'alert';
             icon = 'bi-plug-fill';
             iconColor = '#ff8787';
             text = `Anslut ${priorityCar.name}!`;
-            
-            // Check if swapping is needed
-            if (priorityCar.swap_msg) {
-                subtext = priorityCar.swap_msg;
-            } else {
-                subtext = "Bilen behöver laddas för att nå målet.";
-            }
-        
-        // 2. Info: Charging active
+            subtext = priorityCar.swap_msg || "Bilen behöver laddas för att nå målet.";
         } else if (cars.some(c => c.action === 'CHARGE' && c.plugged_in)) {
             const chargingCar = cars.find(c => c.action === 'CHARGE' && c.plugged_in);
             statusType = 'info';
@@ -260,17 +264,14 @@
             iconColor = '#4dabf7';
             text = `Laddar ${chargingCar.name}`;
             subtext = `${chargingCar.soc}% ➔ ${chargingCar.target}% (Smart)`;
-            
-        // 3. Waiting: Plugged in but idle (Planned)
         } else if (priorityCar && priorityCar.plugged_in && priorityCar.start_time_text) {
-            statusType = 'warn'; // Yellow for waiting
+            statusType = 'warn';
             icon = 'bi-clock-history';
             iconColor = '#ffd43b';
             text = `${priorityCar.name} väntar`;
             subtext = priorityCar.start_time_text;
         }
 
-        // Apply styles
         bar.className = `status-bar status-${statusType}`;
         bar.innerHTML = `
             <i class="bi ${icon} status-icon" style="color: ${iconColor};"></i>
@@ -288,19 +289,14 @@
         let html = '';
 
         Object.values(carsMap).forEach(car => {
-            let socColor = '#69db7c'; // Success green
-            if (car.soc < car.target) socColor = '#ffd43b'; // Warning yellow
-            if (car.soc < 20) socColor = '#ff8787'; // Danger red
+            let socColor = '#69db7c';
+            if (car.soc < car.target) socColor = '#ffd43b';
+            if (car.soc < 20) socColor = '#ff8787';
             
             let statusText = car.reason;
             let badgeClass = car.plugged_in ? 'bg-success' : 'bg-secondary';
             let badgeText = car.plugged_in ? 'INKOPPLAD' : 'EJ ANSLUTEN';
             
-            if (car.override && car.override.action === 'CHARGE') {
-                statusText = "🔥 MANUELL START";
-                socColor = '#ff8787'; 
-            }
-            // Simplify texts
             if (statusText.includes("Waiting")) statusText = "Väntar på lägre pris";
             if (statusText.includes("Current hour")) statusText = "Laddar (Lågt pris)";
             if (statusText.includes("Vehicle not plugged")) statusText = "Redo att anslutas";
@@ -336,7 +332,6 @@
                         </div>
                     </div>
                     
-                    <!-- Manual SoC Slider -->
                     <div id="manual-${car.id}" class="manual-soc-container">
                         <label class="form-label small text-muted text-uppercase mb-2">Manuell Batterinivå</label>
                         <div class="d-flex align-items-center">
@@ -369,14 +364,6 @@
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ vehicle_id: id, soc: val })
-        }).then(() => getStatus());
-    }
-
-    function setOverride(id, action) {
-        fetch('/api/override', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ vehicle_id: id, action: action })
         }).then(() => getStatus());
     }
 
