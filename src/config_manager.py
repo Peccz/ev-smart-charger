@@ -29,7 +29,14 @@ DEFAULT_SETTINGS = {
     "nissan_leaf_max_soc": 90,
     "departure_time": "07:00",
     "smart_buffering": True,
-    "daily_charging_enabled": True  # Charge daily during cheapest hours
+    "daily_charging_enabled": True,  # Charge daily during cheapest hours
+    
+    # Cost defaults (SEK/kWh, excl VAT unless specified)
+    # Based on 2026 tax reduction (45.0 ore incl VAT = 36.0 ore excl VAT)
+    "grid_fee_sek_per_kwh": 0.25, # Approximate E.ON variable fee
+    "energy_tax_sek_per_kwh": 0.36, 
+    "retailer_fee_sek_per_kwh": 0.05,
+    "vat_rate": 0.25
 }
 
 # STRIKT KONFIGURATION AV SENSORER

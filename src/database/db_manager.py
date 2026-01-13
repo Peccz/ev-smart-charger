@@ -31,10 +31,34 @@ class DatabaseManager:
                 vehicle_id TEXT,
                 start_time DATETIME,
                 end_time DATETIME,
-                energy_added_kwh REAL,
-                cost_sek REAL
+                energy_added_kwh REAL DEFAULT 0,
+                cost_sek REAL DEFAULT 0,
+                start_soc INTEGER,
+                end_soc INTEGER,
+                start_odometer INTEGER,
+                end_odometer INTEGER
             )
         ''')
+        
+        # Migrations for existing tables
+        try:
+            cursor.execute("ALTER TABLE charging_sessions ADD COLUMN start_soc INTEGER")
+        except sqlite3.OperationalError: pass
+        try:
+            cursor.execute("ALTER TABLE charging_sessions ADD COLUMN end_soc INTEGER")
+        except sqlite3.OperationalError: pass
+        try:
+            cursor.execute("ALTER TABLE charging_sessions ADD COLUMN start_odometer INTEGER")
+        except sqlite3.OperationalError: pass
+        try:
+            cursor.execute("ALTER TABLE charging_sessions ADD COLUMN end_odometer INTEGER")
+        except sqlite3.OperationalError: pass
+        try:
+            cursor.execute("ALTER TABLE charging_sessions ADD COLUMN cost_spot_sek REAL DEFAULT 0")
+        except sqlite3.OperationalError: pass
+        try:
+            cursor.execute("ALTER TABLE charging_sessions ADD COLUMN cost_grid_sek REAL DEFAULT 0")
+        except sqlite3.OperationalError: pass
 
         # Table: System Metrics (High resolution log for ML/Analytics)
         cursor.execute('''
@@ -56,6 +80,64 @@ class DatabaseManager:
         
         conn.commit()
         conn.close()
+
+    def start_session(self, vehicle_id, start_soc, odometer):
+        """Starts a new charging session and returns the session ID."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO charging_sessions (vehicle_id, start_time, start_soc, start_odometer, energy_added_kwh, cost_sek)
+            VALUES (?, ?, ?, ?, 0, 0)
+        ''', (vehicle_id, datetime.now(), start_soc, odometer))
+        session_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return session_id
+
+    def update_session(self, session_id, energy_delta, spot_cost, grid_cost):
+        """Accumulates energy and cost for an active session."""
+        total_cost = spot_cost + grid_cost
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE charging_sessions 
+            SET energy_added_kwh = energy_added_kwh + ?,
+                cost_sek = cost_sek + ?,
+                cost_spot_sek = cost_spot_sek + ?,
+                cost_grid_sek = cost_grid_sek + ?
+            WHERE id = ?
+        ''', (energy_delta, total_cost, spot_cost, grid_cost, session_id))
+        conn.commit()
+        conn.close()
+
+    def end_session(self, session_id, end_soc, odometer):
+        """Finalizes a session."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE charging_sessions 
+            SET end_time = ?,
+                end_soc = ?,
+                end_odometer = ?
+            WHERE id = ?
+        ''', (datetime.now(), end_soc, odometer, session_id))
+        conn.commit()
+        conn.close()
+
+    def get_charging_history(self, limit=50):
+        """Returns charging history with formatted fields."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row # Access by name
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT * FROM charging_sessions 
+            WHERE end_time IS NOT NULL 
+            ORDER BY start_time DESC 
+            LIMIT ?
+        ''', (limit,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
 
     def log_vehicle_status(self, vehicle_id, soc, range_km, is_plugged_in):
         conn = sqlite3.connect(self.db_path)

@@ -8,7 +8,8 @@ import yaml
 import requests
 
 from config_manager import (ConfigManager, FORECAST_HISTORY_FILE,
-                            OVERRIDES_PATH, STATE_PATH, MANUAL_STATUS_PATH)
+                            OVERRIDES_PATH, STATE_PATH, MANUAL_STATUS_PATH, DATABASE_PATH)
+from database.db_manager import DatabaseManager
 from connectors.spot_price import SpotPriceService
 from connectors.weather import WeatherService
 from optimizer.engine import Optimizer
@@ -99,12 +100,39 @@ def planning_page():
     return render_template('planning.html')
 
 @app.route('/settings')
-def settings_page():
+def settings():
     return render_template('settings.html')
 
-@app.route('/cars')
-def cars_page():
-    return render_template('cars.html')
+@app.route('/history')
+def history():
+    return render_template('history.html')
+
+@app.route('/api/history')
+def api_history():
+    try:
+        db = DatabaseManager(db_path=DATABASE_PATH)
+        data = db.get_charging_history()
+        # Format data if needed
+        history = []
+        for row in data:
+            history.append({
+                "id": row['id'],
+                "vehicle_id": row['vehicle_id'],
+                "start_time": row['start_time'],
+                "end_time": row['end_time'],
+                "energy_kwh": row['energy_added_kwh'],
+                "cost_sek": row['cost_sek'],
+                "cost_spot": row.get('cost_spot_sek', 0),
+                "cost_grid": row.get('cost_grid_sek', 0),
+                "start_soc": row['start_soc'],
+                "end_soc": row['end_soc'],
+                "start_odo": row.get('start_odometer', 0),
+                "end_odo": row.get('end_odometer', 0)
+            })
+        return jsonify({"sessions": history})
+    except Exception as e:
+        app.logger.error(f"Error fetching history: {e}")
+        return jsonify({"sessions": []})
 
 @app.route('/api/status')
 def api_status():
