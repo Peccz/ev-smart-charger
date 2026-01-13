@@ -388,30 +388,39 @@ def api_plan():
                 cheapest_hours = []
 
                 # Logic must match Tier 1 / Tier 2 in engine.py
+                avg_price = 0
                 if current_car_status['soc'] < min_soc:
                     # TIER 1: Critical
                     if 0 < valid_hours_before <= hours_needed:
                         # Final stretch: charge everything before deadline
                         cheapest_hours = df_valid_before_deadline['time_start'].tolist()
+                        avg_price = df_valid_before_deadline['price_sek'].mean() if not df_valid_before_deadline.empty else 0
                     elif valid_hours_before > hours_needed:
                         # Have time: pick cheapest before deadline
-                        df_sorted = df_valid_before_deadline.sort_values(by='price_sek', ascending=True)
-                        cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
+                        df_temp_sorted = df_valid_before_deadline.sort_values(by='price_sek', ascending=True)
+                        cheapest_hours = df_temp_sorted.head(hours_needed)['time_start'].tolist()
+                        avg_price = df_temp_sorted.head(hours_needed)['price_sek'].mean()
                 else:
                     # TIER 2: Opportunistic (Globally cheapest)
                     df_global_sorted = df_prices_with_forecast.sort_values(by='price_sek', ascending=True)
                     cheapest_hours = df_global_sorted.head(hours_needed)['time_start'].tolist()
+                    avg_price = df_global_sorted.head(hours_needed)['price_sek'].mean()
                 
                 for p in prices_with_forecast:
                     is_charging_val = 1 if p['time_start'] in cheapest_hours else 0
                     charging_plan.append(is_charging_val)
                 
                 start_time = min(cheapest_hours) if cheapest_hours else "-"
-                start_time_fmt = datetime.fromisoformat(start_time).strftime("%H:%M") if cheapest_hours else "-"
+                start_time_fmt = "-"
+                if start_time != "-":
+                    try:
+                        start_time_fmt = datetime.fromisoformat(start_time).strftime("%H:%M")
+                    except: pass
+                
                 analysis.append(f"Planerar laddning för {priority_car_from_state['name']}.")
                 analysis.append(f"Behov: {hours_needed} timmar.")
                 analysis.append(f"Starttid: {start_time_fmt}.")
-                analysis.append(f"Valde billigaste timmarna (Snitt: {df_sorted.head(hours_needed)['price_sek'].mean():.2f} kr).")
+                analysis.append(f"Valde billigaste timmarna (Snitt: {avg_price:.2f} kr).")
             else:
                 charging_plan = [0] * len(prices_with_forecast)
                 analysis.append(f"Inget laddbehov just nu för {priority_car_from_state['name']} (Mål {target_soc}% uppnått).")
