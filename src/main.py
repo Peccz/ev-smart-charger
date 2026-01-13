@@ -381,9 +381,21 @@ def main():
     logger.info("EV Smart Charger System Started")
     job()
     schedule.every(1).minutes.do(job)
+    
+    trigger_path = STATE_PATH.parent / "trigger_update"
+    
     while True:
+        # Check for manual trigger from Web UI
+        if trigger_path.exists():
+            logger.info("Manual trigger detected, running optimization cycle...")
+            try:
+                trigger_path.unlink() # Delete trigger file
+                job()
+            except Exception as e:
+                logger.error(f"Error handling trigger: {e}")
+
         schedule.run_pending()
-        time.sleep(10) # Sleep less to catch minute schedule accurately
+        time.sleep(5) # Faster check for triggers
 
 if __name__ == "__main__":
     main()

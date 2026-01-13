@@ -471,6 +471,12 @@ def api_settings():
         current = ConfigManager.get_settings()
         current.update(data)
         if ConfigManager.save_settings(current):
+            # Create a trigger file for the backend to run immediately
+            trigger_path = STATE_PATH.parent / "trigger_update"
+            try:
+                trigger_path.touch()
+            except Exception as e:
+                app.logger.error(f"Failed to create trigger file: {e}")
             return jsonify({"status": "ok"})
         else:
             return jsonify({"status": "error", "message": "Failed to save settings"}), 500
