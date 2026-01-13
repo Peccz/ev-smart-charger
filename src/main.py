@@ -169,16 +169,20 @@ def job():
 
     # Phase detection logic (Run when charging to confirm identity)
     if is_charging:
-        # Phase detection logic (Zaptec Master Override)
-        # Nissan = 1 phase (always L2), Mercedes = 3 phases
+        # Nissan = 1 phase (always L2)
+        # Mercedes = 3 phases (but Zaptec sometimes reports total power on L3 only)
         active_phases = charger_status.get('active_phases', 0)
         phase_map = charger_status.get('phase_map', [False, False, False])
         
         hypothesis = "UNKNOWN_GUEST"
         if active_phases >= 2: 
             hypothesis = "mercedes_eqv"
-        elif active_phases == 1 and phase_map[1]: 
-            hypothesis = "nissan_leaf"
+        elif active_phases == 1:
+            if phase_map[1]: # Phase 2 (L2) active -> Nissan
+                hypothesis = "nissan_leaf"
+            elif phase_map[2]: # Phase 3 (L3) active -> Mercedes (Quirk)
+                logger.info("Phase Detection: High power on L3 only. Identifying as Mercedes EQV.")
+                hypothesis = "mercedes_eqv"
             
         # Verify hypothesis with API
         merc_charging = merc_s.get('is_charging', False)

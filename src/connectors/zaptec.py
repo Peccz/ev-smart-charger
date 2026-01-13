@@ -79,7 +79,8 @@ class ZaptecCharger(Charger):
             "energy_kwh": 0.0,
             "is_charging": False,
             "active_phases": 0,
-            "phase_map": [False, False, False] # [L1, L2, L3]
+            "phase_map": [False, False, False], # [L1, L2, L3]
+            "phase_power": [0.0, 0.0, 0.0] # [L1, L2, L3] in W
         }
 
         if not target_id:
@@ -97,13 +98,14 @@ class ZaptecCharger(Charger):
             response.raise_for_status()
             data = response.json()
             
+            reported_total_power = 0.0
+            
             for obs in data:
                 # Handle case-sensitivity in API response (StateId vs stateId)
                 state_id = obs.get('StateId', obs.get('stateId'))
                 val_str = obs.get('ValueAsString', obs.get('valueAsString', '0'))
 
                 # 710: Charger Operation Mode (Primary)
-                # 506: Older/Alternative mode, sometimes used for stop commands
                 if state_id == 710 or state_id == 506:
                     try:
                         mode_val = int(val_str)
@@ -118,25 +120,23 @@ class ZaptecCharger(Charger):
                         else:
                             status["operating_mode"] = f"UNKNOWN_MODE_{mode_val}"
                     except ValueError:
-                        logger.warning(f"Zaptec: Invalid Operating Mode value: {val_str}")
+                        pass
 
                 elif state_id == 510: # Total Power (W)
                     try:
-                        power_kw = float(val_str) / 1000.0
-                        status["power_kw"] = power_kw
-                        # Secondary check: if power is significant, we are charging
-                        if power_kw > 0.1:
-                            status["is_charging"] = True
+                        reported_total_power = float(val_str)
                     except ValueError:
-                        logger.warning(f"Zaptec: Invalid Power value: {val_str}")
+                        pass
                 
                 elif state_id in [511, 512, 513]: # Phase 1, 2, 3 Power (W)
                     try:
                         val = float(val_str)
+                        idx = state_id - 511
+                        status["phase_power"][idx] = val
+                        
                         if val > 100: # If phase uses more than 100W
                             status["active_phases"] += 1
-                            # Map 511->idx 0, 512->idx 1, 513->idx 2
-                            status["phase_map"][state_id - 511] = True
+                            status["phase_map"][idx] = True
                     except ValueError:
                         pass
 
@@ -145,6 +145,16 @@ class ZaptecCharger(Charger):
                          status["energy_kwh"] = float(val_str)
                     except ValueError:
                         pass
+            
+            # Smart Power Calculation: Use sum of phases if reported total is suspiciously low
+            sum_phase_power = sum(status["phase_power"])
+            final_power_w = max(reported_total_power, sum_phase_power)
+            
+            status["power_kw"] = final_power_w / 1000.0
+            
+            # Secondary check: if power is significant, we are charging
+            if status["power_kw"] > 0.1:
+                status["is_charging"] = True
 
             self.last_status = status
             return status
