@@ -59,6 +59,9 @@ class DatabaseManager:
         try:
             cursor.execute("ALTER TABLE charging_sessions ADD COLUMN cost_grid_sek REAL DEFAULT 0")
         except sqlite3.OperationalError: pass
+        try:
+            cursor.execute("ALTER TABLE charging_sessions ADD COLUMN avg_power_kw REAL")
+        except sqlite3.OperationalError: pass
 
         # Table: System Metrics (High resolution log for ML/Analytics)
         cursor.execute('''
@@ -111,18 +114,60 @@ class DatabaseManager:
         conn.close()
 
     def end_session(self, session_id, end_soc, odometer):
-        """Finalizes a session."""
+        """Finalizes a session and calculates average power."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        
+        # Fetch data to calculate speed
+        cursor.execute("SELECT start_time, energy_added_kwh FROM charging_sessions WHERE id = ?", (session_id,))
+        row = cursor.fetchone()
+        avg_power = 0
+        if row:
+            try:
+                # Handle both string and datetime objects
+                start_time_str = row[0]
+                if isinstance(start_time_str, str):
+                    # SQLite might return different formats, handle common ISO
+                    start_time = datetime.fromisoformat(start_time_str.split('.')[0].replace(' ', 'T'))
+                else:
+                    start_time = start_time_str
+                
+                energy = row[1]
+                duration_hours = (datetime.now() - start_time).total_seconds() / 3600.0
+                if duration_hours > 0.05: # At least 3 minutes to be valid
+                    avg_power = energy / duration_hours
+            except Exception as e:
+                print(f"Error calculating session speed: {e}")
+
         cursor.execute('''
             UPDATE charging_sessions 
             SET end_time = ?,
                 end_soc = ?,
-                end_odometer = ?
+                end_odometer = ?,
+                avg_power_kw = ?
             WHERE id = ?
-        ''', (datetime.now(), end_soc, odometer, session_id))
+        ''', (datetime.now(), end_soc, odometer, avg_power, session_id))
         conn.commit()
         conn.close()
+
+    def get_learned_charge_speed(self, vehicle_id, default_speed):
+        """Returns the average power from recent sessions or the default if no data."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        # Look at last 5 valid sessions (> 1 kWh added to avoid noise)
+        cursor.execute('''
+            SELECT avg_power_kw FROM charging_sessions 
+            WHERE vehicle_id = ? AND avg_power_kw > 0.5 AND energy_added_kwh > 1.0
+            ORDER BY end_time DESC LIMIT 5
+        ''', (vehicle_id,))
+        speeds = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        
+        if speeds:
+            learned_avg = sum(speeds) / len(speeds)
+            # Cap at 120% of default to prevent data errors, but allow lower
+            return min(learned_avg, default_speed * 1.2)
+        return default_speed
 
     def get_charging_history(self, limit=50):
         """Returns charging history with formatted fields."""

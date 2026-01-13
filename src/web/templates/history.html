@@ -34,6 +34,7 @@
                         <th>Datum</th>
                         <th>Bil</th>
                         <th class="text-end">kWh</th>
+                        <th class="text-end">Fart</th>
                         <th class="text-end">El (kr)</th>
                         <th class="text-end">Nät (kr)</th>
                         <th class="text-end">Totalt</th>
@@ -100,6 +101,7 @@
                             <td>${date}</td>
                             <td><span class="badge bg-secondary">${car}</span></td>
                             <td class="text-end text-energy fw-bold">${s.energy_kwh.toFixed(1)}</td>
+                            <td class="text-end small text-muted">${s.avg_power_kw ? s.avg_power_kw.toFixed(1) + ' kW' : '-'}</td>
                             <td class="text-end text-spot">${s.cost_spot.toFixed(2)}</td>
                             <td class="text-end text-grid">${s.cost_grid.toFixed(2)}</td>
                             <td class="text-end fw-bold">${s.cost_sek.toFixed(2)}</td>

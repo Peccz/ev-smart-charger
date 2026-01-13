@@ -121,6 +121,7 @@ def api_history():
                 "start_time": row['start_time'],
                 "end_time": row['end_time'],
                 "energy_kwh": row['energy_added_kwh'],
+                "avg_power_kw": row.get('avg_power_kw', 0),
                 "cost_sek": row['cost_sek'],
                 "cost_spot": row.get('cost_spot_sek', 0),
                 "cost_grid": row.get('cost_grid_sek', 0),

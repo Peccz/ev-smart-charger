@@ -103,6 +103,12 @@ def job():
     leaf = NissanLeaf(config['cars']['nissan_leaf'])
     charger = ZaptecCharger(config['charger']['zaptec'])
     
+    # NEW: Apply Learned Charging Speed
+    # This ensures planning matches reality over time
+    eqv.max_charge_kw = db.get_learned_charge_speed("mercedes_eqv", eqv.max_charge_kw)
+    leaf.max_charge_kw = db.get_learned_charge_speed("nissan_leaf", leaf.max_charge_kw)
+    logger.info(f"Using speed: EQV={eqv.max_charge_kw:.1f}kW, Leaf={leaf.max_charge_kw:.1f}kW")
+    
     # Fetch Data
     official_prices = spot_service.get_prices_upcoming()
     logger.info(f"Fetched {len(official_prices)} official spot prices")
