@@ -246,9 +246,11 @@ def job():
     db.log_system_metrics(metrics)
     logger.info(f"System Metrics Logged: Active={active_car_id}, Power={metrics['zaptec_power_kw']}kW")
 
-    # Preserve session info
+    # Preserve session info before clearing state_data
     current_session_id = state_data.get('session_id')
     current_session_assigned_id = state_data.get('session_assigned_id')
+    
+    # Reset state_data for this cycle but keep session keys
     state_data = {
         'session_id': current_session_id,
         'session_assigned_id': current_session_assigned_id
@@ -336,21 +338,21 @@ def job():
             current_session_id = db.start_session(active_car_id, current_soc, current_odo)
             logger.info(f"Session Started: ID {current_session_id} for {active_car_id}")
             state_data['session_assigned_id'] = active_car_id
+            
+            if active_car_id == "nissan_leaf":
+                leaf.wake_up()
         else:
-            # If we were a guest but now identified the car, update the session ownership in DB
-            if active_car_id not in ["UNKNOWN_GUEST", "UNKNOWN_NONE"] and state_data.get('session_assigned_id') == "UNKNOWN_GUEST":
-                logger.info(f"Session ID {current_session_id} reassigned from GUEST to {active_car_id}")
+            # Reassignment Logic: If identified car differs from session owner, update DB
+            if active_car_id not in ["UNKNOWN_GUEST", "UNKNOWN_NONE"] and state_data.get('session_assigned_id') != active_car_id:
+                logger.info(f"Session ID {current_session_id} reassigned from {state_data.get('session_assigned_id')} to {active_car_id}")
                 db.reassign_session(current_session_id, active_car_id)
                 state_data['session_assigned_id'] = active_car_id
 
-            # Update existing
             db.update_session(current_session_id, energy_delta, cost_spot, cost_grid, current_soc, current_odo)
             
         state_data['session_id'] = current_session_id
         
     elif not is_charging and current_session_id:
-        # End session
-        # Use whatever SoC we have now
         active_car_id_mapped = active_car_id if active_car_id and active_car_id != "UNKNOWN_NONE" else "unknown"
         car_name = {"mercedes_eqv": "Mercedes EQV", "nissan_leaf": "Nissan Leaf"}.get(active_car_id_mapped, "Unknown")
         status = vehicle_statuses.get(car_name, {})
@@ -358,6 +360,7 @@ def job():
         db.end_session(current_session_id, status.get('soc', 0), status.get('odometer', 0))
         logger.info(f"Session Ended: ID {current_session_id}")
         state_data['session_id'] = None
+        state_data['session_assigned_id'] = None
 
     # Save state
     save_state(state_data)
