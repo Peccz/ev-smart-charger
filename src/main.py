@@ -246,9 +246,13 @@ def job():
     db.log_system_metrics(metrics)
     logger.info(f"System Metrics Logged: Active={active_car_id}, Power={metrics['zaptec_power_kw']}kW")
 
-    # Preserve session_id
+    # Preserve session info
     current_session_id = state_data.get('session_id')
-    state_data = {'session_id': current_session_id}
+    current_session_assigned_id = state_data.get('session_assigned_id')
+    state_data = {
+        'session_id': current_session_id,
+        'session_assigned_id': current_session_assigned_id
+    }
     any_charging_needed = False
 
     for car in cars:
