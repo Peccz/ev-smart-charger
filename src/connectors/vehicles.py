@@ -55,7 +55,8 @@ class MercedesEQV(Vehicle):
             "plugged_in": False,
             "odometer": 0,
             "climate_active": False,
-            "is_home": True # Default assumption
+            "is_home": True, # Default assumption
+            "is_charging": False
         }
         
         # Debug log to verify IDs
@@ -73,7 +74,7 @@ class MercedesEQV(Vehicle):
                 except ValueError:
                     pass
 
-        # Plugged In
+        # Plugged In & Charging
         if self.ha_merc_plugged_entity_id:
             state = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
             if state and 'attributes' in state:
@@ -81,10 +82,13 @@ class MercedesEQV(Vehicle):
                 # Specific logic for Mercedes sensor attributes
                 if attrs.get('chargingactive', False):
                     status['plugged_in'] = True
+                    status['is_charging'] = True
                 elif 'chargingstatus' in attrs:
                     val = str(attrs['chargingstatus']).lower()
                     if val not in ['3', 'disconnected', 'null', 'off', 'unavailable', 'unknown']:
                         status['plugged_in'] = True
+                    if val in ['0', 'charging']:
+                        status['is_charging'] = True
         
         # Range
         # Note: hardcoded override for range sensor based on previous findings, or use config

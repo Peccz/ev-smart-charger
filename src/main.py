@@ -152,21 +152,42 @@ def job():
 
     # Phase detection logic (Run when charging to confirm identity)
     if is_charging:
+        # Phase detection logic (Zaptec Master Override)
         # Nissan = 1 phase (always L2), Mercedes = 3 phases
         active_phases = charger_status.get('active_phases', 0)
         phase_map = charger_status.get('phase_map', [False, False, False])
         
-        if active_phases >= 2:
-            logger.info(f"Phase Detection: {active_phases} phases active. Identified as Mercedes EQV (3-phase).")
-            active_car_id = "mercedes_eqv"
-        elif active_phases == 1:
-            if phase_map[1]: # Phase 2 active
-                logger.info("Phase Detection: 1 phase active (L2). Identified as Nissan Leaf.")
+        hypothesis = "UNKNOWN_GUEST"
+        if active_phases >= 2: 
+            hypothesis = "mercedes_eqv"
+        elif active_phases == 1 and phase_map[1]: 
+            hypothesis = "nissan_leaf"
+            
+        # Verify hypothesis with API
+        merc_charging = merc_s.get('is_charging', False)
+        leaf_charging = leaf_s.get('is_charging', False)
+        
+        if hypothesis == "mercedes_eqv":
+            if merc_charging:
+                logger.info(f"Phase Detection (3-phase) confirmed by Mercedes API. Active car: Mercedes EQV")
+                active_car_id = "mercedes_eqv"
+            else:
+                logger.info(f"Phase Detection suggests Mercedes, but API says not charging. Treating as GUEST/Waiting...")
+                active_car_id = "UNKNOWN_GUEST"
+        elif hypothesis == "nissan_leaf":
+            if leaf_charging:
+                logger.info(f"Phase Detection (L2) confirmed by Nissan API. Active car: Nissan Leaf")
                 active_car_id = "nissan_leaf"
             else:
-                logger.info(f"Phase Detection: 1 phase active (Not L2). Identity unclear.")
+                logger.info(f"Phase Detection suggests Nissan, but API says not charging. Treating as GUEST/Waiting...")
                 active_car_id = "UNKNOWN_GUEST"
+        else:
+            # Ambiguous phases. Check APIs directly.
+            if merc_charging and not leaf_charging: active_car_id = "mercedes_eqv"
+            elif leaf_charging and not merc_charging: active_car_id = "nissan_leaf"
+            else: active_car_id = "UNKNOWN_GUEST"
         
+        # Fallback to plugged_in logic if phase detection is inconclusive
     # Fallback / Discovery Logic (When not charging or identity unsure)
     if active_car_id is None:
         if zaptec_connected:
