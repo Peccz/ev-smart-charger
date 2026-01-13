@@ -149,70 +149,21 @@ def job():
     is_charging = charger_status.get('is_charging', False) or (charger_status.get('power_kw', 0) > 0.1)
 
     if is_charging:
-        # Phase detection logic (Zaptec Master Override)
-        # Nissan = 1 phase (always L2), Mercedes = 3 phases
-        active_phases = charger_status.get('active_phases', 0)
-        phase_map = charger_status.get('phase_map', [False, False, False])
-        
-        if active_phases >= 2:
-            logger.info(f"Phase Detection: {active_phases} phases active. Identified as Mercedes EQV (3-phase).")
+        if merc_plugged and not leaf_plugged:
             active_car_id = "mercedes_eqv"
-        elif active_phases == 1:
-            if phase_map[1]: # Phase 2 active
-                logger.info("Phase Detection: 1 phase active (L2). Identified as Nissan Leaf.")
-                active_car_id = "nissan_leaf"
-            else:
-                logger.info(f"Phase Detection: 1 phase active (Not L2). Identity unclear.")
-        
-        # Fallback to plugged_in logic if phase detection is inconclusive
-        if active_car_id is None:
-            if merc_plugged and not leaf_plugged:
-                active_car_id = "mercedes_eqv"
-            elif leaf_plugged and not merc_plugged:
-                active_car_id = "nissan_leaf"
-            elif merc_plugged and leaf_plugged:
-                active_car_id = "UNKNOWN_BOTH"
-            else:
-                active_car_id = "UNKNOWN_NONE"
+        elif leaf_plugged and not merc_plugged:
+            active_car_id = "nissan_leaf"
+        elif merc_plugged and leaf_plugged:
+            active_car_id = "UNKNOWN_BOTH"
+        else:
+            active_car_id = "UNKNOWN_NONE"
     else:
         # Not charging, but who is connected?
-        if merc_plugged and not leaf_plugged: active_car_id = "mercedes_eqv"
-        elif leaf_plugged and not merc_plugged: active_car_id = "nissan_leaf"
-        elif merc_plugged and leaf_plugged: active_car_id = "UNKNOWN_BOTH"
-
-    # --- Fetch Home Sensors (Timmerflotte) ---
-    ha_temp = None
-    ha_humidity = None
-    
-    # Reuse HA credentials from car config
-    ha_url = config['cars']['mercedes_eqv'].get('ha_url')
-    ha_token = config['cars']['mercedes_eqv'].get('ha_token')
-    
-    if ha_url and ha_token:
-        ha_client = HomeAssistantClient(ha_url, ha_token)
-        
-        # Temp
-        temp_id = user_settings.get('ha_temp_sensor_id') 
-        if temp_id:
-            s = ha_client.get_state(temp_id)
-            if s and s.get('state') not in ['unknown', 'unavailable']:
-                try:
-                    ha_temp = float(s['state'])
-                    logger.info(f"Home Sensor Temp: {ha_temp}°C")
-                except ValueError: pass
-        
-        # Humidity
-        hum_id = user_settings.get('ha_humidity_sensor_id')
-        if hum_id:
-            s = ha_client.get_state(hum_id)
-            if s and s.get('state') not in ['unknown', 'unavailable']:
-                try:
-                    ha_humidity = float(s['state'])
-                except ValueError: pass
+        if merc_plugged: active_car_id = "mercedes_eqv"
+        elif leaf_plugged: active_car_id = "nissan_leaf"
 
     # --- 3. Log System Metrics ---
-    # Use real sensor data if available, else forecast
-    current_temp = ha_temp if ha_temp is not None else (weather_forecast[0]['temp_c'] if weather_forecast else 0.0)
+    current_temp = weather_forecast[0]['temp_c'] if weather_forecast else 0.0
     current_price = prices[0]['price_sek'] if prices else 0.0
     
     metrics = {
@@ -274,12 +225,6 @@ def job():
         
         if status.get('plugged_in') and decision['action'] == "CHARGE":
             any_charging_needed = True
-
-    # Add sensors to state
-    state_data['sensors'] = {
-        "temp_c": ha_temp,
-        "humidity": ha_humidity
-    }
 
     # Save state
     save_state(state_data)
