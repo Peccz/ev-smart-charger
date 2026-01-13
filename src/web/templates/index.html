@@ -133,6 +133,12 @@
         <span class="ms-3 text-muted">Laddar status...</span>
     </div>
 
+    <!-- Departure Time Display -->
+    <div class="card p-3 mb-4 text-center border-0" style="background: linear-gradient(145deg, #1e1e1e, #252525); border: 1px solid #333!important;">
+        <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 1px; font-size: 10px;">Planerad Avresa</div>
+        <div class="fs-2 fw-bold text-primary" id="display-departure" style="text-shadow: 0 0 10px rgba(77, 171, 247, 0.3);">--:--</div>
+    </div>
+
     <div id="car-container"></div>
 
 </div>
@@ -167,6 +173,9 @@
             .then(data => {
                 renderSystemStatus(data);
                 renderCars(data.cars);
+                if (data.departure_time) {
+                    document.getElementById('display-departure').innerText = data.departure_time;
+                }
             });
     }
 
@@ -299,13 +308,6 @@
                                 oninput="document.getElementById('manual-soc-val-${car.id}').innerText = this.value + '%'; setManualSoc('${car.id}', this.value);">
                             <span class="fw-bold fs-5" id="manual-soc-val-${car.id}" style="min-width: 45px;">${car.manual_soc || car.soc}%</span>
                         </div>
-                    </div>
-                    
-                    <div class="d-grid gap-2 mt-4">
-                        ${car.override && car.override.action === 'CHARGE' ? 
-                            `<button class="btn btn-sm btn-outline-danger" onclick="setOverride('${car.id}', 'AUTO')">AVBRYT (AUTO)</button>` :
-                            `<button class="btn btn-sm btn-primary" onclick="setOverride('${car.id}', 'CHARGE')">⚡ LADDA NU</button>`
-                        }
                     </div>
                 </div>
             `;

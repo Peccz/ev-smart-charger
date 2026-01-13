@@ -343,26 +343,34 @@ class Optimizer:
             hours_needed_critical = math.ceil(kwh_needed_critical / charge_speed_kw)
             
             df_critical = df[df['time_start_dt'] < deadline]
-            valid_hours_critical = len(df_critical)
+            valid_hours_before = len(df_critical)
             
-            if valid_hours_critical < hours_needed_critical:
-                 # Panic mode: Not enough time to reach min_soc
-                 return {"action": "CHARGE", "reason": f"CRITICAL: Need {hours_needed_critical}h for min_soc before {deadline.strftime('%H:%M')}"}
-            
-            # Find cheapest hours BEFORE deadline for critical charge
-            df_critical_sorted = df_critical.sort_values(by='price_sek', ascending=True)
-            cheapest_critical_hours = df_critical_sorted.head(hours_needed_critical)['time_start'].tolist()
-            
-            if current_time_start in cheapest_critical_hours:
+            # CASE A: Final stretch - we MUST charge now to get as much as possible before departure.
+            # We trigger this if time left is less than or equal to hours needed.
+            # But we ONLY do this if we haven't passed the deadline yet (valid_hours > 0).
+            if 0 < valid_hours_before <= hours_needed_critical:
                 return {
                     "action": "CHARGE", 
-                    "reason": f"CRITICAL: Charging to {min_soc}% by {deadline.strftime('%H:%M')}. Price: {current_price:.2f}"
+                    "reason": f"CRITICAL: Avresa nära ({deadline.strftime('%H:%M')}). Laddar allt som går."
                 }
-            else:
-                # If we are not in a critical hour, check if we should charge opportunistically anyway?
-                # No, strict priority: if current hour is not critical, verify if it's a "super cheap" opportunistic hour below.
-                # However, to be safe, usually we wait for the planned critical slots.
-                pass
+            
+            # CASE B: We have more time than needed. Pick the cheapest hours BEFORE the deadline.
+            if valid_hours_before > hours_needed_critical:
+                df_critical_sorted = df_critical.sort_values(by='price_sek', ascending=True)
+                cheapest_critical_hours = df_critical_sorted.head(hours_needed_critical)['time_start'].tolist()
+                
+                if current_time_start in cheapest_critical_hours:
+                    return {
+                        "action": "CHARGE", 
+                        "reason": f"CRITICAL (Plan): Enligt plan för avresa {deadline.strftime('%H:%M')}. Pris: {current_price:.2f}"
+                    }
+                else:
+                    # If we are not in a critical hour, check Tier 2 below
+                    pass
+            
+            # If valid_hours_before is 0 (deadline passed), we fall through to normal planning for next day.
+
+
 
         # --- TIER 2: OPPORTUNISTIC CHARGING (Reach target_soc anytime) ---
         # If we are here, either:
