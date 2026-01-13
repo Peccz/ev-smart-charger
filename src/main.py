@@ -78,9 +78,9 @@ def job():
     
     # Load previous state (for session tracking)
     state_data = {}
-    if STATE_FILE.exists():
+    if STATE_PATH.exists():
         try:
-            with open(STATE_FILE, 'r') as f:
+            with open(STATE_PATH, 'r') as f:
                 state_data = json.load(f)
         except Exception: pass
     
