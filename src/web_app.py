@@ -25,7 +25,7 @@ weather_service = WeatherService(59.5196, 17.9285)
 
 def _load_forecast_history():
     """Loads historical price forecasts from file."""
-    if not os.path.exists(FORECAST_HISTORY_FILE):
+    if not FORECAST_HISTORY_FILE.exists():
         return {}
     try:
         with open(FORECAST_HISTORY_FILE, 'r') as f:
@@ -38,7 +38,7 @@ def _load_forecast_history():
         return {}
 
 def get_overrides():
-    if not os.path.exists(OVERRIDES_PATH):
+    if not OVERRIDES_PATH.exists():
         return {}
     try:
         with open(OVERRIDES_PATH, 'r') as f:
@@ -62,7 +62,7 @@ def set_override(vehicle_id, action, duration_minutes=60):
         json.dump(overrides, f, indent=2)
 
 def get_manual_status():
-    if not os.path.exists(MANUAL_STATUS_PATH):
+    if not MANUAL_STATUS_PATH.exists():
         return {}
     try:
         with open(MANUAL_STATUS_PATH, 'r') as f:
@@ -81,7 +81,7 @@ def set_manual_soc(vehicle_id, soc):
         json.dump(status, f, indent=2)
 
 def get_optimizer_state():
-    if not os.path.exists(STATE_PATH):
+    if not STATE_PATH.exists():
         return {}
     try:
         with open(STATE_PATH, 'r') as f:
@@ -98,6 +98,10 @@ def index():
 @app.route('/planning')
 def planning_page():
     return render_template('planning.html')
+
+@app.route('/cars')
+def cars_page():
+    return render_template('cars.html')
 
 @app.route('/settings')
 def settings():
@@ -156,6 +160,7 @@ def api_status():
     
     cars = []
     for k, v in state.items():
+        if not isinstance(v, dict): continue
         v['name'] = k
         cars.append(v)
     cars.sort(key=lambda x: x.get('urgency_score', 0), reverse=True)
@@ -327,6 +332,7 @@ def api_plan():
         state = get_optimizer_state()
         cars_in_state = []
         for k, v in state.items():
+            if not isinstance(v, dict): continue
             v['name'] = k
             cars_in_state.append(v)
         
