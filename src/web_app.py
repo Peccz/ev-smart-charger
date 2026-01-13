@@ -382,18 +382,29 @@ def api_plan():
                 # Filter by deadline (same logic as Optimizer)
                 deadline = optimizer.get_deadline()
                 df_prices_with_forecast['time_start_dt'] = pd.to_datetime(df_prices_with_forecast['time_start'])
-                df_valid = df_prices_with_forecast[df_prices_with_forecast['time_start_dt'] < deadline]
+                df_valid_before_deadline = df_prices_with_forecast[df_prices_with_forecast['time_start_dt'] < deadline]
                 
-                # If not enough time before deadline, fallback to full dataframe (panic mode logic)
-                if len(df_valid) < hours_needed:
-                    df_valid = df_prices_with_forecast
+                valid_hours_before = len(df_valid_before_deadline)
+                cheapest_hours = []
 
-                df_sorted = df_valid.sort_values(by='price_sek', ascending=True)
-                cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
+                # Logic must match Tier 1 / Tier 2 in engine.py
+                if current_car_status['soc'] < min_soc:
+                    # TIER 1: Critical
+                    if 0 < valid_hours_before <= hours_needed:
+                        # Final stretch: charge everything before deadline
+                        cheapest_hours = df_valid_before_deadline['time_start'].tolist()
+                    elif valid_hours_before > hours_needed:
+                        # Have time: pick cheapest before deadline
+                        df_sorted = df_valid_before_deadline.sort_values(by='price_sek', ascending=True)
+                        cheapest_hours = df_sorted.head(hours_needed)['time_start'].tolist()
+                else:
+                    # TIER 2: Opportunistic (Globally cheapest)
+                    df_global_sorted = df_prices_with_forecast.sort_values(by='price_sek', ascending=True)
+                    cheapest_hours = df_global_sorted.head(hours_needed)['time_start'].tolist()
                 
                 for p in prices_with_forecast:
-                    is_charging = 1 if p['time_start'] in cheapest_hours else 0
-                    charging_plan.append(is_charging)
+                    is_charging_val = 1 if p['time_start'] in cheapest_hours else 0
+                    charging_plan.append(is_charging_val)
                 
                 start_time = min(cheapest_hours) if cheapest_hours else "-"
                 start_time_fmt = datetime.fromisoformat(start_time).strftime("%H:%M") if cheapest_hours else "-"
