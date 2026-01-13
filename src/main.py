@@ -199,10 +199,16 @@ def job():
                 logger.info(f"Phase Detection suggests Nissan, but API says not charging. Treating as GUEST/Waiting...")
                 active_car_id = "UNKNOWN_GUEST"
         else:
-            # Ambiguous phases. Check APIs directly.
-            if merc_charging and not leaf_charging: active_car_id = "mercedes_eqv"
-            elif leaf_charging and not merc_charging: active_car_id = "nissan_leaf"
-            else: active_car_id = "UNKNOWN_GUEST"
+            # Ambiguous phases or low power (standby)
+            # If Zaptec is active but power is too low for phase detection (<100W), check APIs directly
+            if merc_plugged and not leaf_plugged:
+                active_car_id = "mercedes_eqv"
+                logger.info("Phase detection inconclusive (low power). Identifying as Mercedes based on API plugged_in status.")
+            elif leaf_plugged and not merc_plugged:
+                active_car_id = "nissan_leaf"
+                logger.info("Phase detection inconclusive (low power). Identifying as Nissan based on API plugged_in status.")
+            else:
+                active_car_id = "UNKNOWN_GUEST"
         
         # Fallback to plugged_in logic if phase detection is inconclusive
     # Fallback / Discovery Logic (When not charging or identity unsure)

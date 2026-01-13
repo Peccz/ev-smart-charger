@@ -85,7 +85,11 @@
 
                 body.innerHTML = data.sessions.map(s => {
                     const date = new Date(s.start_time).toLocaleDateString('sv-SE');
-                    const car = s.vehicle_id === 'mercedes_eqv' ? 'EQV' : 'Leaf';
+                    
+                    let car = 'Okänd';
+                    if (s.vehicle_id === 'mercedes_eqv') car = 'EQV';
+                    else if (s.vehicle_id === 'nissan_leaf') car = 'Leaf';
+                    else if (s.vehicle_id === 'UNKNOWN_GUEST') car = 'Gäst';
                     
                     // Efficiency calculation (kWh per 10 km / mil)
                     let efficiency = '-';
