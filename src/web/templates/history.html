@@ -83,18 +83,18 @@
                     return;
                 }
 
-                body.innerHTML = data.sessions.map(s => {
-                    const date = new Date(s.start_time).toLocaleDateString('sv-SE');
-                    
-                    let car = 'Okänd';
-                    if (s.vehicle_id === 'mercedes_eqv') car = 'EQV';
-                    else if (s.vehicle_id === 'nissan_leaf') car = 'Leaf';
-                    else if (s.vehicle_id === 'UNKNOWN_GUEST') car = 'Gäst';
-                    
-                    // Efficiency calculation (kWh per 10 km / mil)
-                    let efficiency = '-';
-                    if (s.start_odo && s.end_odo && s.end_odo > s.start_odo) {
-                        const dist_mil = (s.end_odo - s.start_odo) / 10;
+                                body.innerHTML = data.sessions.map(s => {
+                                    const date = new Date(s.start_time).toLocaleDateString('sv-SE');
+                                    const isActive = !s.end_time;
+                                    
+                                    let car = 'Okänd';
+                                    if (s.vehicle_id === 'mercedes_eqv') car = 'EQV';
+                                    else if (s.vehicle_id === 'nissan_leaf') car = 'Leaf';
+                                    else if (s.vehicle_id === 'UNKNOWN_GUEST') car = 'Gäst';
+                
+                                    // Efficiency calculation (kWh per 10 km / mil)
+                                    let efficiency = isActive ? '<span class="badge bg-success">Laddar nu...</span>' : '-';
+                                    if (!isActive && s.start_odo && s.end_odo && s.end_odo > s.start_odo) {                        const dist_mil = (s.end_odo - s.start_odo) / 10;
                         if (dist_mil > 0) {
                             efficiency = (s.energy_kwh / dist_mil).toFixed(1) + ' kWh/mil';
                         }
