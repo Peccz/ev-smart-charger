@@ -1,10 +1,9 @@
 import time
-import yaml
 import schedule
 import json
-import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
+from logging.handlers import RotatingFileHandler
 
 # Import our modules
 from connectors.spot_price import SpotPriceService
@@ -14,61 +13,56 @@ from connectors.zaptec import ZaptecCharger
 from connectors.home_assistant import HomeAssistantClient
 from database.db_manager import DatabaseManager
 from optimizer.engine import Optimizer
-from config_manager import ConfigManager, DATABASE_PATH
+from config_manager import ConfigManager, DATABASE_PATH, STATE_PATH, FORECAST_HISTORY_FILE
 
-# Setup logging
+# Setup logging with rotation (5 x 2MB)
+log_handler = RotatingFileHandler("ev_charger.log", maxBytes=2*1024*1024, backupCount=5)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("ev_charger.log"),
+        log_handler,
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
-
-STATE_FILE = "data/optimizer_state.json"
-HISTORY_FILE = "data/forecast_history.json"
 
 def _save_forecast_history(forecast_data):
     """
     Saves the generated price forecast to a historical file.
     Trims old forecasts to prevent the file from growing indefinitely.
     """
-    os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
-    
     history = {}
-    if os.path.exists(HISTORY_FILE):
+    if FORECAST_HISTORY_FILE.exists():
         try:
-            with open(HISTORY_FILE, 'r') as f:
+            with open(FORECAST_HISTORY_FILE, 'r') as f:
                 history = json.load(f)
         except json.JSONDecodeError:
-            logger.warning(f"Could not decode {HISTORY_FILE}, starting new history.")
+            logger.warning(f"Could not decode {FORECAST_HISTORY_FILE}, starting new history.")
     
     today_str = datetime.now().strftime("%Y-%m-%d")
     history[today_str] = forecast_data
     
-    seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-    keys_to_remove = [date_str for date_str in history if date_str < seven_days_ago]
-    for key in keys_to_remove:
-        del history[key]
+    # Keep only last 7 days in history file
+    limit_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    history = {k: v for k, v in history.items() if k >= limit_date}
 
     try:
-        with open(HISTORY_FILE, 'w') as f:
+        with open(FORECAST_HISTORY_FILE, 'w') as f:
             json.dump(history, f, indent=2)
-        logger.info(f"Forecast history saved to {HISTORY_FILE}")
+        logger.info(f"Forecast history saved to {FORECAST_HISTORY_FILE}")
     except Exception as e:
-        logger.error(f"Failed to save forecast history to {HISTORY_FILE}: {e}")
+        logger.error(f"Failed to save forecast history to {FORECAST_HISTORY_FILE}: {e}")
 
 def save_state(state):
-    logger.info(f"Attempting to save state to {STATE_FILE}")
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    logger.info(f"Attempting to save state to {STATE_PATH}")
+    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with open(STATE_FILE, 'w') as f:
+        with open(STATE_PATH, 'w') as f:
             json.dump(state, f, indent=2)
-        logger.info(f"Successfully saved state to {STATE_FILE}")
+        logger.info(f"Successfully saved state to {STATE_PATH}")
     except Exception as e:
-        logger.error(f"Failed to save state to {STATE_FILE}: {e}")
+        logger.error(f"Failed to save state to {STATE_PATH}: {e}")
 
 def job():
     logger.info("Starting optimization cycle...")
@@ -84,7 +78,7 @@ def job():
     
     # Load previous state (for session tracking)
     state_data = {}
-    if os.path.exists(STATE_FILE):
+    if STATE_FILE.exists():
         try:
             with open(STATE_FILE, 'r') as f:
                 state_data = json.load(f)
@@ -281,7 +275,7 @@ def job():
             logger.info(f"Session Started: ID {current_session_id} for {active_car_id}")
         else:
             # Update existing
-            db.update_session(current_session_id, energy_delta, cost_spot, cost_grid)
+            db.update_session(current_session_id, energy_delta, cost_spot, cost_grid, current_soc, current_odo)
             
         state_data['session_id'] = current_session_id
         
