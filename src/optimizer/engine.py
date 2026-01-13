@@ -25,7 +25,7 @@ class Optimizer:
         Calculates a bias correction factor based on recent forecast accuracy.
         If we systematically over-forecast, this returns < 1.0.
         """
-        if not os.path.exists(FORECAST_HISTORY_FILE) or not os.path.exists(PRICE_HISTORY_CACHE_FILE):
+        if not FORECAST_HISTORY_FILE.exists() or not PRICE_HISTORY_CACHE_FILE.exists():
             return 1.0
 
         try:

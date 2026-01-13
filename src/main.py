@@ -273,7 +273,14 @@ def job():
             # Start new session
             current_session_id = db.start_session(active_car_id, current_soc, current_odo)
             logger.info(f"Session Started: ID {current_session_id} for {active_car_id}")
+            state_data['session_assigned_id'] = active_car_id
         else:
+            # If we were a guest but now identified the car, update the session ownership in DB
+            if active_car_id not in ["UNKNOWN_GUEST", "UNKNOWN_NONE"] and state_data.get('session_assigned_id') == "UNKNOWN_GUEST":
+                logger.info(f"Session ID {current_session_id} reassigned from GUEST to {active_car_id}")
+                db.reassign_session(current_session_id, active_car_id)
+                state_data['session_assigned_id'] = active_car_id
+
             # Update existing
             db.update_session(current_session_id, energy_delta, cost_spot, cost_grid, current_soc, current_odo)
             
