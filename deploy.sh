@@ -99,6 +99,7 @@ fi
 echo "[5/5] Copying service files and starting services on RPi..."
 scp ev_smart_charger.service $RPI_USER@$RPI_HOST:/tmp/ev_smart_charger.service
 scp ev_web_app.service $RPI_USER@$RPI_HOST:/tmp/ev_web_app.service
+scp ev_ha_watchdog.service $RPI_USER@$RPI_HOST:/tmp/ev_ha_watchdog.service
 if [ $? -ne 0 ]; then
     echo "Error: Failed to copy service files."
     exit 1
@@ -107,13 +108,16 @@ fi
 ssh $RPI_USER@$RPI_HOST << EOF
     sudo cp /tmp/ev_smart_charger.service /etc/systemd/system/
     sudo cp /tmp/ev_web_app.service /etc/systemd/system/
+    sudo cp /tmp/ev_ha_watchdog.service /etc/systemd/system/
     sudo systemctl daemon-reload
     sudo systemctl enable $SERVICE_CORE
     sudo systemctl enable $SERVICE_WEB
+    sudo systemctl enable ev_ha_watchdog.service
     
     echo "Restarting services..."
     sudo systemctl restart $SERVICE_CORE
     sudo systemctl restart $SERVICE_WEB
+    sudo systemctl restart ev_ha_watchdog.service
 EOF
 if [ $? -ne 0 ]; then
     echo "Error: Failed to restart services."
@@ -127,6 +131,9 @@ echo "--- Core Service ---"
 ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_CORE --no-pager | head -n 3"
 echo "--- Web App ---"
 ssh $RPI_USER@$RPI_HOST "sudo systemctl status $SERVICE_WEB --no-pager | head -n 3"
+echo "--- Watchdog ---"
+ssh $RPI_USER@$RPI_HOST "sudo systemctl status ev_ha_watchdog.service --no-pager | head -n 3"
+
 
 echo "======================================="
 echo "   Clean Install & Deployment Complete!                "

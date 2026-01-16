@@ -1,0 +1,14 @@
+[Unit]
+Description=EV Smart Charger - HA Watchdog
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+User=peccz
+WorkingDirectory=/home/peccz/ev_smart_charger
+ExecStart=/home/peccz/ev_smart_charger/venv/bin/python src/ha_watchdog.py
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
