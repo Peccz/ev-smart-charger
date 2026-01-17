@@ -386,6 +386,13 @@ class Optimizer:
         
         deadline = self.get_deadline()
 
+        # --- DEADLINE LOGIC ---
+        hours_until_deadline = (deadline - now).total_seconds() / 3600.0
+        
+        # PANIC MODE: If close to deadline and not reached target, charge regardless of price
+        if 0 < hours_until_deadline < 3.0 and current_soc < target_soc:
+             return {"action": "CHARGE", "reason": f"Panic Mode: Deadline in {hours_until_deadline:.1f}h, target not reached."}
+
         # --- TIER 1: CRITICAL CHARGING (Reach min_soc by Deadline) ---
         if current_soc < min_soc:
             soc_needed_critical = min_soc - current_soc
