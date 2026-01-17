@@ -188,6 +188,7 @@
         let minVal = parseInt(minEl.value);
         let maxVal = parseInt(maxEl.value);
 
+        // Allow overlap in UI, but correct logical display
         if (type === 'min' && minVal > maxVal) {
             maxEl.value = minVal;
             document.getElementById(valId.replace('min', 'max')).innerText = minVal + '%';
