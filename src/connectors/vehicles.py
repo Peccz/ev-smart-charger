@@ -76,11 +76,21 @@ class MercedesEQV(Vehicle):
 
         # Plugged In & Charging
         if self.ha_merc_plugged_entity_id:
-            state = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
-            if state and 'attributes' in state:
-                attrs = state['attributes']
-                # Specific logic for Mercedes sensor attributes
-                if attrs.get('chargingactive', False):
+            state_obj = self.ha_client.get_state(self.ha_merc_plugged_entity_id)
+            if state_obj:
+                state_val = str(state_obj.get('state', '')).lower()
+                attrs = state_obj.get('attributes', {})
+                
+                # Logic for Dedicated Charging Status Sensor (e.g. sensor.urg48t_charging_status)
+                # 0: Charging, 1: End of charge, 2: Charge break, 3: Unplugged, 4: Failure
+                if state_val in ['0', '1', '2', '4', 'charging', 'complete', 'on_hold']:
+                    status['plugged_in'] = True
+                    if state_val in ['0', 'charging']:
+                        status['is_charging'] = True
+                
+                # Logic for Old Range/Attribute based Sensor
+                # Fallback: Check attributes if state check didn't confirm plugged_in
+                elif attrs.get('chargingactive', False):
                     status['plugged_in'] = True
                     status['is_charging'] = True
                 elif 'chargingstatus' in attrs:
