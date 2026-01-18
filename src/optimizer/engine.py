@@ -387,6 +387,7 @@ class Optimizer:
         deadline = self.get_deadline()
 
         # --- DEADLINE LOGIC ---
+        now = datetime.now()
         hours_until_deadline = (deadline - now).total_seconds() / 3600.0
         
         # PANIC MODE: If close to deadline and not reached target, charge regardless of price
