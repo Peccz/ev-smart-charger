@@ -45,7 +45,9 @@ def check_core_service():
     
     # 1. Check File Freshness
     if STATE_PATH.exists():
-        mtime = datetime.fromtimestamp(STATE_PATH.stat().st_mtime, tz=timezone.utc)
+        # Get mtime as UTC aware datetime
+        mtime_ts = STATE_PATH.stat().st_mtime
+        mtime = datetime.fromtimestamp(mtime_ts, tz=timezone.utc)
         now = datetime.now(timezone.utc)
         age = now - mtime
         
@@ -66,10 +68,6 @@ def check_core_service():
 
 def check_ha_health():
     """Checks if Home Assistant is providing fresh data."""
-    # We only check this rarely to avoid spamming logs or restarts
-    # But for simplicity in this loop, we check timestamps in the state file
-    # which is much lighter than querying HA API directly.
-    
     if not STATE_PATH.exists():
         return
 
@@ -82,7 +80,15 @@ def check_ha_health():
         last_updated_str = merc.get("last_updated")
         
         if last_updated_str:
-            last_updated = datetime.fromisoformat(last_updated_str)
+            # Parse ISO format. If it lacks timezone info, assume UTC.
+            try:
+                last_updated = datetime.fromisoformat(last_updated_str)
+                if last_updated.tzinfo is None:
+                    last_updated = last_updated.replace(tzinfo=timezone.utc)
+            except ValueError:
+                logger.error(f"Could not parse date: {last_updated_str}")
+                return
+
             now = datetime.now(timezone.utc)
             age = now - last_updated
             
