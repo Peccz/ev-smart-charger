@@ -256,10 +256,10 @@ class ZaptecCharger(Charger):
         current_status = self.get_status()
 
         # Modes where we are effectively already stopped:
-        # 1: Disconnected
+        # 1: Disconnected - REMOVED to force stop even if API reports ghost disconnect
         # 2: Connected Waiting (Paused)
         # 5: Charge Done
-        safe_stop_modes = [1, 2, 5]
+        safe_stop_modes = [2, 5]
 
         if current_status["mode_code"] in safe_stop_modes and not current_status["is_charging"]:
             logger.info(f"Zaptec: Already stopped/waiting (Mode {current_status['mode_code']}). Skipping STOP command.")
