@@ -163,12 +163,33 @@ def job():
     merc_plugged = merc_s.get('plugged_in', False)
     leaf_plugged = leaf_s.get('plugged_in', False)
     
+    merc_charging = merc_s.get('is_charging', False)
+    leaf_charging = leaf_s.get('is_charging', False)
+    
     is_charging = charger_status.get('is_charging', False) or (charger_status.get('power_kw', 0) > 0.1)
     zaptec_mode = charger_status.get('mode_code', 0)
     zaptec_connected = zaptec_mode in [2, 3, 5] # Connected, Charging, Done
 
-    # Phase detection logic (Run when charging to confirm identity)
-    if is_charging:
+    # PRIORITY 1: API Confirmation
+    # If one car explicitly says "I am charging", we trust it.
+    if merc_charging and not leaf_charging:
+        active_car_id = "mercedes_eqv"
+        logger.info("Identification: Mercedes API confirms charging. Active car: Mercedes EQV")
+    elif leaf_charging and not merc_charging:
+        active_car_id = "nissan_leaf"
+        logger.info("Identification: Nissan API confirms charging. Active car: Nissan Leaf")
+    elif merc_charging and leaf_charging:
+        # Both claim to charge? Use phase detection to break tie.
+        logger.info("Identification Conflict: Both cars claim charging. Using Phase Detection...")
+        active_phases = charger_status.get('active_phases', 0)
+        phase_map = charger_status.get('phase_map', [False, False, False])
+        if active_phases >= 2 or phase_map[2]:
+             active_car_id = "mercedes_eqv"
+        else:
+             active_car_id = "nissan_leaf"
+    
+    # PRIORITY 2: Phase Detection (if APIs are silent)
+    elif is_charging:
         # Nissan = 1 phase (always L2)
         # Mercedes = 3 phases (but Zaptec sometimes reports total power on L3 only)
         active_phases = charger_status.get('active_phases', 0)
@@ -180,31 +201,33 @@ def job():
         elif active_phases == 1:
             if phase_map[1]: # Phase 2 (L2) active -> Nissan
                 hypothesis = "nissan_leaf"
-            elif phase_map[2]: # Phase 3 (L3) active -> Mercedes (Quirk)
-                logger.info("Phase Detection: High power on L3 only. Identifying as Mercedes EQV.")
-                hypothesis = "mercedes_eqv"
+            elif phase_map[2]: # Phase 3 (L3) active -> Mercedes (Quirk) or Rotated Nissan
+                logger.info("Phase Detection: High power on L3. Checking plugged status to confirm.")
+                if leaf_plugged and not merc_plugged:
+                    hypothesis = "nissan_leaf" # Assume Nissan if plugged in
+                else:
+                    hypothesis = "mercedes_eqv" # Default to Mercedes for L3
             
         # Verify hypothesis with API
-        merc_charging = merc_s.get('is_charging', False)
-        leaf_charging = leaf_s.get('is_charging', False)
-        
         if hypothesis == "mercedes_eqv":
-            if merc_charging:
-                logger.info(f"Phase Detection (3-phase) confirmed by Mercedes API. Active car: Mercedes EQV")
+            if merc_plugged: 
+                logger.info(f"Phase Detection (3-phase/L3) identifies Active car: Mercedes EQV")
                 active_car_id = "mercedes_eqv"
+                # Force status update if API is stale but car is clearly charging
+                if "Mercedes EQV" in vehicle_statuses:
+                    vehicle_statuses["Mercedes EQV"]['is_charging'] = True
             else:
-                logger.info(f"Phase Detection suggests Mercedes, but API says not charging. Treating as GUEST/Waiting...")
+                logger.info(f"Phase Detection suggests Mercedes, but API says not plugged. Treating as GUEST/Waiting...")
                 active_car_id = "UNKNOWN_GUEST"
         elif hypothesis == "nissan_leaf":
-            if leaf_charging:
-                logger.info(f"Phase Detection (L2) confirmed by Nissan API. Active car: Nissan Leaf")
+            if leaf_plugged:
+                logger.info(f"Phase Detection (L2/L3) identifies Active car: Nissan Leaf")
                 active_car_id = "nissan_leaf"
             else:
-                logger.info(f"Phase Detection suggests Nissan, but API says not charging. Treating as GUEST/Waiting...")
+                logger.info(f"Phase Detection suggests Nissan, but API says not plugged. Treating as GUEST/Waiting...")
                 active_car_id = "UNKNOWN_GUEST"
         else:
             # Ambiguous phases or low power (standby)
-            # If Zaptec is active but power is too low for phase detection (<100W), check APIs directly
             if merc_plugged and not leaf_plugged:
                 active_car_id = "mercedes_eqv"
                 logger.info("Phase detection inconclusive (low power). Identifying as Mercedes based on API plugged_in status.")
@@ -214,7 +237,6 @@ def job():
             else:
                 active_car_id = "UNKNOWN_GUEST"
         
-        # Fallback to plugged_in logic if phase detection is inconclusive
     # Fallback / Discovery Logic (When not charging or identity unsure)
     if active_car_id is None:
         if zaptec_connected:
