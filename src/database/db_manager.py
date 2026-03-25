@@ -251,32 +251,13 @@ class DatabaseManager:
         conn.commit()
         conn.close()
 
-    def log_system_metrics(self, metrics):
-        """
-        Logs a snapshot of the entire system state.
-        metrics: dict containing keys matching the table columns.
-        """
+    def prune_old_data(self, days=30):
+        """Deletes rows older than `days` from high-volume tables to control DB size."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO system_metrics (
-                timestamp, active_car_id, zaptec_power_kw, zaptec_energy_kwh, zaptec_mode,
-                mercedes_soc, mercedes_plugged, nissan_soc, nissan_plugged,
-                temp_c, price_sek
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            datetime.now(),
-            metrics.get('active_car_id'),
-            metrics.get('zaptec_power_kw', 0.0),
-            metrics.get('zaptec_energy_kwh', 0.0),
-            metrics.get('zaptec_mode', 'UNKNOWN'),
-            metrics.get('mercedes_soc', 0),
-            metrics.get('mercedes_plugged', False),
-            metrics.get('nissan_soc', 0),
-            metrics.get('nissan_plugged', False),
-            metrics.get('temp_c', 0.0),
-            metrics.get('price_sek', 0.0)
-        ))
+        cutoff = f"date('now', '-{days} days')"
+        for table in ('vehicle_log', 'optimizer_log', 'system_metrics'):
+            cursor.execute(f"DELETE FROM {table} WHERE timestamp < {cutoff}")
         conn.commit()
         conn.close()
 

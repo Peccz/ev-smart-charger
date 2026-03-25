@@ -56,6 +56,12 @@ class SpotPriceService:
                     "price_eur": entry["EUR_per_kWh"]
                 })
             return prices
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.warning(f"SpotPriceService: Prices not yet published for {date_str} (404)")
+            else:
+                logger.error(f"SpotPriceService: HTTP error fetching prices for {date_str}: {e}")
+            return []
         except requests.RequestException as e:
             logger.error(f"SpotPriceService: Error fetching prices for {date_str}: {e}")
             return []

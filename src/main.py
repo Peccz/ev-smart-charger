@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 # Constants
 GUARD_STATE_PATH = STATE_PATH.parent / "charger_guard_state.json"
 
+# Module-level charger instance — reused across cycles to preserve OAuth token
+_charger = None
+
 def _save_forecast_history(forecast_data):
     history = {}
     if FORECAST_HISTORY_FILE.exists():
@@ -54,6 +57,7 @@ def save_state(state):
     except Exception: pass
 
 def job():
+    global _charger
     logger.info("Starting optimization cycle...")
     config = ConfigManager.load_full_config()
     user_settings = ConfigManager.get_settings()
@@ -88,7 +92,9 @@ def job():
     eqv.max_charge_kw = db.get_learned_charge_speed("mercedes_eqv", eqv.max_charge_kw)
     
     active_vehicles = [eqv]
-    charger = ZaptecCharger(config['charger']['zaptec'])
+    if _charger is None:
+        _charger = ZaptecCharger(config['charger']['zaptec'])
+    charger = _charger
     
     # Fetch Data
     official_prices = spot_service.get_prices_upcoming()
@@ -145,12 +151,23 @@ def job():
     # --- 4. Logic & State ---
     current_session_id = state_data.get('session_id')
     prev_session_energy = state_data.get('prev_session_energy', 0.0)
+    last_prune_date = state_data.get('last_prune_date', '')
+    last_guard_notification = state_data.get('last_guard_notification', '')
     state_data = {
         'session_id': current_session_id,
         'session_assigned_id': state_data.get('session_assigned_id'),
         'charger_guard': guard.state,
         'api_error_count': api_error_count,
+        'last_prune_date': last_prune_date,
+        'last_guard_notification': last_guard_notification,
     }
+
+    # Daily DB pruning
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    if last_prune_date != today_str:
+        db.prune_old_data(days=30)
+        state_data['last_prune_date'] = today_str
+        logger.info("DB: Pruned rows older than 30 days.")
     
     any_charging_needed = False
     decision = optimizer.suggest_action(eqv, prices, weather_forecast)
@@ -185,8 +202,18 @@ def job():
                 charger.stop_charging()
             # Always register STOP to clear any lingering START state in the guard
             guard.register_command("STOP")
+        state_data['last_guard_notification'] = ''  # Reset when guard is OK
     else:
         state_data["guard_msg"] = msg
+        # Send HA notification on new guard block (not every minute)
+        if msg != last_guard_notification:
+            try:
+                ha_cfg = config['cars']['mercedes_eqv']
+                ha_notify = HomeAssistantClient(ha_cfg['ha_url'], ha_cfg['ha_token'])
+                ha_notify.send_notification("EV Charger Varning", f"ChargerGuard: {msg}", "ev_charger_guard")
+            except Exception as e:
+                logger.warning(f"Failed to send HA notification: {e}")
+            state_data['last_guard_notification'] = msg
 
     # --- 6. Sessions ---
     if is_charging and active_car_id == "mercedes_eqv":
@@ -246,7 +273,7 @@ def job():
         'target_soc': dynamic_target,
         'current_price_sek': prices[0]['price_sek'] if prices else None,
         'reference_price_sek': reference_price,
-        'hours_to_deadline': None,  # computed inside engine; not currently exposed
+        'hours_to_deadline': decision.get('hours_until_deadline'),
         'temp_c': weather_now.get('temperature_2m'),
         'wind_kmh': weather_now.get('wind_speed_10m'),
         'solar_w_m2': weather_now.get('shortwave_radiation'),

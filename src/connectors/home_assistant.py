@@ -22,6 +22,19 @@ class HomeAssistantClient:
             logger.error(f"HA: Error fetching state for {entity_id} from HA: {e}")
             return None
 
+    def send_notification(self, title, message, notification_id="ev_charger"):
+        """Creates a persistent notification in Home Assistant."""
+        url = f"{self.base_url}/api/services/persistent_notification/create"
+        payload = {"title": title, "message": message, "notification_id": notification_id}
+        try:
+            response = requests.post(url, json=payload, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            logger.info(f"HA: Notification sent: {title}")
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"HA: Error sending notification: {e}")
+            return False
+
     def call_service(self, domain, service, entity_id, **kwargs):
         url = f"{self.base_url}/api/services/{domain}/{service}"
         payload = {"entity_id": entity_id}

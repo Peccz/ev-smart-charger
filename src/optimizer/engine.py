@@ -338,6 +338,10 @@ class Optimizer:
             return datetime.now() + timedelta(hours=12) # Default fallback
 
     def suggest_action(self, vehicle, prices, weather_forecast):
+        # Pre-compute deadline so it's available in all return paths
+        deadline = self.get_deadline()
+        hours_until_deadline = round((deadline - datetime.now()).total_seconds() / 3600.0, 2)
+
         # 0. Check Manual Overrides
         overrides = self._get_overrides()
         vehicle_id = "mercedes_eqv"
@@ -346,9 +350,9 @@ class Optimizer:
             ovr = overrides[vehicle_id]
             logger.info(f"Manual override active for {vehicle_id}: {ovr['action']} (expires: {ovr['expires_at']})")
             if ovr['action'] == "CHARGE":
-                return {"action": "CHARGE", "reason": "Manual Override (Ladda Nu!)"}
+                return {"action": "CHARGE", "reason": "Manual Override (Ladda Nu!)", "hours_until_deadline": hours_until_deadline}
             if ovr['action'] == "STOP":
-                return {"action": "IDLE", "reason": "Manual Override (Stoppa)"}
+                return {"action": "IDLE", "reason": "Manual Override (Stoppa)", "hours_until_deadline": hours_until_deadline}
 
         status = vehicle.get_status()
         current_soc = status['soc']
@@ -368,15 +372,15 @@ class Optimizer:
             mode = "Storm Buffering"
 
         if current_soc >= target_soc:
-            return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
+            return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})", "hours_until_deadline": hours_until_deadline}
 
         # 2. Charging Logic - Two Tiered Strategy
         if not status['plugged_in']:
-            return {"action": "IDLE", "reason": f"Vehicle not plugged in. Target: {target_soc}% ({mode})"}
-        
+            return {"action": "IDLE", "reason": f"Vehicle not plugged in. Target: {target_soc}% ({mode})", "hours_until_deadline": hours_until_deadline}
+
         if not prices:
              logger.warning("Optimizer: No price data. Failsafe charging enabled.")
-             return {"action": "CHARGE", "reason": "No price data, failsafe charging"}
+             return {"action": "CHARGE", "reason": "No price data, failsafe charging", "hours_until_deadline": hours_until_deadline}
 
         df = pd.DataFrame(prices)
         # Normalize all time strings to a consistent format to ensure reliable comparisons
@@ -385,11 +389,8 @@ class Optimizer:
         current_time_start = df.iloc[0]['time_start']
         current_price = df.iloc[0]['price_sek']
 
-        deadline = self.get_deadline()
-
         # --- DEADLINE LOGIC ---
         now = datetime.now()
-        hours_until_deadline = (deadline - now).total_seconds() / 3600.0
 
         # PANIC MODE: Dynamic threshold based on how long it takes to reach min_soc
         soc_to_min = max(0, min_soc - current_soc)
@@ -398,7 +399,7 @@ class Optimizer:
         panic_threshold = hours_to_min + panic_margin
 
         if 0 < hours_until_deadline < panic_threshold and current_soc < target_soc:
-             return {"action": "CHARGE", "reason": f"Panic Mode: Deadline in {hours_until_deadline:.1f}h, need {hours_to_min}h to charge."}
+             return {"action": "CHARGE", "reason": f"Panic Mode: Deadline in {hours_until_deadline:.1f}h, need {hours_to_min}h to charge.", "hours_until_deadline": hours_until_deadline}
 
         # --- TIER 1: CRITICAL CHARGING (Reach min_soc by Deadline) ---
         if current_soc < min_soc:
@@ -414,19 +415,21 @@ class Optimizer:
             # But we ONLY do this if we haven't passed the deadline yet (valid_hours > 0).
             if 0 < valid_hours_before <= hours_needed_critical:
                 return {
-                    "action": "CHARGE", 
-                    "reason": f"CRITICAL: Avresa nära ({deadline.strftime('%H:%M')}). Laddar allt som går."
+                    "action": "CHARGE",
+                    "reason": f"CRITICAL: Avresa nära ({deadline.strftime('%H:%M')}). Laddar allt som går.",
+                    "hours_until_deadline": hours_until_deadline,
                 }
-            
+
             # CASE B: We have more time than needed. Pick the cheapest hours BEFORE the deadline.
             if valid_hours_before > hours_needed_critical:
                 df_critical_sorted = df_critical.sort_values(by='price_sek', ascending=True)
                 cheapest_critical_hours = df_critical_sorted.head(hours_needed_critical)['time_start'].tolist()
-                
+
                 if current_time_start in cheapest_critical_hours:
                     return {
-                        "action": "CHARGE", 
-                        "reason": f"CRITICAL (Plan): Enligt plan för avresa {deadline.strftime('%H:%M')}. Pris: {current_price:.2f}"
+                        "action": "CHARGE",
+                        "reason": f"CRITICAL (Plan): Enligt plan för avresa {deadline.strftime('%H:%M')}. Pris: {current_price:.2f}",
+                        "hours_until_deadline": hours_until_deadline,
                     }
                 else:
                     # If we are not in a critical hour, check Tier 2 below
@@ -455,15 +458,17 @@ class Optimizer:
         if current_time_start in cheapest_global_hours:
             reason_tag = "OPPORTUNISTIC" if current_soc >= min_soc else "CRITICAL+OPPORTUNISTIC"
             return {
-                "action": "CHARGE", 
-                "reason": f"{reason_tag}: {mode}. Charging to {target_soc}% (Best price: {current_price:.2f})"
+                "action": "CHARGE",
+                "reason": f"{reason_tag}: {mode}. Charging to {target_soc}% (Best price: {current_price:.2f})",
+                "hours_until_deadline": hours_until_deadline,
             }
 
         # If we are not charging, provide info
         next_best_price = df_global_sorted.head(hours_needed_total)['price_sek'].max()
         return {
-            "action": "IDLE", 
-            "reason": f"{mode}: Waiting for < {next_best_price:.2f} SEK. (Current: {current_price:.2f})"
+            "action": "IDLE",
+            "reason": f"{mode}: Waiting for < {next_best_price:.2f} SEK. (Current: {current_price:.2f})",
+            "hours_until_deadline": hours_until_deadline,
         }
 
     def _should_buffer(self, prices, weather):
