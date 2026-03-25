@@ -15,3 +15,11 @@ config/settings.yaml
 
 # Ignore data directory (contains local state and user settings with secrets)
 data/
+
+# Local debug/analysis scripts (not part of deployable codebase)
+debug_config.py
+debug_prices.py
+generate_tco.py
+generate_2025_tco.py
+analyze_forecasts.py
+simulate_strategies.py

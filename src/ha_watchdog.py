@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from config_manager import ConfigManager, PROJECT_ROOT, STATE_PATH
+from src.connectors.home_assistant import HomeAssistantClient
 
 # Logging setup
 LOG_FILE = PROJECT_ROOT / "system_monitor.log"
@@ -25,7 +26,7 @@ logger = logging.getLogger("SystemMonitor")
 
 # Constants
 CHECK_INTERVAL_SECONDS = 60  # Check every minute
-STALE_STATE_THRESHOLD_MINUTES = 5 # Restart core service if state file is old
+STALE_STATE_THRESHOLD_MINUTES = 10 # Restart core service if state file is old
 STALE_HA_THRESHOLD_HOURS = 4 # Restart HA if car data is extremely old
 DOCKER_CONTAINER_NAME = "homeassistant"
 CORE_SERVICE_NAME = "ev_smart_charger.service"
@@ -60,64 +61,60 @@ def check_core_service():
                 logger.info("✅ Core service restarted successfully.")
             else:
                 logger.error(f"❌ Failed to restart core service: {output}")
-        else:
-            # logger.info(f"✅ Core service healthy. State age: {int(age.total_seconds())}s")
-            pass
     else:
         logger.warning("⚠️ State file not found. Service might be starting up.")
 
 def check_ha_health():
-    """Checks if Home Assistant is providing fresh data."""
-    if not STATE_PATH.exists():
+    """Checks if Home Assistant is providing fresh data by querying it directly."""
+    config = ConfigManager.load_full_config()
+    ha_conf = config['cars']['mercedes_eqv'] # Uses shared HA config
+    
+    if not ha_conf.get('ha_url') or not ha_conf.get('ha_token'):
+        logger.warning("HA Monitor: Missing HA config, skipping health check.")
         return
 
+    client = HomeAssistantClient(ha_conf['ha_url'], ha_conf['ha_token'])
+    entity_id = ha_conf.get('ha_soc_id', 'sensor.urg48t_state_of_charge')
+    
+    state_obj = client.get_state(entity_id)
+    if not state_obj or 'last_updated' not in state_obj:
+        logger.warning(f"HA Monitor: Could not get state for {entity_id}")
+        return
+
+    last_updated_str = state_obj['last_updated']
     try:
-        with open(STATE_PATH, 'r') as f:
-            state = json.load(f)
+        # HA returns ISO format with Z or +00:00
+        last_updated = datetime.fromisoformat(last_updated_str.replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        age = now - last_updated
         
-        # Check Mercedes (usually the problematic one)
-        merc = state.get("Mercedes EQV", {})
-        last_updated_str = merc.get("last_updated")
-        
-        if last_updated_str:
-            # Parse ISO format. If it lacks timezone info, assume UTC.
-            try:
-                last_updated = datetime.fromisoformat(last_updated_str)
-                if last_updated.tzinfo is None:
-                    last_updated = last_updated.replace(tzinfo=timezone.utc)
-            except ValueError:
-                logger.error(f"Could not parse date: {last_updated_str}")
-                return
+        # logger.info(f"HA Health: {entity_id} age is {age}")
 
-            now = datetime.now(timezone.utc)
-            age = now - last_updated
+        if age > timedelta(hours=STALE_HA_THRESHOLD_HOURS):
+            logger.warning(f"🚨 HA Data Stale! {entity_id} age: {age}")
             
-            if age > timedelta(hours=STALE_HA_THRESHOLD_HOURS):
-                logger.warning(f"🚨 HA Data Stale! Mercedes data age: {age}")
-                
-                # Check if we recently restarted HA (prevent loop)
-                marker_file = PROJECT_ROOT / "data" / "last_ha_restart.txt"
-                can_restart = True
-                if marker_file.exists():
-                    try:
-                        last_ts = float(marker_file.read_text().strip())
-                        last_restart_dt = datetime.fromtimestamp(last_ts, tz=timezone.utc)
-                        if (now - last_restart_dt) < timedelta(hours=6):
-                            can_restart = False
-                            logger.info("⏳ Skipping HA restart (Cooldown active).")
-                    except: pass
-                
-                if can_restart:
-                    logger.warning(f"🔄 Restarting Home Assistant container ({DOCKER_CONTAINER_NAME})...")
-                    success, output = run_command(["sudo", "docker", "restart", DOCKER_CONTAINER_NAME])
-                    if success:
-                        logger.info("✅ Home Assistant restarted.")
-                        marker_file.write_text(str(now.timestamp()))
-                    else:
-                        logger.error(f"❌ Failed to restart HA: {output}")
-
+            # Check if we recently restarted HA (prevent loop)
+            marker_file = PROJECT_ROOT / "data" / "last_ha_restart.txt"
+            can_restart = True
+            if marker_file.exists():
+                try:
+                    last_ts = float(marker_file.read_text().strip())
+                    last_restart_dt = datetime.fromtimestamp(last_ts, tz=timezone.utc)
+                    if (now - last_restart_dt) < timedelta(hours=6):
+                        can_restart = False
+                        logger.info("⏳ Skipping HA restart (Cooldown active).")
+                except: pass
+            
+            if can_restart:
+                logger.warning(f"🔄 Restarting Home Assistant container ({DOCKER_CONTAINER_NAME})...")
+                success, output = run_command(["sudo", "docker", "restart", DOCKER_CONTAINER_NAME])
+                if success:
+                    logger.info("✅ Home Assistant restarted.")
+                    marker_file.write_text(str(now.timestamp()))
+                else:
+                    logger.error(f"❌ Failed to restart HA: {output}")
     except Exception as e:
-        logger.error(f"Error checking HA health: {e}")
+        logger.error(f"HA Monitor Error: {e}")
 
 def main():
     logger.info("--- System Monitor Started ---")

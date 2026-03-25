@@ -24,8 +24,6 @@ DATABASE_PATH = PROJECT_ROOT / "data" / "ev_charger.db"
 DEFAULT_SETTINGS = {
     "mercedes_eqv_min_soc": 60,
     "mercedes_eqv_max_soc": 90,
-    "nissan_leaf_min_soc": 60,
-    "nissan_leaf_max_soc": 90,
     "departure_time": "07:00",
     "smart_buffering": True,
     "daily_charging_enabled": True,
@@ -39,18 +37,10 @@ DEFAULT_SETTINGS = {
 DEFAULT_SENSORS = {
     "mercedes_eqv": {
         "ha_soc_id": "sensor.urg48t_state_of_charge",
-        "ha_plugged_id": "sensor.urg48t_range_electric",
+        "ha_plugged_id": "sensor.urg48t_charging_status",
         "ha_climate_id": "button.urg48t_preclimate_start",
         "ha_climate_status_id": "binary_sensor.urg48t_preclimate_status",
         "ha_odometer_id": "sensor.urg48t_odometer"
-    },
-    "nissan_leaf": {
-        "ha_soc_id": "sensor.leaf_battery_level",
-        "ha_plugged_id": "binary_sensor.leaf_plugged_in",
-        "ha_climate_id": "climate.leaf_climate",
-        "ha_last_updated_id": "sensor.leaf_last_updated",
-        "ha_update_id": "button.leaf_update_data",
-        "ha_odometer_id": "sensor.leaf_odometer"
     }
 }
 
@@ -147,7 +137,7 @@ class ConfigManager:
         # --- Vehicle Helper ---
         def merge_vehicle(key_id, name_fallback):
             v_base = base_config.get('cars', {}).get(key_id, {})
-            v_secrets = secrets_data.get('nissan' if 'nissan' in key_id else 'mercedes', {})
+            v_secrets = secrets_data.get('mercedes' if 'mercedes' in key_id else 'unknown', {})
             defaults = DEFAULT_SENSORS.get(key_id, {})
             
             return {
@@ -160,25 +150,26 @@ class ConfigManager:
                 'ha_url': ha_secrets.get('url', v_base.get('ha_url', 'http://100.100.118.62:8123')),
                 'ha_token': ha_secrets.get('token', v_base.get('ha_token')),
                 
-                # Dynamic Entity Mapping (Priority: settings.yaml -> fallback)
-                'ha_merc_soc_entity_id': v_base.get('ha_soc_id', defaults.get('ha_soc_id')),
-                'ha_nissan_soc_entity_id': v_base.get('ha_soc_id', defaults.get('ha_soc_id')),
-                'ha_merc_plugged_entity_id': v_base.get('ha_plugged_id', defaults.get('ha_plugged_id')),
-                'ha_nissan_plugged_entity_id': v_base.get('ha_plugged_id', defaults.get('ha_plugged_id')),
-                'ha_nissan_range_entity_id': v_base.get('ha_range_id', 'sensor.leaf_range_ac_on'),
-                'ha_nissan_last_updated_id': v_base.get('ha_last_updated_id', defaults.get('ha_last_updated_id')),
+                # Dynamic Entity Mapping
+                'enabled': v_base.get('enabled', get_val(f'{key_id}_enabled', True)),
+                'ha_soc_id': v_base.get('ha_soc_id', defaults.get('ha_soc_id')),
+                'ha_plugged_id': v_base.get('ha_plugged_id', defaults.get('ha_plugged_id')),
+                'location_id': v_base.get('ha_location_id', get_val(f'{key_id}_location_id')),
                 'climate_entity_id': v_base.get('ha_climate_id', defaults.get('ha_climate_id')),
                 'climate_status_id': v_base.get('ha_climate_status_id', defaults.get('ha_climate_status_id')),
                 'odometer_entity_id': v_base.get('ha_odometer_id', defaults.get('ha_odometer_id')),
                 'update_entity_id': v_base.get('ha_update_id', defaults.get('ha_update_id')),
                 
+                # Capabilities
+                'phases': v_base.get('phases', 3 if 'mercedes' in key_id else 1),
+                
                 'username': v_secrets.get('username', get_val(f'{key_id}_username')),
                 'password': v_secrets.get('password', get_val(f'{key_id}_password'))
             }
 
+        # Only include Mercedes EQV in the final car list
         base_config['cars'] = {
-            'mercedes_eqv': merge_vehicle('mercedes_eqv', 'Mercedes EQV'),
-            'nissan_leaf': merge_vehicle('nissan_leaf', 'Nissan Leaf')
+            'mercedes_eqv': merge_vehicle('mercedes_eqv', 'Mercedes EQV')
         }
         
         # Add shared fees to config

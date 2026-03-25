@@ -100,6 +100,17 @@ This script automatically commits, pushes to GitHub, pulls on RPi, and restarts 
    - OAuth token management with automatic refresh
    - Real-time power and energy monitoring
 
+6. **Charger Guard (`src/optimizer/charger_guard.py`)**
+   - Safety layer wrapping all START/STOP commands to the Zaptec charger
+   - Enforces cooldown (10 min between conflicting commands), lockout (60 min after dead-start), and daily restart cap (5/day)
+   - Validates that a START command actually produces power flow; triggers lockout if not
+   - Persists state to `data/charger_guard_state.json`
+
+7. **HA Watchdog (`src/ha_watchdog.py`)**
+   - Runs as `monitor.service`; polls every 60 seconds
+   - Restarts `ev_smart_charger.service` if `optimizer_state.json` is not updated within 10 minutes (hung process detection)
+   - Restarts the Home Assistant Docker container if HA sensor data is >4 hours old (with 6-hour restart cooldown tracked via `data/last_ha_restart.txt`)
+
 6. **External Data Sources**
    - **Spot Prices** (`src/connectors/spot_price.py`): Fetches from elprisetjustnu.se API
    - **Weather** (`src/connectors/weather.py`): Open-Meteo API for forecasts
@@ -230,7 +241,8 @@ The optimizer is **fail-safe by default**:
 Services communicate via JSON files:
 - `main.py` writes to `optimizer_state.json`
 - `web_app.py` reads state files and writes to `manual_overrides.json`
-- `monitor_changes.py` watches Home Assistant and updates `manual_status.json`
+- `ha_watchdog.py` monitors service and HA health, writes `data/last_ha_restart.txt`
+- `ChargerGuard` persists rate-limiting state to `data/charger_guard_state.json`
 
 ## Common Tasks
 

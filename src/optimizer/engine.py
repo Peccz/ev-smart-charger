@@ -84,8 +84,8 @@ class Optimizer:
             avg_bias = sum(ratios) / len(ratios)
             
             # Dampen and Clamp
-            # If avg_bias is 0.9 (we over-forecasted), we want to return 0.9
-            # But let's be conservative and only go halfway
+            # avg_bias is actual/forecast ratio. Dampen halfway toward 1.0 to avoid
+            # overcorrection (e.g. ratio=0.9 → correction=0.95, not 0.9).
             final_bias = (1.0 + avg_bias) / 2.0
             
             # Hard clamps to prevent runaway feedback
@@ -114,8 +114,8 @@ class Optimizer:
                     now = datetime.now()
                     for vid, override in data.items():
                         expires = dateutil.parser.parse(override['expires_at'])
-                        if expires.tzinfo is None:
-                            expires = expires.replace(tzinfo=None) 
+                        if expires.tzinfo is not None:
+                            expires = expires.replace(tzinfo=None)
                         if expires > now:
                             valid[vid] = override
                     return valid
@@ -340,7 +340,7 @@ class Optimizer:
     def suggest_action(self, vehicle, prices, weather_forecast):
         # 0. Check Manual Overrides
         overrides = self._get_overrides()
-        vehicle_id = "mercedes_eqv" if "Mercedes" in vehicle.name else "nissan_leaf"
+        vehicle_id = "mercedes_eqv"
 
         if vehicle_id in overrides:
             ovr = overrides[vehicle_id]
