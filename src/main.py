@@ -28,8 +28,10 @@ logger = logging.getLogger(__name__)
 # Constants
 GUARD_STATE_PATH = STATE_PATH.parent / "charger_guard_state.json"
 
-# Module-level charger instance — reused across cycles to preserve OAuth token
+# Module-level service instances — reused across cycles to preserve in-memory caches
 _charger = None
+_spot_service = None
+_weather_service = None
 
 def _save_forecast_history(forecast_data):
     history = {}
@@ -57,7 +59,7 @@ def save_state(state):
     except Exception: pass
 
 def job():
-    global _charger
+    global _charger, _spot_service, _weather_service
     logger.info("Starting optimization cycle...")
     config = ConfigManager.load_full_config()
     user_settings = ConfigManager.get_settings()
@@ -76,8 +78,12 @@ def job():
         except Exception: pass
     
     db = DatabaseManager(db_path=DATABASE_PATH)
-    spot_service = SpotPriceService(region=config['grid']['region'])
-    weather_service = WeatherService(config['location']['latitude'], config['location']['longitude'])
+    if _spot_service is None:
+        _spot_service = SpotPriceService(region=config['grid']['region'])
+    if _weather_service is None:
+        _weather_service = WeatherService(config['location']['latitude'], config['location']['longitude'])
+    spot_service = _spot_service
+    weather_service = _weather_service
     optimizer = Optimizer(config)
     guard = ChargerGuard(GUARD_STATE_PATH)
     
@@ -153,6 +159,7 @@ def job():
     prev_session_energy = state_data.get('prev_session_energy', 0.0)
     last_prune_date = state_data.get('last_prune_date', '')
     last_guard_notification = state_data.get('last_guard_notification', '')
+    climate_triggered_date = state_data.get('climate_triggered_date', '')
     state_data = {
         'session_id': current_session_id,
         'session_assigned_id': state_data.get('session_assigned_id'),
@@ -160,6 +167,7 @@ def job():
         'api_error_count': api_error_count,
         'last_prune_date': last_prune_date,
         'last_guard_notification': last_guard_notification,
+        'climate_triggered_date': climate_triggered_date,
     }
 
     # Daily DB pruning
@@ -214,6 +222,23 @@ def job():
             except Exception as e:
                 logger.warning(f"Failed to send HA notification: {e}")
             state_data['last_guard_notification'] = msg
+
+    # --- 5.5. Pre-climate ---
+    if merc_s.get('plugged_in') and merc_s.get('is_home', True) and not merc_s.get('climate_active', False):
+        dep_str = user_settings.get('departure_time', '07:00')
+        try:
+            dep_h, dep_m = map(int, dep_str.split(':'))
+            now_dt = datetime.now()
+            dep_dt = now_dt.replace(hour=dep_h, minute=dep_m, second=0, microsecond=0)
+            if dep_dt <= now_dt:
+                dep_dt += timedelta(days=1)
+            mins_to_dep = (dep_dt - now_dt).total_seconds() / 60
+            if 20 <= mins_to_dep <= 35 and climate_triggered_date != today_str:
+                if eqv.start_climate():
+                    state_data['climate_triggered_date'] = today_str
+                    logger.info(f"Pre-climate triggered: departure in {mins_to_dep:.0f} min")
+        except Exception as e:
+            logger.warning(f"Pre-climate error: {e}")
 
     # --- 6. Sessions ---
     if is_charging and active_car_id == "mercedes_eqv":
@@ -274,9 +299,9 @@ def job():
         'current_price_sek': prices[0]['price_sek'] if prices else None,
         'reference_price_sek': reference_price,
         'hours_to_deadline': decision.get('hours_until_deadline'),
-        'temp_c': weather_now.get('temperature_2m'),
-        'wind_kmh': weather_now.get('wind_speed_10m'),
-        'solar_w_m2': weather_now.get('shortwave_radiation'),
+        'temp_c': weather_now.get('temp_c'),
+        'wind_kmh': weather_now.get('wind_kmh_80m'),
+        'solar_w_m2': weather_now.get('solar_w_m2'),
         'api_error_count': api_error_count,
         'guard_status': msg if not can_exec else 'OK',
     })

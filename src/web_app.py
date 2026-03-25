@@ -88,6 +88,10 @@ def settings():
 def history():
     return render_template('history.html')
 
+@app.route('/log')
+def log_page():
+    return render_template('log.html')
+
 @app.route('/api/status')
 def api_status():
     try:
@@ -284,6 +288,16 @@ def api_control():
     except Exception as e:
         app.logger.error(f"Error in api_control: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/optimizer-log')
+def api_optimizer_log():
+    try:
+        db = DatabaseManager(db_path=DATABASE_PATH)
+        rows = db.get_optimizer_log(limit=200)
+        return jsonify({"rows": rows})
+    except Exception as e:
+        app.logger.error(f"Error in api_optimizer_log: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

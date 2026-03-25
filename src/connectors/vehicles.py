@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from .base import Vehicle
 from .home_assistant import HomeAssistantClient
@@ -23,6 +24,9 @@ class MercedesEQV(Vehicle):
         self.ha_climate_status_id = config.get('climate_status_id')
         self.ha_odometer_id = config.get('odometer_entity_id')
         self.ha_location_id = config.get('location_id')
+        self._cached_status = None
+        self._cache_time = 0
+        self._cache_ttl = 90  # seconds — all calls within same cycle share one HA round-trip
 
     def start_charging(self):
         logger.info("MercedesEQV: start_charging() called - Mercedes Me does not support remote start")
@@ -39,6 +43,9 @@ class MercedesEQV(Vehicle):
             logger.warning(f"MercedesEQV: Missing config for HA integration: {missing}")
 
     def get_status(self):
+        if self._cached_status and (time.time() - self._cache_time < self._cache_ttl):
+            return self._cached_status
+
         status = {
             "soc": 0,
             "range_km": 0,
@@ -48,7 +55,7 @@ class MercedesEQV(Vehicle):
             "is_home": True,
             "is_charging": False
         }
-        
+
         if not self.ha_client:
             return status
 
@@ -95,6 +102,8 @@ class MercedesEQV(Vehicle):
 
         status['climate_active'] = self._get_climate_active()
         logger.info(f"MercedesEQV Status: {status}")
+        self._cached_status = status
+        self._cache_time = time.time()
         return status
 
     def _get_climate_active(self):
