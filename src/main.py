@@ -32,6 +32,8 @@ GUARD_STATE_PATH = STATE_PATH.parent / "charger_guard_state.json"
 _charger = None
 _spot_service = None
 _weather_service = None
+_historical_avg = None
+_historical_avg_date = None
 
 def _save_forecast_history(forecast_data):
     history = {}
@@ -59,7 +61,7 @@ def save_state(state):
     except Exception: pass
 
 def job():
-    global _charger, _spot_service, _weather_service
+    global _charger, _spot_service, _weather_service, _historical_avg, _historical_avg_date
     logger.info("Starting optimization cycle...")
     config = ConfigManager.load_full_config()
     user_settings = ConfigManager.get_settings()
@@ -104,7 +106,11 @@ def job():
     
     # Fetch Data
     official_prices = spot_service.get_prices_upcoming()
-    historical_avg = spot_service.get_historical_average(days=7)
+    _today = datetime.now().strftime("%Y-%m-%d")
+    if _historical_avg is None or _historical_avg_date != _today:
+        _historical_avg = spot_service.get_historical_average(days=7)
+        _historical_avg_date = _today
+    historical_avg = _historical_avg
     optimizer.long_term_history_avg = historical_avg
     weather_forecast = weather_service.get_forecast()
     
@@ -160,6 +166,7 @@ def job():
     last_prune_date = state_data.get('last_prune_date', '')
     last_guard_notification = state_data.get('last_guard_notification', '')
     climate_triggered_date = state_data.get('climate_triggered_date', '')
+    prev_decision_action = state_data.get('prev_decision_action', '')
     state_data = {
         'session_id': current_session_id,
         'session_assigned_id': state_data.get('session_assigned_id'),
@@ -168,6 +175,7 @@ def job():
         'last_prune_date': last_prune_date,
         'last_guard_notification': last_guard_notification,
         'climate_triggered_date': climate_triggered_date,
+        'prev_decision_action': prev_decision_action,
     }
 
     # Daily DB pruning
@@ -191,10 +199,28 @@ def job():
         "urgency_score": optimizer.calculate_urgency(eqv, dynamic_target)
     }
 
+    state_data['prev_decision_action'] = decision['action']
+
     if active_car_id == "mercedes_eqv" and decision['action'] == "CHARGE":
         any_charging_needed = True
     elif active_car_id == "UNKNOWN_GUEST":
         any_charging_needed = True # Always charge guests
+
+    # "Charging complete" notification: CHARGE → IDLE with target reached
+    if (decision['action'] == 'IDLE'
+            and 'reached' in decision.get('reason', '')
+            and prev_decision_action == 'CHARGE'):
+        try:
+            ha_cfg = config['cars']['mercedes_eqv']
+            ha_notify = HomeAssistantClient(ha_cfg['ha_url'], ha_cfg['ha_token'])
+            ha_notify.send_notification(
+                "EV Laddning Klar",
+                f"Mercedes EQV: {merc_s.get('soc', '?')}% SoC. {decision['reason']}",
+                "ev_charging_complete"
+            )
+            logger.info("Charging complete notification sent.")
+        except Exception as e:
+            logger.warning(f"Failed to send charging complete notification: {e}")
 
     # --- 5. Control ---
     desired_action = "START" if any_charging_needed else "STOP"

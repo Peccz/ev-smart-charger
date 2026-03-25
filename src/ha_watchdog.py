@@ -30,6 +30,7 @@ STALE_STATE_THRESHOLD_MINUTES = 10 # Restart core service if state file is old
 STALE_HA_THRESHOLD_HOURS = 4 # Restart HA if car data is extremely old
 DOCKER_CONTAINER_NAME = "homeassistant"
 CORE_SERVICE_NAME = "ev_smart_charger.service"
+WEB_SERVICE_NAME = "ev_web_app.service"
 
 def run_command(cmd_list):
     try:
@@ -63,6 +64,17 @@ def check_core_service():
                 logger.error(f"❌ Failed to restart core service: {output}")
     else:
         logger.warning("⚠️ State file not found. Service might be starting up.")
+
+def check_web_service():
+    """Restarts the web dashboard if it has stopped."""
+    ok, _ = run_command(["sudo", "systemctl", "is-active", "--quiet", WEB_SERVICE_NAME])
+    if not ok:
+        logger.warning(f"🚨 Web service down! Restarting {WEB_SERVICE_NAME}...")
+        success, output = run_command(["sudo", "systemctl", "restart", WEB_SERVICE_NAME])
+        if success:
+            logger.info("✅ Web service restarted successfully.")
+        else:
+            logger.error(f"❌ Failed to restart web service: {output}")
 
 def check_ha_health():
     """Checks if Home Assistant is providing fresh data by querying it directly."""
@@ -121,6 +133,7 @@ def main():
     while True:
         try:
             check_core_service()
+            check_web_service()
             check_ha_health()
         except Exception as e:
             logger.error(f"Monitor Loop Error: {e}")
