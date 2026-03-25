@@ -169,9 +169,11 @@ def job():
         if desired_action == "START" and not is_charging:
             if charger.start_charging():
                 guard.register_command("START")
-        elif desired_action == "STOP" and is_charging:
-            if charger.stop_charging():
-                guard.register_command("STOP")
+        elif desired_action == "STOP":
+            if is_charging:
+                charger.stop_charging()
+            # Always register STOP to clear any lingering START state in the guard
+            guard.register_command("STOP")
     else:
         state_data["guard_msg"] = msg
 
