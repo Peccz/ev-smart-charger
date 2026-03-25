@@ -101,9 +101,14 @@ def job():
     _save_forecast_history(prices)
 
     # --- 2. Status Updates ---
+    api_error_count = state_data.get('api_error_count', 0)
     try:
         charger_status = charger.get_status()
-    except Exception: charger_status = {}
+        api_error_count = 0
+    except Exception:
+        charger_status = {}
+        api_error_count += 1
+        logger.warning(f"Zaptec API unavailable (error #{api_error_count})")
 
     zaptec_mode = charger_status.get('mode_code', 0)
     zaptec_is_disconnected = (zaptec_mode == 1)
@@ -121,30 +126,36 @@ def job():
     active_car_id = None
     merc_s = vehicle_statuses.get("Mercedes EQV", {})
     
+    merc_plugged = merc_s.get('plugged_in', False)
     if is_charging:
         active_phases = charger_status.get('active_phases', 0)
-        # Mercedes is 3-phase
-        if active_phases >= 2 or merc_s.get('is_home'):
+        # Mercedes is 3-phase. Use plugged_in as primary signal to avoid misidentifying
+        # a 3-phase guest charger as Mercedes when Mercedes is home but not connected.
+        if merc_plugged and (active_phases >= 2 or active_phases == 0):
             active_car_id = "mercedes_eqv"
+        elif merc_plugged and active_phases == 1:
+            active_car_id = "mercedes_eqv"  # 1-phase home socket fallback
         else:
             active_car_id = "UNKNOWN_GUEST"
     elif zaptec_mode in [2, 3, 5]:
-        active_car_id = "mercedes_eqv" if merc_s.get('plugged_in') else "UNKNOWN_GUEST"
+        active_car_id = "mercedes_eqv" if merc_plugged else "UNKNOWN_GUEST"
     else:
         active_car_id = "UNKNOWN_NONE"
 
     # --- 4. Logic & State ---
     current_session_id = state_data.get('session_id')
+    prev_session_energy = state_data.get('prev_session_energy', 0.0)
     state_data = {
         'session_id': current_session_id,
         'session_assigned_id': state_data.get('session_assigned_id'),
-        'charger_guard': guard.state
+        'charger_guard': guard.state,
+        'api_error_count': api_error_count,
     }
     
     any_charging_needed = False
-    target_soc = user_settings.get("mercedes_eqv_target", 80)
     decision = optimizer.suggest_action(eqv, prices, weather_forecast)
-    
+    dynamic_target, _ = optimizer._calculate_dynamic_target("mercedes_eqv", prices)
+
     state_data["Mercedes EQV"] = {
         "id": "mercedes_eqv",
         "last_updated": datetime.now().isoformat(),
@@ -152,7 +163,7 @@ def job():
         "plugged_in": merc_s.get('plugged_in', False),
         "action": decision['action'],
         "reason": decision['reason'],
-        "urgency_score": optimizer.calculate_urgency(eqv, target_soc)
+        "urgency_score": optimizer.calculate_urgency(eqv, dynamic_target)
     }
 
     if active_car_id == "mercedes_eqv" and decision['action'] == "CHARGE":
@@ -180,21 +191,37 @@ def job():
     # --- 6. Sessions ---
     if is_charging and active_car_id == "mercedes_eqv":
         power_kw = charger_status.get('power_kw', 0.0)
-        energy_delta = power_kw / 60.0
-        cost_grid = energy_delta * (grid_fee + energy_tax + retail_fee) * (1 + vat_rate)
+        current_energy_kwh = charger_status.get('energy_kwh', 0.0)
         current_price = prices[0]['price_sek'] if prices else 0.0
-        cost_spot = energy_delta * current_price
-        
+
         if not current_session_id:
             current_session_id = db.start_session("mercedes_eqv", merc_s.get('soc', 0), merc_s.get('odometer', 0))
             state_data['session_assigned_id'] = "mercedes_eqv"
+            prev_session_energy = current_energy_kwh
+            energy_delta = 0.0
         else:
+            # Use Zaptec session energy (kWh) for accurate delta; fall back to power snapshot
+            if current_energy_kwh > 0:
+                energy_delta = max(0.0, current_energy_kwh - prev_session_energy)
+            else:
+                energy_delta = power_kw / 60.0
+            prev_session_energy = current_energy_kwh
+            cost_grid = energy_delta * (grid_fee + energy_tax + retail_fee) * (1 + vat_rate)
+            cost_spot = energy_delta * current_price
             db.update_session(current_session_id, energy_delta, cost_spot, cost_grid, merc_s.get('soc', 0), merc_s.get('odometer', 0))
+
         state_data['session_id'] = current_session_id
+        state_data['prev_session_energy'] = prev_session_energy
     elif not is_charging and current_session_id:
-        db.end_session(current_session_id, merc_s.get('soc', 0), merc_s.get('odometer', 0))
-        state_data['session_id'] = None
-        state_data['session_assigned_id'] = None
+        # Grace period: only close session if Zaptec has been reachable (not an API blip)
+        if api_error_count < 3:
+            db.end_session(current_session_id, merc_s.get('soc', 0), merc_s.get('odometer', 0))
+            state_data['session_id'] = None
+            state_data['session_assigned_id'] = None
+            state_data['prev_session_energy'] = 0.0
+        else:
+            logger.warning(f"Zaptec API error count {api_error_count} — keeping session open during outage.")
+            state_data['session_id'] = current_session_id
 
     save_state(state_data)
 

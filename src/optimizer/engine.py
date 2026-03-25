@@ -134,7 +134,7 @@ class Optimizer:
         # Convert official prices to DataFrame
         official_prices_df = pd.DataFrame(current_prices)
         if not official_prices_df.empty:
-            official_prices_df['time_start'] = pd.to_datetime(official_prices_df['time_start'], utc=True).dt.tz_convert('Europe/Berlin').dt.tz_localize(None)
+            official_prices_df['time_start'] = pd.to_datetime(official_prices_df['time_start'], utc=True).dt.tz_convert('Europe/Stockholm').dt.tz_localize(None)
             official_prices_df = official_prices_df.set_index('time_start')
             official_prices_df = official_prices_df.resample('1h').mean(numeric_only=True)
         
@@ -197,14 +197,13 @@ class Optimizer:
             opt_config = self.config.get('optimization', {})
             
             # 1. Wind Factor (High wind = Low price)
+            # Linear model: neutral at 20 km/h, ±wind_penalty per km/h deviation.
+            # Clamped to [0.70, 1.40] to prevent runaway adjustments.
             wind_speed = hour_data.get('wind_kmh_80m', 10)
             wind_penalty = float(opt_config.get('forecast_wind_penalty', 0.03))
-            wind_factor = 1.0
-            if wind_speed < 10:
-                wind_factor = 1.0 + (10 - wind_speed) * wind_penalty
-            elif wind_speed > 25:
-                # Keep hardcoded safety clamp for high wind for now, or move to config later
-                wind_factor = max(0.7, 1.0 - (wind_speed - 25) * (wind_penalty / 2)) 
+            wind_ref = float(opt_config.get('forecast_wind_ref_kmh', 20.0))
+            wind_factor = 1.0 - (wind_speed - wind_ref) * (wind_penalty / wind_ref)
+            wind_factor = max(0.70, min(wind_factor, 1.40))
 
             # 2. Solar Factor (High sun = Low price)
             solar_rad = hour_data.get('solar_w_m2', 0)
@@ -296,10 +295,11 @@ class Optimizer:
         # (This is fetched as 7-day average in main.py)
         reference_price = self.long_term_history_avg
         
-        # Fallback if no history available
+        # Fallback if no history available — use a configured SE3 reference price
+        # to avoid using the volatile forecast average as its own reference point.
         if reference_price is None:
-            reference_price = df['price_sek'].mean() # Use forecast avg as proxy
-            logger.warning("Optimizer: Missing historical data, using forecast average as reference.")
+            reference_price = float(self.config.get('optimization', {}).get('fallback_reference_price_sek', 1.20))
+            logger.warning(f"Optimizer: Missing historical data, using configured fallback reference {reference_price:.2f} SEK.")
 
         # --- LOGIC: 7-Day Rolling Average Strategy ---
         # Super Cheap: < 80% of average
@@ -356,6 +356,8 @@ class Optimizer:
         
         # Get Constraints
         min_soc = user_settings.get(f"{vehicle_id}_min_soc", 40)
+        capacity_kwh = vehicle.capacity_kwh
+        charge_speed_kw = vehicle.max_charge_kw
         
         # 1. Calculate Dynamic Target SoC (Opportunistic Target)
         target_soc, mode = self._calculate_dynamic_target(vehicle_id, prices)
@@ -369,9 +371,6 @@ class Optimizer:
             return {"action": "IDLE", "reason": f"Target SoC {target_soc}% reached ({mode})"}
 
         # 2. Charging Logic - Two Tiered Strategy
-        capacity_kwh = vehicle.capacity_kwh
-        charge_speed_kw = vehicle.max_charge_kw
-        
         if not status['plugged_in']:
             return {"action": "IDLE", "reason": f"Vehicle not plugged in. Target: {target_soc}% ({mode})"}
         
@@ -380,19 +379,26 @@ class Optimizer:
              return {"action": "CHARGE", "reason": "No price data, failsafe charging"}
 
         df = pd.DataFrame(prices)
+        # Normalize all time strings to a consistent format to ensure reliable comparisons
+        df['time_start'] = pd.to_datetime(df['time_start']).dt.strftime('%Y-%m-%dT%H:00:00')
         df['time_start_dt'] = pd.to_datetime(df['time_start'])
         current_time_start = df.iloc[0]['time_start']
         current_price = df.iloc[0]['price_sek']
-        
+
         deadline = self.get_deadline()
 
         # --- DEADLINE LOGIC ---
         now = datetime.now()
         hours_until_deadline = (deadline - now).total_seconds() / 3600.0
-        
-        # PANIC MODE: If close to deadline and not reached target, charge regardless of price
-        if 0 < hours_until_deadline < 3.0 and current_soc < target_soc:
-             return {"action": "CHARGE", "reason": f"Panic Mode: Deadline in {hours_until_deadline:.1f}h, target not reached."}
+
+        # PANIC MODE: Dynamic threshold based on how long it takes to reach min_soc
+        soc_to_min = max(0, min_soc - current_soc)
+        hours_to_min = math.ceil((soc_to_min / 100.0) * capacity_kwh / charge_speed_kw) if charge_speed_kw > 0 else 0
+        panic_margin = float(self.config.get('optimization', {}).get('panic_margin_hours', 0.5))
+        panic_threshold = hours_to_min + panic_margin
+
+        if 0 < hours_until_deadline < panic_threshold and current_soc < target_soc:
+             return {"action": "CHARGE", "reason": f"Panic Mode: Deadline in {hours_until_deadline:.1f}h, need {hours_to_min}h to charge."}
 
         # --- TIER 1: CRITICAL CHARGING (Reach min_soc by Deadline) ---
         if current_soc < min_soc:
@@ -468,7 +474,8 @@ class Optimizer:
         if not weather:
             return False
             
-        df_weather = pd.DataFrame(weather)
+        # Only look at the next 24 hours — distant forecasts should not trigger buffering today
+        df_weather = pd.DataFrame(weather).head(24)
         avg_wind_80m = df_weather['wind_kmh_80m'].mean() # Use higher altitude wind for generation forecast
         avg_temp = df_weather['temp_c'].mean()
         

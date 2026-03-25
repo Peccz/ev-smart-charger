@@ -129,9 +129,12 @@ class ConfigManager:
             'price_buffer_threshold': opt_cfg.get('price_buffer_threshold', 0.10),
             'planning_horizon_days': opt_cfg.get('planning_horizon_days', 3),
             'forecast_wind_penalty': opt_cfg.get('forecast_wind_penalty', 0.03),
+            'forecast_wind_ref_kmh': opt_cfg.get('forecast_wind_ref_kmh', 20.0),
             'forecast_solar_discount': opt_cfg.get('forecast_solar_discount', 0.0002),
             'forecast_temp_penalty': opt_cfg.get('forecast_temp_penalty', 0.01),
-            'forecast_winter_bias': opt_cfg.get('forecast_winter_bias', 1.10)
+            'forecast_winter_bias': opt_cfg.get('forecast_winter_bias', 1.10),
+            'fallback_reference_price_sek': opt_cfg.get('fallback_reference_price_sek', 1.20),
+            'panic_margin_hours': opt_cfg.get('panic_margin_hours', 0.5),
         }
 
         # --- Vehicle Helper ---

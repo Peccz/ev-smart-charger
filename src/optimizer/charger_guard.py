@@ -1,8 +1,12 @@
 import json
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+def _now():
+    """Returns current UTC time as a naive datetime for consistent cross-TZ behavior."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +46,7 @@ class ChargerGuard:
             logger.error(f"ChargerGuard: Error saving state: {e}")
 
     def can_execute(self, action):
-        now = datetime.now()
+        now = _now()
         last_time = datetime.fromisoformat(self.state["last_command_time"])
         
         # 1. Failure Mode Check
@@ -71,7 +75,7 @@ class ChargerGuard:
         return True, "OK"
 
     def register_command(self, action):
-        now = datetime.now()
+        now = _now()
         if action == "START" and self.state["last_command"] == "STOP":
             self.state["daily_restarts"] += 1
             
@@ -87,7 +91,7 @@ class ChargerGuard:
         if self.state["last_command"] != "START":
             return True
 
-        now = datetime.now()
+        now = _now()
         cmd_time = datetime.fromisoformat(self.state["last_command_time"])
         
         # Wait a few minutes before validating
@@ -105,5 +109,5 @@ class ChargerGuard:
     def trigger_lockout(self, minutes=None):
         if minutes is None:
             minutes = self.lockout_minutes
-        self.state["failure_mode_until"] = (datetime.now() + timedelta(minutes=minutes)).isoformat()
+        self.state["failure_mode_until"] = (_now() + timedelta(minutes=minutes)).isoformat()
         self._save_state()
