@@ -86,7 +86,34 @@ class DatabaseManager:
                 price_sek REAL
             )
         ''')
-        
+
+        # Table: Optimizer Log (per-cycle decision context for debugging/analysis)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS optimizer_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                soc INTEGER,
+                plugged_in BOOLEAN,
+                is_charging BOOLEAN,
+                power_kw REAL,
+                zaptec_mode INTEGER,
+                active_car_id TEXT,
+                session_id INTEGER,
+                action TEXT,
+                reason TEXT,
+                optimization_mode TEXT,
+                target_soc INTEGER,
+                current_price_sek REAL,
+                reference_price_sek REAL,
+                hours_to_deadline REAL,
+                temp_c REAL,
+                wind_kmh REAL,
+                solar_w_m2 REAL,
+                api_error_count INTEGER,
+                guard_status TEXT
+            )
+        ''')
+
         conn.commit()
         conn.close()
 
@@ -252,6 +279,56 @@ class DatabaseManager:
         ))
         conn.commit()
         conn.close()
+
+    def log_optimizer_cycle(self, data: dict):
+        """Logs one optimizer cycle's decision context for debugging and analysis."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO optimizer_log (
+                timestamp, soc, plugged_in, is_charging, power_kw, zaptec_mode,
+                active_car_id, session_id, action, reason, optimization_mode,
+                target_soc, current_price_sek, reference_price_sek, hours_to_deadline,
+                temp_c, wind_kmh, solar_w_m2, api_error_count, guard_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            datetime.now(),
+            data.get('soc'),
+            data.get('plugged_in'),
+            data.get('is_charging'),
+            data.get('power_kw'),
+            data.get('zaptec_mode'),
+            data.get('active_car_id'),
+            data.get('session_id'),
+            data.get('action'),
+            data.get('reason'),
+            data.get('optimization_mode'),
+            data.get('target_soc'),
+            data.get('current_price_sek'),
+            data.get('reference_price_sek'),
+            data.get('hours_to_deadline'),
+            data.get('temp_c'),
+            data.get('wind_kmh'),
+            data.get('solar_w_m2'),
+            data.get('api_error_count'),
+            data.get('guard_status'),
+        ))
+        conn.commit()
+        conn.close()
+
+    def get_optimizer_log(self, limit=1440):
+        """Returns recent optimizer cycles (default = last 24h at 1 cycle/min)."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT * FROM optimizer_log
+            ORDER BY timestamp DESC
+            LIMIT ?
+        ''', (limit,))
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
 
     def get_recent_history(self, vehicle_id, limit=100):
         conn = sqlite3.connect(self.db_path)

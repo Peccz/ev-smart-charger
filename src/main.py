@@ -154,7 +154,7 @@ def job():
     
     any_charging_needed = False
     decision = optimizer.suggest_action(eqv, prices, weather_forecast)
-    dynamic_target, _ = optimizer._calculate_dynamic_target("mercedes_eqv", prices)
+    dynamic_target, optimization_mode = optimizer._calculate_dynamic_target("mercedes_eqv", prices)
 
     state_data["Mercedes EQV"] = {
         "id": "mercedes_eqv",
@@ -224,6 +224,35 @@ def job():
             state_data['session_id'] = current_session_id
 
     save_state(state_data)
+
+    # --- 7. Log optimizer cycle ---
+    weather_now = weather_forecast[0] if weather_forecast else {}
+    reference_price = None
+    if prices:
+        long_term_avg = getattr(optimizer, 'long_term_history_avg', None)
+        reference_price = long_term_avg if long_term_avg else (sum(p['price_sek'] for p in prices) / len(prices))
+
+    db.log_optimizer_cycle({
+        'soc': merc_s.get('soc'),
+        'plugged_in': merc_s.get('plugged_in', False),
+        'is_charging': is_charging,
+        'power_kw': charger_status.get('power_kw', 0.0),
+        'zaptec_mode': zaptec_mode,
+        'active_car_id': active_car_id,
+        'session_id': state_data.get('session_id'),
+        'action': decision['action'],
+        'reason': decision['reason'],
+        'optimization_mode': optimization_mode,
+        'target_soc': dynamic_target,
+        'current_price_sek': prices[0]['price_sek'] if prices else None,
+        'reference_price_sek': reference_price,
+        'hours_to_deadline': None,  # computed inside engine; not currently exposed
+        'temp_c': weather_now.get('temperature_2m'),
+        'wind_kmh': weather_now.get('wind_speed_10m'),
+        'solar_w_m2': weather_now.get('shortwave_radiation'),
+        'api_error_count': api_error_count,
+        'guard_status': msg if not can_exec else 'OK',
+    })
 
 def main():
     logger.info("EV Smart Charger System Started (Mercedes EQV Only)")
