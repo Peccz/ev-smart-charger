@@ -20,6 +20,7 @@ FORECAST_HISTORY_FILE = PROJECT_ROOT / "data" / "forecast_history.json"
 PRICE_HISTORY_CACHE_FILE = PROJECT_ROOT / "data" / "price_history_cache.json"
 SECRET_KEY_PATH = PROJECT_ROOT / "data" / ".flask_secret"
 DATABASE_PATH = PROJECT_ROOT / "data" / "ev_charger.db"
+POWER_LIMIT_PATH = PROJECT_ROOT / "config" / "power_limit.json"
 
 DEFAULT_SETTINGS = {
     "mercedes_eqv_min_soc": 60,

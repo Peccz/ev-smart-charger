@@ -14,7 +14,7 @@ from connectors.home_assistant import HomeAssistantClient
 from database.db_manager import DatabaseManager
 from optimizer.engine import Optimizer
 from optimizer.charger_guard import ChargerGuard
-from config_manager import ConfigManager, DATABASE_PATH, STATE_PATH, FORECAST_HISTORY_FILE, PROJECT_ROOT
+from config_manager import ConfigManager, DATABASE_PATH, STATE_PATH, FORECAST_HISTORY_FILE, PROJECT_ROOT, POWER_LIMIT_PATH
 
 # Setup logging
 log_handler = RotatingFileHandler(PROJECT_ROOT / "ev_charger.log", maxBytes=2*1024*1024, backupCount=5)
@@ -27,6 +27,44 @@ logger = logging.getLogger(__name__)
 
 # Constants
 GUARD_STATE_PATH = STATE_PATH.parent / "charger_guard_state.json"
+_CHARGER_PHASES = 3
+_CHARGER_VOLTAGE = 230
+_CHARGER_MIN_AMPS = 6   # IEC 61851 minimum
+_CHARGER_MAX_AMPS = 16
+_POWER_LIMIT_MAX_AGE_S = 90  # Ignore limits older than this
+
+def _apply_power_limit(charger, state_data):
+    """Read power_limit.json written by energy_overwatch and apply to Zaptec if changed."""
+    if not POWER_LIMIT_PATH.exists():
+        return
+    try:
+        with open(POWER_LIMIT_PATH, 'r') as f:
+            limit_data = json.load(f)
+
+        limit_w = int(limit_data.get('limitW', 0))
+        timestamp_ms = limit_data.get('timestamp', 0)
+        reason = limit_data.get('reason', '')
+
+        age_s = (datetime.now().timestamp() * 1000 - timestamp_ms) / 1000
+        if age_s > _POWER_LIMIT_MAX_AGE_S:
+            logger.debug(f"power_limit.json är {age_s:.0f}s gammal, ignoreras.")
+            return
+
+        # limitW=0 means "stop charging" — handled by START/STOP logic, skip current adjustment
+        min_usable_w = _CHARGER_MIN_AMPS * _CHARGER_VOLTAGE * _CHARGER_PHASES
+        if limit_w < min_usable_w:
+            return
+
+        target_amps = round(limit_w / (_CHARGER_VOLTAGE * _CHARGER_PHASES))
+        target_amps = max(_CHARGER_MIN_AMPS, min(_CHARGER_MAX_AMPS, target_amps))
+
+        last_set_amps = state_data.get('last_set_amps', -1)
+        if target_amps != last_set_amps:
+            logger.info(f"energy_overwatch: {limit_w}W → {target_amps}A ({reason})")
+            if charger.set_charging_current(target_amps):
+                state_data['last_set_amps'] = target_amps
+    except Exception as e:
+        logger.warning(f"power_limit.json: kunde inte tillämpas: {e}")
 
 # Module-level service instances — reused across cycles to preserve in-memory caches
 _charger = None
@@ -167,6 +205,7 @@ def job():
     last_guard_notification = state_data.get('last_guard_notification', '')
     climate_triggered_date = state_data.get('climate_triggered_date', '')
     prev_decision_action = state_data.get('prev_decision_action', '')
+    last_set_amps = state_data.get('last_set_amps', -1)
     state_data = {
         'session_id': current_session_id,
         'session_assigned_id': state_data.get('session_assigned_id'),
@@ -176,6 +215,7 @@ def job():
         'last_guard_notification': last_guard_notification,
         'climate_triggered_date': climate_triggered_date,
         'prev_decision_action': prev_decision_action,
+        'last_set_amps': last_set_amps,
     }
 
     # Daily DB pruning
@@ -249,7 +289,10 @@ def job():
                 logger.warning(f"Failed to send HA notification: {e}")
             state_data['last_guard_notification'] = msg
 
-    # --- 5.5. Pre-climate ---
+    # --- 5.5. Load limit from energy_overwatch ---
+    _apply_power_limit(charger, state_data)
+
+    # --- 5.6. Pre-climate ---
     if merc_s.get('plugged_in') and merc_s.get('is_home', True) and not merc_s.get('climate_active', False):
         dep_str = user_settings.get('departure_time', '07:00')
         try:
